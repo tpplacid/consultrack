@@ -119,7 +119,7 @@ export function EmployeesClient({ admin, employees: initialEmployees }: Props) {
                 <tr key={e.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-xs font-bold text-teal-600">{getInitials(e.name)}</div>
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">{getInitials(e.name)}</div>
                       <div>
                         <p className="font-medium text-slate-900">{e.name}</p>
                         <p className="text-xs text-slate-500">{e.email}</p>
@@ -129,7 +129,7 @@ export function EmployeesClient({ admin, employees: initialEmployees }: Props) {
                   <td className="px-4 py-3 text-slate-600">{ROLE_LABELS[e.role]}</td>
                   <td className="px-4 py-3 text-slate-600">{manager?.name || '—'}</td>
                   <td className="px-4 py-3">
-                    <span className="font-semibold text-teal-600">{e.score}</span>
+                    <span className="font-semibold text-indigo-600">{e.score}</span>
                     <span className="text-slate-400">/10</span>
                   </td>
                   <td className="px-4 py-3">
@@ -139,7 +139,7 @@ export function EmployeesClient({ admin, employees: initialEmployees }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <button onClick={() => openEdit(e)} className="text-slate-500 hover:text-teal-600" title="Edit"><Edit size={15} /></button>
+                      <button onClick={() => openEdit(e)} className="text-slate-500 hover:text-indigo-600" title="Edit"><Edit size={15} /></button>
                       <button onClick={() => openReset(e)} className="text-slate-500 hover:text-orange-600" title="Reset password"><KeyRound size={15} /></button>
                       <button onClick={() => toggleActive(e)} className="text-slate-500 hover:text-red-600" title={e.is_active ? 'Deactivate' : 'Activate'}>
                         {e.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
@@ -161,7 +161,7 @@ export function EmployeesClient({ admin, employees: initialEmployees }: Props) {
             <div key={e.id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-sm font-bold text-teal-600">{getInitials(e.name)}</div>
+                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-bold text-indigo-600">{getInitials(e.name)}</div>
                   <div>
                     <p className="font-semibold text-slate-900">{e.name}</p>
                     <p className="text-xs text-slate-500">{e.email}</p>
@@ -182,11 +182,11 @@ export function EmployeesClient({ admin, employees: initialEmployees }: Props) {
                 </div>
                 <div className="bg-slate-50 rounded-lg p-2">
                   <p className="text-slate-400 mb-0.5">Score</p>
-                  <p className="font-semibold text-teal-600">{e.score}<span className="text-slate-400 font-normal">/10</span></p>
+                  <p className="font-semibold text-indigo-600">{e.score}<span className="text-slate-400 font-normal">/10</span></p>
                 </div>
               </div>
               <div className="flex gap-3 pt-1 border-t border-slate-100">
-                <button onClick={() => openEdit(e)} className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-teal-600 font-medium">
+                <button onClick={() => openEdit(e)} className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-600 font-medium">
                   <Edit size={13} />Edit
                 </button>
                 <button onClick={() => openReset(e)} className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-orange-500 font-medium">

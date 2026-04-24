@@ -70,11 +70,11 @@ export function LeavesClient({ employee, leaves: initialLeaves }: Props) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Leave Date</label>
-            <input type="date" required value={form.leave_date} onChange={e => setForm(p => ({...p, leave_date: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            <input type="date" required value={form.leave_date} onChange={e => setForm(p => ({...p, leave_date: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Leave Type</label>
-            <select value={form.leave_type} onChange={e => setForm(p => ({...p, leave_type: e.target.value as Leave['leave_type']}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <select value={form.leave_type} onChange={e => setForm(p => ({...p, leave_type: e.target.value as Leave['leave_type']}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="casual">Casual</option>
               <option value="sick">Sick</option>
               <option value="emergency">Emergency</option>
@@ -82,7 +82,7 @@ export function LeavesClient({ employee, leaves: initialLeaves }: Props) {
           </div>
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Reason</label>
-            <textarea value={form.reason} onChange={e => setForm(p => ({...p, reason: e.target.value}))} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Optional reason…" />
+            <textarea value={form.reason} onChange={e => setForm(p => ({...p, reason: e.target.value}))} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Optional reason…" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>

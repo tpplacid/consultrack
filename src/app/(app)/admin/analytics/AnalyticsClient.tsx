@@ -154,21 +154,21 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-slate-900">Analytics Dashboard</h1>
         <div className="flex flex-wrap gap-2">
-          <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
             <option value={365}>Last year</option>
           </select>
-          <select value={empFilter} onChange={e => setEmpFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <select value={empFilter} onChange={e => setEmpFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">All Employees</option>
             {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">All Stages</option>
             {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{k} — {v}</option>)}
           </select>
-          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">All Sources</option>
             <option value="meta">Meta</option>
             <option value="offline">Offline</option>
@@ -180,7 +180,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total Leads', value: filteredLeads.length, color: 'text-teal-600' },
+          { label: 'Total Leads', value: filteredLeads.length, color: 'text-indigo-600' },
           { label: 'Hot Leads', value: filteredLeads.filter(l => l.main_stage === 'C').length, color: 'text-orange-600' },
           { label: 'Closed Won', value: filteredLeads.filter(l => l.main_stage === 'F').length, color: 'text-green-600' },
           { label: 'SLA Breaches', value: slaBreaches.filter(b => b.resolution === 'pending').length, color: 'text-red-600' },
@@ -281,7 +281,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
                   <td className="py-2 text-right text-slate-700">{e.assigned}</td>
                   <td className="py-2 text-right text-slate-700">{e.contacted}</td>
                   <td className="py-2 text-right text-green-600 font-medium">{e.converted}</td>
-                  <td className="py-2 text-right font-medium text-teal-600">
+                  <td className="py-2 text-right font-medium text-indigo-600">
                     {e.assigned > 0 ? `${Math.round((e.converted / e.assigned) * 100)}%` : '—'}
                   </td>
                 </tr>

@@ -59,7 +59,7 @@ export function OfflineApprovalsClient({ admin, approvals: initialApprovals }: P
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/leads/${a.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-teal-600">
+                    <Link href={`/leads/${a.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-indigo-600">
                       {lead?.name}
                     </Link>
                     <span className="text-xs text-slate-500">{lead?.phone}</span>

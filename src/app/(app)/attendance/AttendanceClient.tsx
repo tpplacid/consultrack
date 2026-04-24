@@ -104,7 +104,7 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
       <h1 className="text-xl font-bold text-slate-900">Attendance</h1>
 
       {!requireKey && (
-        <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
           <KeyRound size={14} />
           Attendance key requirement is currently disabled — clock in without a code.
         </div>
@@ -134,7 +134,7 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
                 value={wifiCode}
                 onChange={e => setWifiCode(e.target.value)}
                 placeholder="e.g. ADMISHINE_OFFICE"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           )}
@@ -205,7 +205,7 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
               value={overrideReason}
               onChange={e => setOverrideReason(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Explain why you can't verify WiFi…"
             />
           </div>

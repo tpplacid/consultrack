@@ -102,23 +102,23 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…" className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…" className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All Stages</option>
           {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
         </select>
-        <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+        <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All Owners</option>
           {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
-        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All Sources</option>
           <option value="meta">Meta</option>
           <option value="offline">Offline</option>
           <option value="referral">Referral</option>
         </select>
-        <button onClick={selectAll} className="text-sm text-teal-600 hover:underline whitespace-nowrap">Select all ({filtered.length})</button>
+        <button onClick={selectAll} className="text-sm text-indigo-600 hover:underline whitespace-nowrap">Select all ({filtered.length})</button>
       </div>
 
       {/* Lead Table (desktop) / Cards (mobile) */}
@@ -137,9 +137,9 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map(l => (
-              <tr key={l.id} className={`hover:bg-slate-50 transition-colors ${selected.includes(l.id) ? 'bg-teal-50' : ''}`}>
+              <tr key={l.id} className={`hover:bg-slate-50 transition-colors ${selected.includes(l.id) ? 'bg-indigo-50' : ''}`}>
                 <td className="px-4 py-3"><input type="checkbox" checked={selected.includes(l.id)} onChange={() => toggleSelect(l.id)} /></td>
-                <td className="px-4 py-3"><Link href={`/leads/${l.id}`} className="font-medium text-slate-900 hover:text-teal-600">{l.name}</Link></td>
+                <td className="px-4 py-3"><Link href={`/leads/${l.id}`} className="font-medium text-slate-900 hover:text-indigo-600">{l.name}</Link></td>
                 <td className="px-4 py-3 text-slate-600">{l.phone}</td>
                 <td className="px-4 py-3"><StageBadge stage={l.main_stage} /></td>
                 <td className="px-4 py-3 text-slate-600">{(l.owner as Employee)?.name || '—'}</td>
@@ -161,7 +161,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       <Modal open={transferModal} onClose={() => setTransferModal(false)} title="Transfer Leads">
         <div className="p-5 space-y-4">
           <p className="text-sm text-slate-600">Transferring <strong>{selected.length} lead(s)</strong> to:</p>
-          <select value={newOwner} onChange={e => setNewOwner(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <select value={newOwner} onChange={e => setNewOwner(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">Select employee…</option>
             {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.role})</option>)}
           </select>

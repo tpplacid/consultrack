@@ -14,6 +14,7 @@ export default async function AdminSlaPage() {
       owner:employees!sla_breaches_owner_id_fkey(id,name,role),
       resolver:employees!sla_breaches_resolved_by_fkey(id,name)
     `)
+    .eq('org_id', employee.org_id)
     .order('created_at', { ascending: false })
     .limit(200)
 

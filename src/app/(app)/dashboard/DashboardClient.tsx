@@ -71,7 +71,7 @@ export function DashboardClient({ employee, leads: initialLeads, stats }: Props)
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {newCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-400/30 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-400/30 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full">
                 <Bell size={12} />
                 {newCount} new this session
               </div>
@@ -90,7 +90,7 @@ export function DashboardClient({ employee, leads: initialLeads, stats }: Props)
             { label: 'Total',      value: stats.total,    color: 'text-slate-800',   bg: 'bg-white',      accent: '#94a3b8' },
             { label: 'Hot Leads',  value: stats.hot,      color: 'text-orange-600',  bg: 'bg-orange-50',  accent: '#f97316' },
             { label: 'Follow Up',  value: stats.followup, color: 'text-amber-600',   bg: 'bg-amber-50',   accent: '#f59e0b' },
-            { label: 'Closed Won', value: stats.closed,   color: 'text-emerald-600', bg: 'bg-emerald-50', accent: '#10b981' },
+            { label: 'Closed Won', value: stats.closed,   color: 'text-indigo-600', bg: 'bg-indigo-50', accent: '#4f46e5' },
           ].map(s => (
             <div key={s.label} className={`${s.bg} rounded-2xl border border-slate-200 p-4 shadow-sm`}>
               <p className="text-xs text-slate-500 font-medium">{s.label}</p>
@@ -106,14 +106,14 @@ export function DashboardClient({ employee, leads: initialLeads, stats }: Props)
           <div className="flex-1 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm" />
+              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
           </div>
           <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm">
+            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
             {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm">
+            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
             <option value="">All Sources</option>
             <option value="meta">Meta</option>
             <option value="offline">Offline</option>

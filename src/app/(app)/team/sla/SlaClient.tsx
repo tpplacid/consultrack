@@ -93,7 +93,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
               <CardTitle>Pending Breaches</CardTitle>
               <button
                 onClick={() => setBulkSelected(pending.map(b => b.id))}
-                className="text-xs text-teal-600 hover:underline"
+                className="text-xs text-indigo-600 hover:underline"
               >
                 Select all
               </button>
@@ -111,7 +111,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <Link href={`/leads/${b.lead_id}`} className="text-sm font-medium text-slate-900 hover:text-teal-600">
+                      <Link href={`/leads/${b.lead_id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
                         {(b.lead as Lead)?.name}
                       </Link>
                       <p className="text-xs text-slate-500">{(b.owner as Employee)?.name} — Stage {b.stage}</p>
@@ -142,7 +142,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
               <div key={b.id} className="px-5 py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <Link href={`/leads/${b.lead_id}`} className="text-sm font-medium text-slate-900 hover:text-teal-600">
+                    <Link href={`/leads/${b.lead_id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
                       {(b.lead as Lead)?.name}
                     </Link>
                     <p className="text-xs text-slate-500">{(b.owner as Employee)?.name}</p>

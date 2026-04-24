@@ -15,10 +15,10 @@ export function LeadCard({ lead, highlight = false }: { lead: Lead; highlight?: 
   return (
     <Link href={`/leads/${lead.id}`} className="block">
       <div className={`relative bg-white rounded-2xl border p-4 card-glow
-        ${overdue ? 'border-red-200 bg-red-50/50' : highlight ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200'}`}>
+        ${overdue ? 'border-red-200 bg-red-50/50' : highlight ? 'border-indigo-300 bg-indigo-50/30' : 'border-slate-200'}`}>
 
         {fresh && (
-          <div className="badge-new absolute -top-2 -right-2 flex items-center gap-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-emerald-500/30 z-10 select-none">
+          <div className="badge-new absolute -top-2 -right-2 flex items-center gap-0.5 bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-indigo-500/30 z-10 select-none">
             <Sparkles size={8} />
             NEW
           </div>
@@ -40,7 +40,7 @@ export function LeadCard({ lead, highlight = false }: { lead: Lead; highlight?: 
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full capitalize">{lead.source}</span>
           {lead.preferred_course && (
-            <span className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full truncate max-w-[120px]">{lead.preferred_course}</span>
+            <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full truncate max-w-[120px]">{lead.preferred_course}</span>
           )}
         </div>
 
@@ -51,7 +51,7 @@ export function LeadCard({ lead, highlight = false }: { lead: Lead; highlight?: 
           </div>
         )}
         {lead.next_followup_at && (
-          <div className="flex items-center gap-1 mt-1 text-xs text-teal-600">
+          <div className="flex items-center gap-1 mt-1 text-xs text-indigo-600">
             <Clock size={10} />
             <span>Follow-up: {formatDateTime(lead.next_followup_at)}</span>
           </div>

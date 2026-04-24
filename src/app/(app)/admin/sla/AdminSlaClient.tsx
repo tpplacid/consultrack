@@ -65,7 +65,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
           { label: 'Closed', value: counts.closed, color: 'text-green-600', key: 'closed' },
         ].map(s => (
           <button key={s.key} onClick={() => setResolutionFilter(resolutionFilter === s.key ? '' : s.key)}
-            className={`bg-white border rounded-xl p-4 text-left transition-all ${resolutionFilter === s.key ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200 hover:border-slate-300'}`}>
+            className={`bg-white border rounded-xl p-4 text-left transition-all ${resolutionFilter === s.key ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200 hover:border-slate-300'}`}>
             <p className="text-xs text-slate-500">{s.label}</p>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
           </button>
@@ -73,7 +73,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
       </div>
 
       {resolutionFilter && (
-        <button onClick={() => setResolutionFilter('')} className="text-xs text-teal-600 hover:underline">
+        <button onClick={() => setResolutionFilter('')} className="text-xs text-indigo-600 hover:underline">
           Clear filter
         </button>
       )}
@@ -87,7 +87,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Link href={`/leads/${b.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-teal-600">
+                    <Link href={`/leads/${b.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-indigo-600">
                       {lead?.name}
                     </Link>
                     <StageBadge stage={b.stage} />

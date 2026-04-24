@@ -24,7 +24,7 @@ export function ActivityTracker({ reports, activityCounts, today }: Props) {
           const flagged = count < 2
           return (
             <div key={r.id} className={`flex items-center gap-4 p-4 rounded-xl border ${flagged ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${flagged ? 'bg-red-100 text-red-600' : 'bg-teal-100 text-teal-600'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${flagged ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
                 {getInitials(r.name)}
               </div>
               <div className="flex-1 min-w-0">

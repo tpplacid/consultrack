@@ -74,8 +74,8 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
       style={{ background: 'linear-gradient(135deg, #0d2d1e 0%, #0f3d28 100%)' }}
     >
       <div className="max-w-xl mx-auto flex items-start gap-3">
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
-          <Zap size={15} className="text-emerald-400" />
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center mt-0.5">
+          <Zap size={15} className="text-indigo-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">
@@ -88,7 +88,7 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
           <div className="mt-1 space-y-0.5">
             {notifs.slice(0, 3).map(n => (
               <div key={n.id} className="flex items-center gap-1.5 text-xs text-white/60">
-                {n.type === 'breach' ? <AlertTriangle size={10} className="text-amber-400 flex-shrink-0" /> : <Zap size={10} className="text-emerald-400 flex-shrink-0" />}
+                {n.type === 'breach' ? <AlertTriangle size={10} className="text-amber-400 flex-shrink-0" /> : <Zap size={10} className="text-indigo-400 flex-shrink-0" />}
                 <span className="truncate">{n.message}</span>
               </div>
             ))}
@@ -101,7 +101,7 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
       </div>
       {/* Progress bar */}
       <div className="mt-2 max-w-xl mx-auto h-0.5 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-emerald-500/60 rounded-full" style={{ animation: 'shrink 10s linear forwards' }} />
+        <div className="h-full bg-indigo-500/60 rounded-full" style={{ animation: 'shrink 10s linear forwards' }} />
       </div>
       <style>{`@keyframes shrink { from { width: 100%; } to { width: 0%; } }`}</style>
     </div>

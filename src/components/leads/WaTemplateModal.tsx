@@ -85,10 +85,10 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
               <button
                 key={t.id}
                 onClick={() => handleSelectTemplate(t)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${selected?.id === t.id ? 'border-teal-400 bg-teal-50' : 'border-slate-200 hover:border-slate-300'}`}
+                className={`w-full text-left p-3 rounded-lg border transition-colors ${selected?.id === t.id ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare size={14} className="text-teal-500" />
+                  <MessageSquare size={14} className="text-indigo-500" />
                   <span className="text-sm font-medium text-slate-900">{t.name}</span>
                 </div>
                 <p className="text-xs text-slate-500 line-clamp-2">{renderTemplate(t.body)}</p>
@@ -106,7 +106,7 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
             onChange={e => { setSelected(null); setCustomText(e.target.value) }}
             rows={4}
             placeholder="Type a custom message, or select a template above…"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
         </div>
 

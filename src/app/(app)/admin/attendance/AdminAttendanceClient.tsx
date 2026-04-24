@@ -110,11 +110,11 @@ export function AdminAttendanceClient({ admin, records: initialRecords, orgId, r
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-slate-900">Attendance Management</h1>
-        <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${requireKey ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50 border-emerald-200'}`}>
-          <KeyRound size={16} className={requireKey ? 'text-slate-500' : 'text-emerald-600'} />
+        <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${requireKey ? 'bg-slate-50 border-slate-200' : 'bg-indigo-50 border-indigo-200'}`}>
+          <KeyRound size={16} className={requireKey ? 'text-slate-500' : 'text-indigo-600'} />
           <div>
             <p className="text-xs font-semibold text-slate-700">Attendance Key</p>
-            <p className={`text-xs ${requireKey ? 'text-slate-500' : 'text-emerald-600 font-medium'}`}>
+            <p className={`text-xs ${requireKey ? 'text-slate-500' : 'text-indigo-600 font-medium'}`}>
               {requireKey ? 'Required for all staff' : 'Disabled — key-free clock-in'}
             </p>
           </div>
@@ -157,7 +157,7 @@ export function AdminAttendanceClient({ admin, records: initialRecords, orgId, r
 
       <Modal open={!!noteModal} onClose={() => setNoteModal(null)} title="Add Admin Note">
         <div className="p-5 space-y-4">
-          <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Admin note…" />
+          <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Admin note…" />
           <Button className="w-full" loading={loading} onClick={() => noteModal && updateStatus(noteModal, noteModal.status, adminNote)}>Save Note</Button>
         </div>
       </Modal>

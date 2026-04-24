@@ -180,7 +180,7 @@ export const STAGE_COLORS: Record<LeadStage, string> = {
   'D': 'bg-purple-50 text-purple-600',
   'E': 'bg-red-50 text-red-600',
   'F': 'bg-green-50 text-green-600',
-  'G': 'bg-teal-50 text-teal-600',
+  'G': 'bg-indigo-50 text-indigo-600',
   'X': 'bg-gray-100 text-gray-500',
   'Y': 'bg-pink-50 text-pink-600',
 }

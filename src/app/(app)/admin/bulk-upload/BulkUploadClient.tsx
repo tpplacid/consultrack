@@ -199,7 +199,7 @@ export function BulkUploadClient({ admin, employees }: Props) {
         <a
           href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE_CSV)}`}
           download="admishine_leads_template.csv"
-          className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 font-medium"
+          className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
         >
           <Download size={15} />
           Download template
@@ -225,7 +225,7 @@ export function BulkUploadClient({ admin, employees }: Props) {
           </p>
 
           <div
-            className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50/30 transition-colors"
+            className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors"
             onClick={() => fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}
             onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}

@@ -127,7 +127,7 @@ export function AllocationClient({ admin, employees: initialEmployees, weekoffs:
             <select
               value={woForm.employee_id}
               onChange={e => setWoForm(p => ({...p, employee_id: e.target.value}))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select employee…</option>
               {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.role})</option>)}
@@ -139,7 +139,7 @@ export function AllocationClient({ admin, employees: initialEmployees, weekoffs:
             <select
               value={woForm.day_of_week}
               onChange={e => setWoForm(p => ({...p, day_of_week: e.target.value, specific_date: ''}))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">No recurring day</option>
               {DAYS.map(d => <option key={d} value={d} className="capitalize">{d}</option>)}
@@ -154,7 +154,7 @@ export function AllocationClient({ admin, employees: initialEmployees, weekoffs:
               type="date"
               value={woForm.specific_date}
               onChange={e => setWoForm(p => ({...p, specific_date: e.target.value, day_of_week: ''}))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 

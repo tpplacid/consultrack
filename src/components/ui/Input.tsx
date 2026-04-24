@@ -13,7 +13,7 @@ export function Input({ label, error, className, id, ...props }: InputProps) {
       <input
         id={inputId}
         className={cn(
-          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition',
+          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition',
           error ? 'border-red-400' : 'border-slate-300',
           className
         )}
@@ -37,7 +37,7 @@ export function Select({ label, error, className, id, children, ...props }: Sele
       <select
         id={selectId}
         className={cn(
-          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white transition',
+          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition',
           error ? 'border-red-400' : 'border-slate-300',
           className
         )}
@@ -63,7 +63,7 @@ export function Textarea({ label, error, className, id, ...props }: TextareaProp
       <textarea
         id={textareaId}
         className={cn(
-          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition resize-none',
+          'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none',
           error ? 'border-red-400' : 'border-slate-300',
           className
         )}

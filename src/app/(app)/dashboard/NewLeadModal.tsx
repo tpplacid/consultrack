@@ -106,7 +106,7 @@ export function NewLeadModal({ open, onClose, employee }: Props) {
             value={form.comments}
             onChange={e => update('comments', e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Any notes…"
           />
         </div>

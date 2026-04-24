@@ -70,10 +70,10 @@ export function AdminTemplatesClient({ admin, templates: initialTemplates }: Pro
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-slate-900">{t.name}</h3>
                     <div className="flex gap-2">
-                      <button onClick={() => toggleActive(t)} className="text-slate-400 hover:text-teal-600" title="Toggle active">
+                      <button onClick={() => toggleActive(t)} className="text-slate-400 hover:text-indigo-600" title="Toggle active">
                         {t.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
                       </button>
-                      <button onClick={() => { setSelected(t); setForm({ name: t.name, body: t.body }); setModal('edit') }} className="text-slate-400 hover:text-teal-600"><Edit size={15} /></button>
+                      <button onClick={() => { setSelected(t); setForm({ name: t.name, body: t.body }); setModal('edit') }} className="text-slate-400 hover:text-indigo-600"><Edit size={15} /></button>
                       <button onClick={() => deleteTemplate(t)} className="text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
                     </div>
                   </div>
@@ -93,7 +93,7 @@ export function AdminTemplatesClient({ admin, templates: initialTemplates }: Pro
           <div className="space-y-1">
             <label className="block text-sm font-medium text-slate-700">Message Body</label>
             <p className="text-xs text-slate-500">Use &#123;&#123;name&#125;&#125; for the lead&apos;s name</p>
-            <textarea value={form.body} onChange={e => setForm(p => ({...p, body: e.target.value}))} rows={4} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            <textarea value={form.body} onChange={e => setForm(p => ({...p, body: e.target.value}))} rows={4} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setModal(null)}>Cancel</Button>

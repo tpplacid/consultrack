@@ -99,7 +99,7 @@ function LeadTable({ leads, type, stageLabel, color }: { leads: Lead[]; type: st
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500">{formatDateTime(l.stage_entered_at)}</td>
                       <td className="px-4 py-3">
-                        <Link href={`/leads/${l.id}`} className="text-teal-600 hover:underline text-xs font-medium">View →</Link>
+                        <Link href={`/leads/${l.id}`} className="text-indigo-600 hover:underline text-xs font-medium">View →</Link>
                       </td>
                     </tr>
                   )

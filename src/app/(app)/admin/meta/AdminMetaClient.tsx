@@ -75,8 +75,8 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
           </div>
         </div>
         <div className="mt-3 bg-slate-50 rounded-lg p-3 text-xs text-slate-600 font-mono">
-          Verify Token: <span className="text-teal-600">META_VERIFY_TOKEN</span> (env var)<br />
-          Webhook URL: <span className="text-teal-600">https://yourdomain.com/api/meta/webhook</span>
+          Verify Token: <span className="text-indigo-600">META_VERIFY_TOKEN</span> (env var)<br />
+          Webhook URL: <span className="text-indigo-600">https://yourdomain.com/api/meta/webhook</span>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
             value={audienceId}
             onChange={e => setAudienceId(e.target.value)}
             placeholder="Meta Custom Audience ID (optional)"
-            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <Button size="sm" variant="outline" onClick={downloadCSV}>
             <Download size={14} />
@@ -100,7 +100,7 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
           </Button>
         </div>
         {selected.length > 0 && (
-          <p className="text-xs text-teal-600">{selected.length} leads selected</p>
+          <p className="text-xs text-indigo-600">{selected.length} leads selected</p>
         )}
       </div>
 
@@ -119,10 +119,10 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {leads.map(l => (
-              <tr key={l.id} className={`hover:bg-slate-50 ${selected.includes(l.id) ? 'bg-teal-50' : ''}`}>
+              <tr key={l.id} className={`hover:bg-slate-50 ${selected.includes(l.id) ? 'bg-indigo-50' : ''}`}>
                 <td className="px-4 py-3"><input type="checkbox" checked={selected.includes(l.id)} onChange={() => toggleSelect(l.id)} /></td>
                 <td className="px-4 py-3 font-medium">
-                  <Link href={`/leads/${l.id}`} className="text-slate-900 hover:text-teal-600">{l.name}</Link>
+                  <Link href={`/leads/${l.id}`} className="text-slate-900 hover:text-indigo-600">{l.name}</Link>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{l.phone}</td>
                 <td className="px-4 py-3"><StageBadge stage={l.main_stage} /></td>

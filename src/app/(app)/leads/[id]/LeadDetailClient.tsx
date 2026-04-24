@@ -171,7 +171,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <div className="flex flex-wrap items-center gap-2 mt-0.5">
             <div className="flex items-center gap-1 text-sm text-slate-500">
               <Phone size={13} />
-              <a href={`tel:${lead.phone}`} className="hover:text-teal-600">{lead.phone}</a>
+              <a href={`tel:${lead.phone}`} className="hover:text-indigo-600">{lead.phone}</a>
             </div>
             <StageBadge stage={lead.main_stage} />
             {overdue && (
@@ -211,7 +211,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                   <select
                     value={stageDraft}
                     onChange={e => { setStageDraft(e.target.value as LeadStage); setSubStageDraft('') }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                   >
                     {ALL_STAGES.map(s => <option key={s} value={s}>{s} — {STAGE_LABELS[s]}</option>)}
                   </select>
@@ -222,7 +222,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                     <select
                       value={subStageDraft}
                       onChange={e => setSubStageDraft(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                     >
                       <option value="">Select sub-stage</option>
                       {subStageOptions.map(s => <option key={s} value={s}>{s}</option>)}
@@ -250,7 +250,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                   type="datetime-local"
                   value={followupDraft}
                   onChange={e => setFollowupDraft(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </CardContent>
@@ -281,7 +281,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                 <Input label="Father Phone" value={fields.father_phone} onChange={e => setFields(p => ({...p, father_phone: e.target.value}))} placeholder="+91 9XXXXXXXXX" />
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-slate-700">Decision Maker</label>
-                  <select value={fields.decision_maker} onChange={e => setFields(p => ({...p, decision_maker: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <select value={fields.decision_maker} onChange={e => setFields(p => ({...p, decision_maker: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Select…</option>
                     <option value="father">Father</option>
                     <option value="mother">Mother</option>
@@ -292,7 +292,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                 <Input label="Income Status" value={fields.income_status} onChange={e => setFields(p => ({...p, income_status: e.target.value}))} placeholder="e.g. Below 5L" />
                 <div className="space-y-1">
                   <label className="block text-sm font-medium text-slate-700">Loan Needed</label>
-                  <select value={fields.loan_status} onChange={e => setFields(p => ({...p, loan_status: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <select value={fields.loan_status} onChange={e => setFields(p => ({...p, loan_status: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Unknown</option>
                     <option value="yes">Yes</option>
                     <option value="no">No</option>
@@ -316,7 +316,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                 value={comment}
                 onChange={e => setComment(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 placeholder="Add a note, call log, or update…"
               />
               <Button size="sm" onClick={handleAddComment} loading={addingComment} disabled={!comment.trim()}>
@@ -361,8 +361,8 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
               ) : activities.map(act => (
                 <div key={act.id} className="p-4">
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-teal-600 text-xs font-bold">
+                    <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-indigo-600 text-xs font-bold">
                         {(act.employee as Employee)?.name?.[0] || '?'}
                       </span>
                     </div>
@@ -374,7 +374,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                       <p className="text-xs text-slate-500 mt-0.5 capitalize">{act.activity_type.replace('_', ' ')}</p>
                       {act.note && <p className="text-sm text-slate-700 mt-1">{act.note}</p>}
                       {act.stage_from && act.stage_to && (
-                        <p className="text-xs text-teal-600 mt-1">
+                        <p className="text-xs text-indigo-600 mt-1">
                           Stage: {act.stage_from} → {act.stage_to}
                         </p>
                       )}
@@ -402,7 +402,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <select
             value={transferTarget}
             onChange={e => setTransferTarget(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">Select employee…</option>
             {orgEmployees

@@ -25,7 +25,7 @@ export function TeamClient({ manager, reports, leads }: Props) {
       <div className="flex gap-3 overflow-x-auto pb-1">
         <button
           onClick={() => setSelectedEmployee('all')}
-          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm ${selectedEmployee === 'all' ? 'border-teal-400 bg-teal-50 text-teal-700 font-medium' : 'border-slate-200 bg-white text-slate-600'}`}
+          className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm ${selectedEmployee === 'all' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium' : 'border-slate-200 bg-white text-slate-600'}`}
         >
           All ({leads.length})
         </button>
@@ -35,9 +35,9 @@ export function TeamClient({ manager, reports, leads }: Props) {
             <button
               key={r.id}
               onClick={() => setSelectedEmployee(r.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm ${selectedEmployee === r.id ? 'border-teal-400 bg-teal-50 text-teal-700 font-medium' : 'border-slate-200 bg-white text-slate-600'}`}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border transition-all text-sm ${selectedEmployee === r.id ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium' : 'border-slate-200 bg-white text-slate-600'}`}
             >
-              <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center text-xs font-bold text-teal-600">
+              <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">
                 {getInitials(r.name)}
               </div>
               {r.name} ({count})

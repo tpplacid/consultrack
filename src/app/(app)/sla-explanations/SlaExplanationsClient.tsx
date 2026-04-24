@@ -52,7 +52,7 @@ export function SlaExplanationsClient({ employee, breaches: initialBreaches }: P
             <CardContent className="pt-5 space-y-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <Link href={`/leads/${b.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-teal-600">
+                  <Link href={`/leads/${b.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-indigo-600">
                     {lead?.name}
                   </Link>
                   <div className="flex items-center gap-2 mt-1">
@@ -70,7 +70,7 @@ export function SlaExplanationsClient({ employee, breaches: initialBreaches }: P
                   value={explanations[b.id] || ''}
                   onChange={e => setExplanations(prev => ({ ...prev, [b.id]: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   placeholder="Explain what happened and your plan to resolve it…"
                 />
               </div>

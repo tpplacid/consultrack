@@ -74,7 +74,7 @@ function TreeNode({ node, depth, leadCounts, activityCounts, onScoreUpdate, allE
 
   return (
     <div className={`${depth > 0 ? 'ml-6 border-l-2 border-slate-200 pl-4' : ''}`}>
-      <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all mb-2 ${flagged ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white hover:border-teal-200'}`}>
+      <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all mb-2 ${flagged ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white hover:border-indigo-200'}`}>
         {/* Expand toggle */}
         {node.children.length > 0 ? (
           <button onClick={() => setExpanded(!expanded)} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
@@ -115,14 +115,14 @@ function TreeNode({ node, depth, leadCounts, activityCounts, onScoreUpdate, allE
                 max={10}
                 value={scoreVal}
                 onChange={e => setScoreVal(e.target.value)}
-                className="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-teal-500"
+                className="w-12 px-1 py-0.5 border border-slate-300 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 onKeyDown={e => e.key === 'Enter' && saveScore()}
               />
-              <button onClick={saveScore} disabled={saving} className="text-xs text-teal-600 hover:underline disabled:opacity-50">Save</button>
+              <button onClick={saveScore} disabled={saving} className="text-xs text-indigo-600 hover:underline disabled:opacity-50">Save</button>
               <button onClick={() => setEditScore(false)} className="text-xs text-slate-400 hover:underline">Cancel</button>
             </div>
           ) : (
-            <button onClick={() => setEditScore(true)} className="text-xs text-slate-600 hover:text-teal-600 font-medium">
+            <button onClick={() => setEditScore(true)} className="text-xs text-slate-600 hover:text-indigo-600 font-medium">
               {node.score}/10
             </button>
           )}
