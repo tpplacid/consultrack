@@ -7,15 +7,37 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { CheckCircle, XCircle, HelpCircle, Wifi, WifiOff } from 'lucide-react'
+import { CheckCircle, XCircle, HelpCircle, Wifi, WifiOff, KeyRound } from 'lucide-react'
 
-interface Props { admin: Employee; records: Attendance[] }
+interface Props {
+  admin: Employee
+  records: Attendance[]
+  orgId: string
+  requireKey: boolean
+}
 
-export function AdminAttendanceClient({ admin, records: initialRecords }: Props) {
+export function AdminAttendanceClient({ admin, records: initialRecords, orgId, requireKey: initialRequireKey }: Props) {
   const [records, setRecords] = useState(initialRecords)
   const [noteModal, setNoteModal] = useState<Attendance | null>(null)
   const [adminNote, setAdminNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const [requireKey, setRequireKey] = useState(initialRequireKey)
+  const [toggling, setToggling] = useState(false)
+
+  async function toggleAttendanceKey() {
+    setToggling(true)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('orgs')
+      .update({ require_attendance_key: !requireKey })
+      .eq('id', orgId)
+    if (error) toast.error(error.message)
+    else {
+      setRequireKey(prev => !prev)
+      toast.success(!requireKey ? 'Attendance key requirement enabled' : 'Attendance key requirement disabled')
+    }
+    setToggling(false)
+  }
 
   async function updateStatus(record: Attendance, status: Attendance['status'], note?: string) {
     setLoading(true)
@@ -41,7 +63,13 @@ export function AdminAttendanceClient({ admin, records: initialRecords }: Props)
   const questioned = records.filter(r => r.status === 'questioned')
   const others = records.filter(r => r.status !== 'questioned')
 
-  const statusIcon = { present: <CheckCircle size={14} className="text-green-500" />, absent: <XCircle size={14} className="text-red-500" />, half_day: <HelpCircle size={14} className="text-yellow-500" />, questioned: <HelpCircle size={14} className="text-orange-500" />, rejected: <XCircle size={14} className="text-red-500" /> }
+  const statusIcon = {
+    present: <CheckCircle size={14} className="text-green-500" />,
+    absent: <XCircle size={14} className="text-red-500" />,
+    half_day: <HelpCircle size={14} className="text-yellow-500" />,
+    questioned: <HelpCircle size={14} className="text-orange-500" />,
+    rejected: <XCircle size={14} className="text-red-500" />,
+  }
 
   function RecordRow({ r }: { r: Attendance }) {
     const emp = r.employee as Employee
@@ -80,7 +108,26 @@ export function AdminAttendanceClient({ admin, records: initialRecords }: Props)
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">Attendance Management</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-xl font-bold text-slate-900">Attendance Management</h1>
+        <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${requireKey ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50 border-emerald-200'}`}>
+          <KeyRound size={16} className={requireKey ? 'text-slate-500' : 'text-emerald-600'} />
+          <div>
+            <p className="text-xs font-semibold text-slate-700">Attendance Key</p>
+            <p className={`text-xs ${requireKey ? 'text-slate-500' : 'text-emerald-600 font-medium'}`}>
+              {requireKey ? 'Required for all staff' : 'Disabled — key-free clock-in'}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={requireKey ? 'danger' : 'secondary'}
+            loading={toggling}
+            onClick={toggleAttendanceKey}
+          >
+            {requireKey ? 'Disable' : 'Enable'}
+          </Button>
+        </div>
+      </div>
 
       {questioned.length > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">

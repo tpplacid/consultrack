@@ -13,6 +13,7 @@ export interface Org {
   id: string
   name: string
   slug: string
+  require_attendance_key: boolean
   created_at: string
 }
 

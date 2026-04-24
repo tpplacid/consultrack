@@ -8,21 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { Clock, Wifi, WifiOff, CheckCircle, AlertCircle, LogIn, LogOut } from 'lucide-react'
+import { Clock, Wifi, WifiOff, LogIn, LogOut, KeyRound } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Props {
   employee: Employee
   records: Attendance[]
+  requireKey: boolean
 }
 
-export function AttendanceClient({ employee, records: initialRecords }: Props) {
+export function AttendanceClient({ employee, records: initialRecords, requireKey }: Props) {
   const [records, setRecords] = useState(initialRecords)
   const [loading, setLoading] = useState(false)
   const [overrideOpen, setOverrideOpen] = useState(false)
   const [overrideReason, setOverrideReason] = useState('')
   const [wifiCode, setWifiCode] = useState('')
-  const [clockType, setClockType] = useState<'in' | 'out'>('in')
 
   const today = format(new Date(), 'yyyy-MM-dd')
   const todayRecords = records.filter(r => r.work_date === today)
@@ -34,13 +34,21 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
     const supabase = createClient()
     const now = new Date().toISOString()
 
-    // WiFi verification: compare entered code against employee's wifi_ssid
-    const wifiVerified = employee.wifi_ssid
-      ? wifiCode.trim().toLowerCase() === employee.wifi_ssid.toLowerCase()
-      : false
+    const wifiVerified = !requireKey
+      ? true
+      : employee.wifi_ssid
+        ? wifiCode.trim().toLowerCase() === employee.wifi_ssid.toLowerCase()
+        : false
+
+    const finalStatus = !requireKey
+      ? 'present'
+      : isManualOverride
+        ? 'questioned'
+        : wifiVerified
+          ? 'present'
+          : 'questioned'
 
     if (!isClockedIn) {
-      // Clock In — new record
       const { data, error } = await supabase.from('attendance').insert({
         org_id: employee.org_id,
         employee_id: employee.id,
@@ -49,16 +57,21 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
         wifi_verified: wifiVerified,
         manual_override: isManualOverride,
         override_reason: isManualOverride ? overrideReason : null,
-        status: isManualOverride ? 'questioned' : 'present',
+        status: finalStatus,
       }).select().single()
 
       if (error) toast.error(error.message)
       else {
         setRecords(prev => [data, ...prev])
-        toast.success(wifiVerified ? '✓ Clocked in (WiFi verified)' : 'Clocked in (WiFi not verified)')
+        toast.success(
+          !requireKey
+            ? 'Clocked in'
+            : wifiVerified
+              ? 'Clocked in (WiFi verified)'
+              : 'Clocked in (WiFi not verified)'
+        )
       }
     } else {
-      // Clock out — update existing record
       const { data, error } = await supabase
         .from('attendance')
         .update({ clock_out: now })
@@ -90,7 +103,13 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-slate-900">Attendance</h1>
 
-      {/* Clock In/Out Card */}
+      {!requireKey && (
+        <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <KeyRound size={14} />
+          Attendance key requirement is currently disabled — clock in without a code.
+        </div>
+      )}
+
       <Card>
         <CardContent className="space-y-4 pt-5">
           <div className="flex items-center justify-between">
@@ -105,11 +124,11 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
             </div>
           </div>
 
-          {!isClockedIn && (
+          {!isClockedIn && requireKey && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-slate-700">
                 WiFi Check-in Code
-                <span className="text-slate-400 font-normal ml-1">(enter today's office WiFi code)</span>
+                <span className="text-slate-400 font-normal ml-1">(enter today&apos;s office WiFi code)</span>
               </label>
               <input
                 value={wifiCode}
@@ -129,7 +148,7 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
             >
               {isClockedIn ? <><LogOut size={15} />Clock Out</> : <><LogIn size={15} />Clock In</>}
             </Button>
-            {!isClockedIn && (
+            {!isClockedIn && requireKey && (
               <Button variant="outline" onClick={() => setOverrideOpen(true)}>
                 Override
               </Button>
@@ -157,7 +176,6 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
         </CardContent>
       </Card>
 
-      {/* History */}
       <Card>
         <CardHeader><CardTitle>Attendance History (Last 30 days)</CardTitle></CardHeader>
         <div className="divide-y divide-slate-100">
@@ -178,7 +196,6 @@ export function AttendanceClient({ employee, records: initialRecords }: Props) {
         </div>
       </Card>
 
-      {/* Override Modal */}
       <Modal open={overrideOpen} onClose={() => setOverrideOpen(false)} title="Manual Override">
         <div className="p-5 space-y-4">
           <p className="text-sm text-slate-600">Clock in without WiFi verification. Your entry will be marked as <strong>questioned</strong> and reviewed by admin.</p>

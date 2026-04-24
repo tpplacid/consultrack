@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, FileText,
   BarChart3, Settings, LogOut, Menu, X, ChevronDown,
-  Bell, Shield, UserCog, MessageSquare, CheckSquare, GitBranch
+  Bell, Shield, UserCog, MessageSquare, CheckSquare, GitBranch, Upload
 } from 'lucide-react'
 import { RealtimeNotifier } from '@/components/RealtimeNotifier'
 
@@ -43,6 +43,7 @@ const adminNavItems: NavItem[] = [
   { href: '/admin/templates', label: 'WA Templates', icon: <MessageSquare size={18} /> },
   { href: '/admin/meta', label: 'Meta Leads', icon: <Shield size={18} /> },
   { href: '/admin/sla', label: 'SLA Log', icon: <Bell size={18} /> },
+  { href: '/admin/bulk-upload', label: 'Bulk Upload', icon: <Upload size={18} /> },
 ]
 
 export function AppShell({ employee, children }: { employee: Employee; children: React.ReactNode }) {
