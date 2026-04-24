@@ -8,7 +8,7 @@ export default async function BulkUploadPage() {
 
   const { data: employees } = await supabase
     .from('employees')
-    .select('id, name, role, org_id, reports_to')
+    .select('*')
     .eq('org_id', employee.org_id)
     .eq('is_active', true)
 
