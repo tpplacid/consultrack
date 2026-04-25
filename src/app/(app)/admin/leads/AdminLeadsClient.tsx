@@ -131,7 +131,10 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold text-slate-900">All Leads</h1>
+        <div>
+          <h1 className="text-xl font-bold text-brand-800">All Leads</h1>
+          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mt-0.5">Organisation-wide view of every lead — select multiple to perform bulk actions</p>
+        </div>
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={exportCSV}>
             <Download size={14} />Export CSV ({filtered.length})
@@ -164,93 +167,103 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
         if (totalPayments === 0) return null
         return (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
-              <p className="text-xs text-emerald-600 font-medium">Total Collected</p>
-              <p className="text-xl font-bold text-emerald-800 mt-0.5">₹{totalPayments.toLocaleString('en-IN')}</p>
+            <div className="bg-brand-800 rounded-xl border border-brand-700 p-4">
+              <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
+              <p className="text-xl font-bold text-white mt-0.5">₹{totalPayments.toLocaleString('en-IN')}</p>
+              <p className="text-[8px] text-brand-300 mt-1">Sum of all payment types</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-xs text-slate-500 font-medium">Application Fees</p>
-              <p className="text-xl font-bold text-slate-800 mt-0.5">₹{appFees.toLocaleString('en-IN')}</p>
+            <div className="bg-white rounded-xl border border-brand-100 p-4">
+              <p className="text-xs text-brand-600 font-semibold">Application Fees</p>
+              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{appFees.toLocaleString('en-IN')}</p>
+              <p className="text-[8px] text-brand-400 mt-1">Paid at application stage</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-xs text-slate-500 font-medium">Booking Fees</p>
-              <p className="text-xl font-bold text-slate-800 mt-0.5">₹{bookFees.toLocaleString('en-IN')}</p>
+            <div className="bg-white rounded-xl border border-brand-100 p-4">
+              <p className="text-xs text-brand-600 font-semibold">Booking Fees</p>
+              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{bookFees.toLocaleString('en-IN')}</p>
+              <p className="text-[8px] text-brand-400 mt-1">Seat confirmation payment</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <p className="text-xs text-slate-500 font-medium">Tuition Fees</p>
-              <p className="text-xl font-bold text-slate-800 mt-0.5">₹{tuitionFees.toLocaleString('en-IN')}</p>
+            <div className="bg-white rounded-xl border border-brand-100 p-4">
+              <p className="text-xs text-brand-600 font-semibold">Tuition Fees</p>
+              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{tuitionFees.toLocaleString('en-IN')}</p>
+              <p className="text-[8px] text-brand-400 mt-1">Full course tuition collected</p>
             </div>
           </div>
         )
       })()}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="flex-1 relative min-w-[180px]">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
-            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <div>
+        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Filters — combine stage, owner, source, and date range to isolate specific lead segments</p>
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="flex-1 relative min-w-[180px]">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
+              className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-800" />
+          </div>
+          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+            <option value="">All Stages</option>
+            {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
+          </select>
+          <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+            <option value="">All Owners</option>
+            {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+            <option value="">All Sources</option>
+            <option value="meta">Meta</option>
+            <option value="offline">Offline</option>
+            <option value="referral">Referral</option>
+          </select>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700" />
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700" />
+          <button onClick={selectAll} className="text-sm font-bold text-brand-600 hover:underline whitespace-nowrap">
+            Select all ({filtered.length})
+          </button>
         </div>
-        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">All Stages</option>
-          {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
-        </select>
-        <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">All Owners</option>
-          {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-        </select>
-        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">All Sources</option>
-          <option value="meta">Meta</option>
-          <option value="offline">Offline</option>
-          <option value="referral">Referral</option>
-        </select>
-        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        <button onClick={selectAll} className="text-sm text-indigo-600 hover:underline whitespace-nowrap">
-          Select all ({filtered.length})
-        </button>
       </div>
 
       {selected.length > 0 && (
-        <p className="text-xs text-slate-500">{selected.length} lead(s) selected</p>
+        <p className="text-[8px] text-brand-500 uppercase tracking-widest font-semibold">{selected.length} lead(s) selected — use the action buttons above to transfer, re-stage, or delete</p>
       )}
 
       {/* Desktop table */}
-      <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
-        <table className="w-full text-sm min-w-[700px]">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3 text-left">
-                <input type="checkbox"
-                  checked={filtered.length > 0 && filtered.every(l => selected.includes(l.id))}
-                  onChange={e => e.target.checked ? selectAll() : setSelected([])} />
+      <div>
+        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Lead table — click a name to open the full lead record</p>
+        <div className="hidden md:block bg-white rounded-xl border border-brand-100 overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead className="bg-brand-50 border-b border-brand-100">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  <input type="checkbox"
+                    checked={filtered.length > 0 && filtered.every(l => selected.includes(l.id))}
+                    onChange={e => e.target.checked ? selectAll() : setSelected([])} />
               </th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Name</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Phone</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Stage</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Owner</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Source</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-600">Updated</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Name</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Phone</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Stage</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Owner</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Source</th>
+              <th className="px-4 py-3 text-left font-semibold text-brand-700">Updated</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-brand-50">
             {filtered.map(l => (
-              <tr key={l.id} className={`hover:bg-slate-50 transition-colors ${selected.includes(l.id) ? 'bg-indigo-50' : ''}`}>
+              <tr key={l.id} className={`hover:bg-brand-50 transition-colors ${selected.includes(l.id) ? 'bg-brand-50' : ''}`}>
                 <td className="px-4 py-3"><input type="checkbox" checked={selected.includes(l.id)} onChange={() => toggleSelect(l.id)} /></td>
-                <td className="px-4 py-3"><Link href={`/leads/${l.id}`} className="font-medium text-slate-900 hover:text-indigo-600">{l.name}</Link></td>
-                <td className="px-4 py-3 text-slate-600">{l.phone}</td>
+                <td className="px-4 py-3"><Link href={`/leads/${l.id}`} className="font-semibold text-brand-800 hover:text-brand-500">{l.name}</Link></td>
+                <td className="px-4 py-3 text-brand-600">{l.phone}</td>
                 <td className="px-4 py-3"><StageBadge stage={l.main_stage} /></td>
-                <td className="px-4 py-3 text-slate-600">{(l.owner as Employee)?.name || '—'}</td>
-                <td className="px-4 py-3 capitalize text-slate-600">{l.source}</td>
-                <td className="px-4 py-3 text-slate-500 text-xs">{formatDateTime(l.updated_at)}</td>
+                <td className="px-4 py-3 text-brand-600">{(l.owner as Employee)?.name || '—'}</td>
+                <td className="px-4 py-3 capitalize text-brand-600">{l.source}</td>
+                <td className="px-4 py-3 text-brand-400 text-xs">{formatDateTime(l.updated_at)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <p className="py-10 text-center text-slate-400">No leads match filters</p>}
+        {filtered.length === 0 && <p className="py-10 text-center text-brand-400">No leads match the selected filters.</p>}
+        </div>
       </div>
 
       {/* Mobile cards */}
@@ -261,7 +274,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       {/* Transfer Modal */}
       <Modal open={transferModal} onClose={() => setTransferModal(false)} title={`Transfer ${selected.length} Lead(s)`}>
         <div className="p-5 space-y-4">
-          <select value={newOwner} onChange={e => setNewOwner(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select value={newOwner} onChange={e => setNewOwner(e.target.value)} className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
             <option value="">Select employee…</option>
             {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.role})</option>)}
           </select>

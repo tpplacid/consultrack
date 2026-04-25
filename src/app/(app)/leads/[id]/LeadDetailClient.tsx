@@ -181,19 +181,19 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       {/* Back + Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-slate-500 hover:text-slate-700 transition-colors">
+        <button onClick={() => router.back()} className="text-brand-500 hover:text-brand-800 transition-colors">
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-slate-900 truncate">{lead.name}</h1>
+          <h1 className="text-xl font-bold text-brand-800 truncate">{lead.name}</h1>
           <div className="flex flex-wrap items-center gap-2 mt-0.5">
-            <div className="flex items-center gap-1 text-sm text-slate-500">
+            <div className="flex items-center gap-1 text-sm text-brand-500">
               <Phone size={13} />
-              <a href={`tel:${lead.phone}`} className="hover:text-indigo-600">{lead.phone}</a>
+              <a href={`tel:${lead.phone}`} className="hover:text-brand-700">{lead.phone}</a>
             </div>
             <StageBadge stage={lead.main_stage} />
             {overdue && (
-              <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
+              <span className="flex items-center gap-1 text-xs text-red-600 font-semibold">
                 <AlertTriangle size={12} />
                 SLA Overdue
               </span>
@@ -221,6 +221,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Stage & Pipeline</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Move the lead through the admission pipeline — stage changes trigger SLA deadline resets automatically</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -278,6 +279,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Lead Information</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Academic profile and course preferences — completing this section enables advancement to the Follow Up stage</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -293,7 +295,10 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
 
           {/* Parent & Financial */}
           <Card>
-            <CardHeader><CardTitle>Parent & Financial</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Parent & Financial</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Decision-maker details and financial profile — helps counsel the right stakeholder and assess loan eligibility</p>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Input label="Father Phone" value={fields.father_phone} onChange={e => setFields(p => ({...p, father_phone: e.target.value}))} placeholder="+91 9XXXXXXXXX" />
@@ -322,7 +327,10 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
 
           {/* Payments */}
           <Card>
-            <CardHeader><CardTitle>Payments</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Payments</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Record fees collected from this lead — amounts feed into the dashboard and analytics payment summaries</p>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <Input label="Application Fees (₹)" type="number" value={fields.application_fees} onChange={e => setFields(p => ({...p, application_fees: e.target.value}))} placeholder="0" />
@@ -330,9 +338,9 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
                 <Input label="Tuition Fees (₹)" type="number" value={fields.tuition_fees} onChange={e => setFields(p => ({...p, tuition_fees: e.target.value}))} placeholder="0" />
               </div>
               {(fields.application_fees || fields.booking_fees || fields.tuition_fees) && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3">
-                  <p className="text-xs text-indigo-500 font-medium">Total Collected</p>
-                  <p className="text-xl font-bold text-indigo-700">
+                <div className="bg-brand-800 border border-brand-700 rounded-lg px-4 py-3">
+                  <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
+                  <p className="text-xl font-bold text-white">
                     ₹{((parseFloat(fields.application_fees || '0') || 0) + (parseFloat(fields.booking_fees || '0') || 0) + (parseFloat(fields.tuition_fees || '0') || 0)).toLocaleString('en-IN')}
                   </p>
                 </div>
@@ -368,51 +376,57 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
         <div className="space-y-4">
           {/* Owner info */}
           <Card>
-            <CardHeader><CardTitle>Ownership</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Ownership</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Assigned counsellor and their reporting manager — use Transfer to reassign this lead</p>
+            </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div>
-                <p className="text-xs text-slate-500 font-medium">Owner</p>
-                <p className="font-medium text-slate-800">{(lead.owner as Employee)?.name || '—'}</p>
-                <p className="text-xs text-slate-500 capitalize">{(lead.owner as Employee)?.role}</p>
+                <p className="text-xs text-brand-400 font-semibold">Owner</p>
+                <p className="font-semibold text-brand-800">{(lead.owner as Employee)?.name || '—'}</p>
+                <p className="text-xs text-brand-400 capitalize">{(lead.owner as Employee)?.role}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Reporting Manager</p>
-                <p className="font-medium text-slate-800">{(lead.reporting_manager as Employee)?.name || '—'}</p>
+                <p className="text-xs text-brand-400 font-semibold">Reporting Manager</p>
+                <p className="font-semibold text-brand-800">{(lead.reporting_manager as Employee)?.name || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Source</p>
-                <p className="font-medium text-slate-800 capitalize">{lead.source}</p>
+                <p className="text-xs text-brand-400 font-semibold">Source</p>
+                <p className="font-semibold text-brand-800 capitalize">{lead.source}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Created</p>
-                <p className="font-medium text-slate-800">{timeAgo(lead.created_at)}</p>
+                <p className="text-xs text-brand-400 font-semibold">Created</p>
+                <p className="font-semibold text-brand-800">{timeAgo(lead.created_at)}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Activity Timeline */}
           <Card>
-            <CardHeader><CardTitle>Activity Timeline</CardTitle></CardHeader>
-            <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Activity Timeline</CardTitle>
+              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Chronological log of all actions taken on this lead — stage changes, comments, and field updates</p>
+            </CardHeader>
+            <div className="divide-y divide-brand-50 max-h-[500px] overflow-y-auto">
               {activities.length === 0 ? (
-                <div className="p-4 text-sm text-slate-400 text-center">No activities yet</div>
+                <div className="p-4 text-sm text-brand-400 text-center">No activity recorded yet.</div>
               ) : activities.map(act => (
                 <div key={act.id} className="p-4">
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-indigo-600 text-xs font-bold">
+                    <div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-brand-700 text-xs font-bold">
                         {(act.employee as Employee)?.name?.[0] || '?'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-medium text-slate-700">{(act.employee as Employee)?.name}</p>
-                        <p className="text-xs text-slate-400 flex-shrink-0">{timeAgo(act.created_at)}</p>
+                        <p className="text-xs font-semibold text-brand-700">{(act.employee as Employee)?.name}</p>
+                        <p className="text-xs text-brand-400 flex-shrink-0">{timeAgo(act.created_at)}</p>
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5 capitalize">{act.activity_type.replace('_', ' ')}</p>
-                      {act.note && <p className="text-sm text-slate-700 mt-1">{act.note}</p>}
+                      <p className="text-xs text-brand-400 mt-0.5 capitalize">{act.activity_type.replace('_', ' ')}</p>
+                      {act.note && <p className="text-sm text-brand-700 mt-1">{act.note}</p>}
                       {act.stage_from && act.stage_to && (
-                        <p className="text-xs text-indigo-600 mt-1">
+                        <p className="text-xs text-brand-500 font-semibold mt-1">
                           Stage: {act.stage_from} → {act.stage_to}
                         </p>
                       )}

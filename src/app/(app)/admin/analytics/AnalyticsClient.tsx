@@ -170,23 +170,26 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Analytics Dashboard</h1>
+        <div>
+          <h1 className="text-xl font-bold text-brand-800">Analytics Dashboard</h1>
+          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mt-0.5">All charts reflect the date range and filters selected below — data is computed from leads created within that window</p>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
             <option value={365}>Last year</option>
           </select>
-          <select value={empFilter} onChange={e => setEmpFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select value={empFilter} onChange={e => setEmpFilter(e.target.value)} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
             <option value="">All Employees</option>
             {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
             <option value="">All Stages</option>
             {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{k} — {v}</option>)}
           </select>
-          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
             <option value="">All Sources</option>
             <option value="meta">Meta</option>
             <option value="offline">Offline</option>
@@ -195,44 +198,58 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </div>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Leads', value: String(filteredLeads.length), color: 'text-indigo-600' },
-          { label: 'Hot Leads', value: String(filteredLeads.filter(l => l.main_stage === 'C').length), color: 'text-orange-600' },
-          { label: 'Closed Won', value: String(filteredLeads.filter(l => l.main_stage === 'F').length), color: 'text-green-600' },
-          { label: 'SLA Breaches', value: String(slaBreaches.filter(b => b.resolution === 'pending').length), color: 'text-red-600' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-4">
-            <p className="text-xs text-slate-500 font-medium">{s.label}</p>
-            <p className={`text-3xl font-bold mt-1 ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+      {/* Pipeline summary */}
+      <div>
+        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Pipeline Summary — high-level counts for the selected period and filters</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Total Leads', value: String(filteredLeads.length),                                        desc: 'All leads in range' },
+            { label: 'Hot Leads',   value: String(filteredLeads.filter(l => l.main_stage === 'C').length),       desc: 'Stage C — high intent' },
+            { label: 'Closed Won',  value: String(filteredLeads.filter(l => l.main_stage === 'F').length),       desc: 'Confirmed admissions' },
+            { label: 'SLA Breaches',value: String(slaBreaches.filter(b => b.resolution === 'pending').length),   desc: 'Unresolved breaches' },
+          ].map(s => (
+            <div key={s.label} className="bg-white border border-brand-100 rounded-xl p-4">
+              <p className="text-xs text-brand-600 font-semibold">{s.label}</p>
+              <p className="text-3xl font-bold mt-1 text-brand-800">{s.value}</p>
+              <p className="text-[8px] text-brand-400 mt-1">{s.desc}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Payment summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
-          <p className="text-xs text-emerald-600 font-medium">Total Collected</p>
-          <p className="text-2xl font-bold text-emerald-800 mt-1 truncate">₹{paymentTotals.total.toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-medium">Application Fees</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1 truncate">₹{paymentTotals.app.toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-medium">Booking Fees</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1 truncate">₹{paymentTotals.booking.toLocaleString('en-IN')}</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500 font-medium">Tuition Fees</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1 truncate">₹{paymentTotals.tuition.toLocaleString('en-IN')}</p>
+      {/* Payment summary */}
+      <div>
+        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Revenue Summary — total fees collected across all leads in the selected period</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-brand-800 border border-brand-700 rounded-xl p-4">
+            <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
+            <p className="text-2xl font-bold text-white mt-1 truncate">₹{paymentTotals.total.toLocaleString('en-IN')}</p>
+            <p className="text-[8px] text-brand-300 mt-1">All payment types combined</p>
+          </div>
+          <div className="bg-white border border-brand-100 rounded-xl p-4">
+            <p className="text-xs text-brand-600 font-semibold">Application Fees</p>
+            <p className="text-2xl font-bold text-brand-800 mt-1 truncate">₹{paymentTotals.app.toLocaleString('en-IN')}</p>
+            <p className="text-[8px] text-brand-400 mt-1">Paid at application stage</p>
+          </div>
+          <div className="bg-white border border-brand-100 rounded-xl p-4">
+            <p className="text-xs text-brand-600 font-semibold">Booking Fees</p>
+            <p className="text-2xl font-bold text-brand-800 mt-1 truncate">₹{paymentTotals.booking.toLocaleString('en-IN')}</p>
+            <p className="text-[8px] text-brand-400 mt-1">Seat confirmation payment</p>
+          </div>
+          <div className="bg-white border border-brand-100 rounded-xl p-4">
+            <p className="text-xs text-brand-600 font-semibold">Tuition Fees</p>
+            <p className="text-2xl font-bold text-brand-800 mt-1 truncate">₹{paymentTotals.tuition.toLocaleString('en-IN')}</p>
+            <p className="text-[8px] text-brand-400 mt-1">Full course tuition collected</p>
+          </div>
         </div>
       </div>
 
       {/* 1. Lead Funnel */}
       <Card>
-        <CardHeader><CardTitle>Lead Funnel</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Lead Funnel</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Volume of leads at each pipeline stage — identifies where drop-offs occur in the admission journey</p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={funnelData} layout="vertical">
@@ -251,7 +268,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       {/* Row: Source Pie + Decision Maker Pie */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle>Lead Source Breakdown</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Lead Source Breakdown</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Distribution of leads by acquisition channel — Meta ads, offline walk-ins, and referrals</p>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -265,7 +285,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Decision Maker Breakdown</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Decision Maker Breakdown</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Who makes the final admission decision — helps tailor counselling conversations to the right person</p>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -282,7 +305,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* 3. Daily lead inflow */}
       <Card>
-        <CardHeader><CardTitle>Daily Lead Inflow (Last 30 Days)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Daily Lead Inflow</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">New leads created per day over the last 30 days — highlights campaign performance and seasonal patterns</p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={dailyData}>
@@ -298,7 +324,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* 4. Counsellor performance */}
       <Card>
-        <CardHeader><CardTitle>Counsellor Performance</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Counsellor Performance</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Leads assigned, contacted, and converted per team member — conversion rate is won leads divided by total assigned</p>
+        </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead>
@@ -333,7 +362,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       {/* Row: Stage time + SLA compliance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle>Avg Days per Stage</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Avg Days per Stage</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Average time leads spend at each stage — longer durations indicate bottlenecks in the counselling process</p>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={stageTimeData}>
@@ -348,7 +380,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>SLA Compliance Rate (%)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>SLA Compliance Rate</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Percentage of SLA breaches resolved per counsellor — 100% means no outstanding violations</p>
+          </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={slaData}>
@@ -366,7 +401,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* 7. College interest */}
       <Card>
-        <CardHeader><CardTitle>College Interest (Top 15)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>College Interest — Top 15</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Institutions most frequently listed by leads as preferred — useful for identifying high-demand partnerships</p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={collegeData} layout="vertical">
@@ -383,7 +421,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* 10. Conversion by course */}
       <Card>
-        <CardHeader><CardTitle>Conversion by Course</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Conversion by Course</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Lead volume and closed-won count by preferred course — reveals which programmes convert most effectively</p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={courseData}>
@@ -424,7 +465,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* 9. Activity heatmap */}
       <Card>
-        <CardHeader><CardTitle>Activity Heatmap (Last 7 Days)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Activity Heatmap — Last 7 Days</CardTitle>
+          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Daily activity count per team member — green indicates active engagement, red indicates no recorded actions that day</p>
+        </CardHeader>
         <CardContent className="overflow-x-auto">
           {activityHeatmap.length > 0 ? (
             <table className="w-full text-sm min-w-[500px]">

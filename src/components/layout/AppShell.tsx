@@ -79,7 +79,7 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
   const visibleNav = navItems.filter(item => !item.roles || item.roles.includes(employee.role))
 
   function NavLink({ item }: { item: NavItem }) {
-    const active = pathname === item.href || pathname.startsWith(item.href + '/') || pathname.startsWith(item.href.replace('/admin/settings', '/admin/settings').replace('/admin/team-mgmt', '/admin/team-mgmt'))
+    const active = pathname === item.href || pathname.startsWith(item.href + '/')
     return (
       <Link
         href={item.href}
@@ -87,21 +87,21 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
         className={cn(
           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
           active
-            ? 'bg-indigo-50 text-indigo-700'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            ? 'bg-brand-400 text-white'
+            : 'text-brand-100 hover:bg-brand-700 hover:text-white'
         )}
       >
-        <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{item.icon}</span>
+        <span className={active ? 'text-white' : 'text-brand-200'}>{item.icon}</span>
         {item.label}
       </Link>
     )
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-brand-800">
       {/* Logo */}
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-center">
-        <Image src="/Admishine Logo.png" alt="admishine" width={160} height={60} className="object-contain h-12 w-auto" priority />
+      <div className="px-5 py-4 border-b border-brand-700 flex items-center justify-center">
+        <Image src="/Admishine Logo.png" alt="admishine" width={160} height={60} className="object-contain h-12 w-auto brightness-0 invert" priority />
       </div>
 
       {/* Nav */}
@@ -111,23 +111,23 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
         {isAdmin && (
           <>
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Admin</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Admin</p>
             </div>
             {adminNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Analytics</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Analytics</p>
             </div>
             {analyticsNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Team</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Team</p>
             </div>
             {teamNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">SLA</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">SLA</p>
             </div>
             {slaNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Config</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Config</p>
             </div>
             {settingsNavItems.map(item => <NavLink key={item.href} item={item} />)}
           </>
@@ -135,16 +135,16 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
       </nav>
 
       {/* User */}
-      <div className="border-t border-slate-100 p-3">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-indigo-700">
+      <div className="border-t border-brand-700 p-3">
+        <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-brand-700 transition-colors">
+          <div className="w-8 h-8 bg-brand-400 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white">
             {getInitials(employee.name)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">{employee.name}</p>
-            <p className="text-xs text-slate-500">{formatRole(employee.role)}</p>
+            <p className="text-sm font-semibold text-white truncate">{employee.name}</p>
+            <p className="text-xs text-brand-200">{formatRole(employee.role)}</p>
           </div>
-          <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 transition-colors" title="Sign out">
+          <button onClick={handleLogout} className="text-brand-300 hover:text-white transition-colors" title="Sign out">
             <LogOut size={15} />
           </button>
         </div>
@@ -153,9 +153,9 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
   )
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-[#f0f6f6]">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-shrink-0 lg:w-60 border-r border-slate-200">
+      <aside className="hidden lg:flex lg:flex-shrink-0 lg:w-60 border-r border-brand-700">
         <div className="flex flex-col w-full">
           <SidebarContent />
         </div>
@@ -174,21 +174,21 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
       {/* Main */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 p-1">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-brand-800 border-b border-brand-700 shadow-sm">
+          <button onClick={() => setSidebarOpen(true)} className="text-white p-1">
             <Menu size={22} />
           </button>
-          <Image src="/Admishine Logo.png" alt="admishine" width={110} height={36} className="object-contain h-8 w-auto" />
+          <Image src="/Admishine Logo.png" alt="admishine" width={110} height={36} className="object-contain h-8 w-auto brightness-0 invert" />
           <div className="flex items-center gap-3">
             {notifCount > 0 && (
               <div className="relative">
-                <Bell size={20} className="text-slate-500" />
+                <Bell size={20} className="text-white" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                   {notifCount > 9 ? '9+' : notifCount}
                 </span>
               </div>
             )}
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-700">
+            <div className="w-8 h-8 bg-brand-400 rounded-full flex items-center justify-center text-xs font-bold text-white">
               {getInitials(employee.name)}
             </div>
           </div>

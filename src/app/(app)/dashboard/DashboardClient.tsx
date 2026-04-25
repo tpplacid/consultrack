@@ -104,14 +104,15 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
       <NotificationBanner employeeId={employee.id} orgId={employee.org_id} />
 
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">My Leads</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Welcome back, {employee.name}</p>
+            <h1 className="text-2xl font-bold text-brand-800">My Leads</h1>
+            <p className="text-sm text-brand-500 mt-0.5">Welcome back, {employee.name}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {newCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-400/30 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold px-3 py-1.5 rounded-full">
                 <Bell size={12} />
                 {newCount} new this session
               </div>
@@ -125,59 +126,72 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {[
-            { label: 'Total',      value: stats.total.toString(),    color: 'text-slate-800',   bg: 'bg-white',      accent: '#94a3b8' },
-            { label: 'Hot Leads',  value: stats.hot.toString(),      color: 'text-orange-600',  bg: 'bg-orange-50',  accent: '#f97316' },
-            { label: 'Follow Up',  value: stats.followup.toString(), color: 'text-amber-600',   bg: 'bg-amber-50',   accent: '#f59e0b' },
-            { label: 'Closed Won', value: stats.closed.toString(),   color: 'text-indigo-600',  bg: 'bg-indigo-50',  accent: '#4f46e5' },
-            { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, color: 'text-emerald-700', bg: 'bg-emerald-50', accent: '#10b981' },
-          ].map(s => (
-            <div key={s.label} className={`${s.bg} rounded-2xl border border-slate-200 p-4 shadow-sm`}>
-              <p className="text-xs text-slate-500 font-medium">{s.label}</p>
-              <p className={`text-2xl font-bold mt-0.5 ${s.color} truncate`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+        {/* Performance overview */}
+        <div>
+          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Performance Overview — counts reflect leads assigned to you within visible date range</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { label: 'Total Leads',     value: stats.total.toString(),                                    desc: 'All active leads' },
+              { label: 'Hot Leads',       value: stats.hot.toString(),                                      desc: 'Stage C — high intent' },
+              { label: 'Follow Up',       value: stats.followup.toString(),                                 desc: 'Stage B — scheduled callbacks' },
+              { label: 'Closed Won',      value: stats.closed.toString(),                                   desc: 'Stage F — confirmed admissions' },
+              { label: 'Total Payments',  value: `₹${stats.totalPayments.toLocaleString('en-IN')}`,         desc: 'Application + Booking + Tuition' },
+            ].map(s => (
+              <div key={s.label} className="bg-white rounded-xl border border-brand-100 p-4 shadow-sm">
+                <p className="text-xs font-semibold text-brand-600">{s.label}</p>
+                <p className="text-2xl font-bold mt-1 text-brand-800 truncate">{s.value}</p>
+                <p className="text-[8px] text-brand-400 mt-1">{s.desc}</p>
+              </div>
+            ))}
           </div>
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
-            {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
-            <option value="">All Sources</option>
-            <option value="meta">Meta</option>
-            <option value="offline">Offline</option>
-            <option value="referral">Referral</option>
-          </select>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
         </div>
 
+        {/* Filters */}
+        <div>
+          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Filters — narrow results by pipeline stage, lead source, or date range</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
+                className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm" />
+            </div>
+            <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+              {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+            <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+              <option value="">All Sources</option>
+              <option value="meta">Meta</option>
+              <option value="offline">Offline</option>
+              <option value="referral">Referral</option>
+            </select>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700" />
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700" />
+          </div>
+        </div>
+
+        {/* Lead cards */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
-            <p className="text-lg font-medium">No leads found</p>
-            <p className="text-sm mt-1">Try adjusting your filters or create a new lead.</p>
+          <div className="text-center py-16 text-brand-300">
+            <p className="text-lg font-semibold text-brand-500">No leads found</p>
+            <p className="text-sm mt-1 text-brand-400">Adjust your filters or add a new lead to get started.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(lead => (
-              <LeadCard
-                key={lead.id}
-                lead={lead}
-                highlight={newLeadIds.has(lead.id)}
-                pendingApproval={isPendingOffline(lead)}
-              />
-            ))}
+          <div>
+            <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-3">Lead Cards — click any card to view full details, timeline, and edit fields</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map(lead => (
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  highlight={newLeadIds.has(lead.id)}
+                  pendingApproval={isPendingOffline(lead)}
+                />
+              ))}
+            </div>
           </div>
         )}
 
