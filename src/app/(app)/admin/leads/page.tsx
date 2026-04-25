@@ -10,11 +10,13 @@ export default async function AdminLeadsPage() {
     supabase
       .from('leads')
       .select('*, owner:employees!leads_owner_id_fkey(id,name,role)')
+      .eq('org_id', employee.org_id)
       .order('updated_at', { ascending: false })
-      .limit(500),
+      .limit(200),
     supabase
       .from('employees')
-      .select('*')
+      .select('id, name, role, email, org_id, reports_to, is_active')
+      .eq('org_id', employee.org_id)
       .eq('is_active', true),
   ])
 

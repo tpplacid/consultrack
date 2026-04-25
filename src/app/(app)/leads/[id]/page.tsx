@@ -33,9 +33,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       .eq('is_active', true),
     supabase
       .from('employees')
-      .select('id, name, role, reports_to, org_id, email, score, is_active, is_on_leave, wifi_ssid, created_at')
+      .select('id, name, role, reports_to, org_id, email, is_active')
       .eq('org_id', lead.org_id)
-      .eq('is_active', true),
+      .eq('is_active', true)
+      .limit(100),
   ])
 
   return (

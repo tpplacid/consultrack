@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Lead } from '@/types'
 import { StageBadge } from './StageBadge'
@@ -10,7 +10,7 @@ import { Phone, Clock, AlertTriangle, Sparkles, HourglassIcon } from 'lucide-rea
 const ONE_MINUTE = 60 * 1000
 const ONE_DAY = 24 * 60 * 60 * 1000
 
-export function LeadCard({
+export const LeadCard = memo(function LeadCard({
   lead,
   highlight = false,
   pendingApproval = false,
@@ -104,4 +104,4 @@ export function LeadCard({
       )}
     </div>
   )
-}
+})
