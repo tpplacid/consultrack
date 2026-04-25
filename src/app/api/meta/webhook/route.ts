@@ -17,9 +17,13 @@ export async function GET(req: NextRequest) {
 // ── POST: Receive leads ──────────────────────────────────────
 export async function POST(req: NextRequest) {
   const body = await req.json()
+  console.log('[Meta Webhook] received body:', JSON.stringify(body))
 
   // Meta sends: { object: 'page', entry: [{ changes: [{ field: 'leadgen', value: { ... } }] }] }
-  if (body.object !== 'page') return NextResponse.json({ ok: true })
+  if (body.object !== 'page') {
+    console.log('[Meta Webhook] not a page event, skipping')
+    return NextResponse.json({ ok: true })
+  }
 
   const supabase = createAdminClient()
 
@@ -27,26 +31,32 @@ export async function POST(req: NextRequest) {
     for (const change of entry.changes || []) {
       if (change.field !== 'leadgen') continue
       const value = change.value
+      console.log('[Meta Webhook] leadgen value:', JSON.stringify(value))
 
       // Fetch full lead data from Meta Graph API
       try {
         const graphRes = await fetch(
-          `https://graph.facebook.com/v19.0/${value.leadgen_id}?access_token=${process.env.META_PAGE_ACCESS_TOKEN}`
+          `https://graph.facebook.com/v19.0/${value.leadgen_id}?fields=field_data,created_time&access_token=${process.env.META_PAGE_ACCESS_TOKEN}`
         )
         const leadData = await graphRes.json()
-        if (leadData.error) { console.error('Meta Graph error:', leadData.error); continue }
+        console.log('[Meta Webhook] graph leadData:', JSON.stringify(leadData))
+        if (leadData.error) { console.error('[Meta Webhook] Graph error:', leadData.error); continue }
 
         // Parse field_data array → key/value map
         const fields: Record<string, string> = {}
         for (const f of leadData.field_data || []) {
           fields[f.name] = f.values?.[0] || ''
         }
+        console.log('[Meta Webhook] parsed fields:', JSON.stringify(fields))
 
         const phone = fields['phone_number'] || fields['phone'] || ''
         const name = `${fields['first_name'] || ''} ${fields['last_name'] || ''}`.trim() || fields['full_name'] || 'Unknown'
         const metaLeadId = String(value.leadgen_id)
 
-        if (!phone) continue
+        if (!phone) {
+          console.log('[Meta Webhook] no phone found, skipping. fields:', JSON.stringify(fields))
+          continue
+        }
 
         // Dedup by phone + meta_lead_id
         const { data: existing } = await supabase
