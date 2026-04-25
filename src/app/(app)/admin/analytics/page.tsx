@@ -1,12 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import dynamic from 'next/dynamic'
+import { AnalyticsClient } from './AnalyticsClient'
 import { subDays, format } from 'date-fns'
-
-const AnalyticsClient = dynamic(() => import('./AnalyticsClient').then(m => m.AnalyticsClient), {
-  ssr: false,
-  loading: () => <div className="p-8 text-center text-slate-400 text-sm">Loading analytics...</div>,
-})
 
 export default async function AnalyticsPage() {
   const employee = await requireRole(['ad'])
