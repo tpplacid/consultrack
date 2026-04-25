@@ -17,7 +17,7 @@ export default async function AdminLeavesPage() {
 
   const { data: leaves, error: leavesError } = await supabase
     .from('leaves')
-    .select('*, employee:employees(id,name,role)')
+    .select('*, employee:employees!employee_id(id,name,role)')
     .in('employee_id', empIds.length > 0 ? empIds : ['00000000-0000-0000-0000-000000000000'])
     .order('created_at', { ascending: false })
 

@@ -18,7 +18,7 @@ export default async function AdminAttendancePage() {
   const [{ data: records, error: recError }, { data: org }] = await Promise.all([
     supabase
       .from('attendance')
-      .select('*, employee:employees(id,name,role)')
+      .select('*, employee:employees!employee_id(id,name,role)')
       .in('employee_id', empIds.length > 0 ? empIds : ['00000000-0000-0000-0000-000000000000'])
       .order('work_date', { ascending: false })
       .limit(500),
