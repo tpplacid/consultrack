@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { AdminLeadsClient } from './AdminLeadsClient'
+import { Employee } from '@/types'
 
 export default async function AdminLeadsPage() {
   const employee = await requireRole(['ad'])
@@ -20,5 +21,5 @@ export default async function AdminLeadsPage() {
       .eq('is_active', true),
   ])
 
-  return <AdminLeadsClient admin={employee} leads={leads || []} employees={employees || []} />
+  return <AdminLeadsClient admin={employee} leads={leads || []} employees={(employees || []) as unknown as Employee[]} />
 }

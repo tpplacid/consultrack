@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { LeadDetailClient } from './LeadDetailClient'
+import { Employee } from '@/types'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -45,7 +46,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       activities={activities || []}
       templates={templates || []}
       employee={employee}
-      orgEmployees={orgEmployees || []}
+      orgEmployees={(orgEmployees || []) as unknown as Employee[]}
     />
   )
 }
