@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Employee, Leave } from '@/types'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -16,20 +15,15 @@ export function AdminLeavesClient({ admin, leaves: initialLeaves }: Props) {
 
   async function updateStatus(leave: Leave, status: 'approved' | 'rejected') {
     setLoading(leave.id)
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('leaves')
-      .update({ status, approved_by: admin.id })
-      .eq('id', leave.id)
-      .select().single()
-
-    if (error) toast.error(error.message)
+    const res = await fetch('/api/leaves/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: leave.id, status }),
+    })
+    const json = await res.json()
+    if (!res.ok) toast.error(json.error || 'Failed to update')
     else {
-      // If approved emergency leave, toggle employee is_on_leave
-      if (status === 'approved' && leave.leave_type === 'emergency') {
-        await supabase.from('employees').update({ is_on_leave: true }).eq('id', leave.employee_id)
-      }
-      setLeaves(prev => prev.map(l => l.id === data.id ? { ...data, employee: l.employee } : l))
+      setLeaves(prev => prev.map(l => l.id === json.data.id ? { ...json.data, employee: l.employee } : l))
       toast.success(`Leave ${status}`)
     }
     setLoading(null)
