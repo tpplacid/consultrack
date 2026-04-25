@@ -1,6 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { AllocationClient } from '../../../allocation/AllocationClient'
+import { AllocationClient } from '../../allocation/AllocationClient'
 import { format } from 'date-fns'
 
 export default async function TeamAllocationPage() {
