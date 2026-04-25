@@ -6,15 +6,16 @@ export default async function AdminAttendancePage() {
   const employee = await requireRole(['ad'])
   const supabase = createAdminClient()
 
-  // Two-step: get org employee IDs first (works regardless of RLS / missing org_id column)
-  const { data: orgEmps } = await supabase
+  const { data: orgEmps, error: empError } = await supabase
     .from('employees')
     .select('id')
     .eq('org_id', employee.org_id)
 
+  console.log('[AdminAttendance] org_id:', employee.org_id, '| emp count:', orgEmps?.length, '| empError:', empError?.message)
+
   const empIds = (orgEmps || []).map(e => e.id)
 
-  const [{ data: records }, { data: org }] = await Promise.all([
+  const [{ data: records, error: recError }, { data: org }] = await Promise.all([
     supabase
       .from('attendance')
       .select('*, employee:employees(id,name,role)')
@@ -27,6 +28,8 @@ export default async function AdminAttendancePage() {
       .eq('id', employee.org_id)
       .single(),
   ])
+
+  console.log('[AdminAttendance] records count:', records?.length, '| recError:', recError?.message)
 
   return (
     <AdminAttendanceClient

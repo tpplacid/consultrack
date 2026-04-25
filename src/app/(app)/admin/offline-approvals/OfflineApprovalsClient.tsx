@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Employee, Lead, OfflineLeadApproval } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { StageBadge } from '@/components/leads/StageBadge'
 import { timeAgo } from '@/lib/utils'
@@ -17,20 +18,21 @@ export function OfflineApprovalsClient({ admin, approvals: initialApprovals }: P
 
   async function handleAction(approval: OfflineLeadApproval, action: 'approved' | 'rejected') {
     setLoading(approval.id)
+    const supabase = createClient()
 
-    const res = await fetch('/api/offline-approvals/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: approval.id, lead_id: approval.lead_id, action }),
-    })
-    const json = await res.json()
+    const { error: approvalError } = await supabase
+      .from('offline_lead_approvals')
+      .update({ status: action })
+      .eq('id', approval.id)
 
-    if (!res.ok) {
-      toast.error(json.error || 'Failed to update')
-    } else {
-      setApprovals(prev => prev.map(a => a.id === approval.id ? { ...a, status: action } : a))
-      toast.success(`Lead ${action}`)
-    }
+    if (approvalError) { toast.error(approvalError.message); setLoading(null); return }
+
+    await supabase.from('leads')
+      .update({ approved: action === 'approved', approved_by: action === 'approved' ? admin.id : null })
+      .eq('id', approval.lead_id)
+
+    setApprovals(prev => prev.map(a => a.id === approval.id ? { ...a, status: action } : a))
+    toast.success(`Lead ${action}`)
     setLoading(null)
   }
 

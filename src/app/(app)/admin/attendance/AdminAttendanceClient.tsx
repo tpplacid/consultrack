@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Employee, Attendance } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, formatDateTime } from '@/lib/utils'
@@ -25,32 +26,34 @@ export function AdminAttendanceClient({ admin, records: initialRecords, orgId, r
 
   async function toggleAttendanceKey() {
     setToggling(true)
-    const next = !requireKey
-    const res = await fetch('/api/attendance/toggle-key', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ require_attendance_key: next }),
-    })
-    const json = await res.json()
-    if (!res.ok) toast.error(json.error || 'Failed to update')
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('orgs')
+      .update({ require_attendance_key: !requireKey })
+      .eq('id', orgId)
+    if (error) toast.error(error.message)
     else {
-      setRequireKey(next)
-      toast.success(next ? 'Attendance key requirement enabled' : 'Attendance key requirement disabled')
+      setRequireKey(prev => !prev)
+      toast.success(!requireKey ? 'Attendance key requirement enabled' : 'Attendance key requirement disabled')
     }
     setToggling(false)
   }
 
   async function updateStatus(record: Attendance, status: Attendance['status'], note?: string) {
     setLoading(true)
-    const res = await fetch('/api/attendance/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: record.id, status, admin_note: note ?? record.admin_note }),
-    })
-    const json = await res.json()
-    if (!res.ok) toast.error(json.error || 'Failed to update')
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('attendance')
+      .update({
+        status,
+        admin_note: note || record.admin_note,
+        override_approved_by: status === 'present' ? admin.id : undefined,
+      })
+      .eq('id', record.id)
+      .select().single()
+    if (error) toast.error(error.message)
     else {
-      setRecords(prev => prev.map(r => r.id === json.data.id ? { ...json.data, employee: r.employee } : r))
+      setRecords(prev => prev.map(r => r.id === data.id ? { ...data, employee: r.employee } : r))
       toast.success(`Marked as ${status}`)
     }
     setLoading(false)

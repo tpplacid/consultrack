@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { Employee, Leave } from '@/types'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -21,14 +22,17 @@ export function LeavesClient({ employee, leaves: initialLeaves }: Props) {
     e.preventDefault()
     if (!form.leave_date) return toast.error('Select a date')
     setLoading(true)
-    const res = await fetch('/api/leaves/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leave_date: form.leave_date, leave_type: form.leave_type, reason: form.reason }),
-    })
-    const json = await res.json()
-    if (!res.ok) toast.error(json.error || 'Failed to submit')
-    else { setLeaves(prev => [json.data, ...prev]); toast.success('Leave applied'); setOpen(false) }
+    const supabase = createClient()
+    const { data, error } = await supabase.from('leaves').insert({
+      org_id: employee.org_id,
+      employee_id: employee.id,
+      leave_date: form.leave_date,
+      leave_type: form.leave_type,
+      reason: form.reason,
+      status: 'pending',
+    }).select().single()
+    if (error) toast.error(error.message)
+    else { setLeaves(prev => [data, ...prev]); toast.success('Leave applied'); setOpen(false) }
     setLoading(false)
   }
 

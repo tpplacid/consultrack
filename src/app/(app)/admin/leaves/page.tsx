@@ -6,19 +6,22 @@ export default async function AdminLeavesPage() {
   const employee = await requireRole(['ad'])
   const supabase = createAdminClient()
 
-  // Two-step: get org employee IDs first (works even if leaves has no org_id column)
-  const { data: orgEmps } = await supabase
+  const { data: orgEmps, error: empError } = await supabase
     .from('employees')
     .select('id')
     .eq('org_id', employee.org_id)
 
+  console.log('[AdminLeaves] org_id:', employee.org_id, '| emp count:', orgEmps?.length, '| empError:', empError?.message)
+
   const empIds = (orgEmps || []).map(e => e.id)
 
-  const { data: leaves } = await supabase
+  const { data: leaves, error: leavesError } = await supabase
     .from('leaves')
     .select('*, employee:employees(id,name,role)')
     .in('employee_id', empIds.length > 0 ? empIds : ['00000000-0000-0000-0000-000000000000'])
     .order('created_at', { ascending: false })
+
+  console.log('[AdminLeaves] leaves count:', leaves?.length, '| leavesError:', leavesError?.message)
 
   return <AdminLeavesClient admin={employee} leaves={leaves || []} />
 }

@@ -5,6 +5,7 @@ import { Employee } from '@/types'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input, Select } from '@/components/ui/Input'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -36,20 +37,51 @@ export function NewLeadModal({ open, onClose, employee }: Props) {
     if (!form.name || !form.phone) return toast.error('Name and phone required')
     setLoading(true)
 
-    const res = await fetch('/api/leads/create-offline', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    const json = await res.json()
+    const supabase = createClient()
+    const { data: emp } = await supabase.from('employees').select('org_id, reports_to').eq('id', employee.id).single()
+    if (!emp) { setLoading(false); return toast.error('Employee not found') }
 
-    if (!res.ok) {
-      toast.error(json.error || 'Failed to create lead')
-    } else {
-      toast.success('Lead created!')
-      router.refresh()
-      onClose()
+    const { data: lead, error } = await supabase.from('leads').insert({
+      org_id: emp.org_id,
+      name: form.name,
+      phone: form.phone,
+      source: form.source,
+      main_stage: '0',
+      owner_id: employee.id,
+      reporting_manager_id: emp.reports_to,
+      location: form.location || null,
+      lead_type: form.lead_type || null,
+      preferred_course: form.preferred_course || null,
+      comments: form.comments || null,
+      approved: false,
+    }).select().single()
+
+    if (error || !lead) {
+      toast.error(error?.message || 'Failed to create lead')
+      setLoading(false)
+      return
     }
+
+    await supabase.from('activities').insert({
+      org_id: emp.org_id,
+      lead_id: lead.id,
+      employee_id: employee.id,
+      activity_type: 'lead_created',
+      note: `Lead created via ${form.source}`,
+    })
+
+    if (emp.reports_to) {
+      await supabase.from('offline_lead_approvals').insert({
+        org_id: emp.org_id,
+        lead_id: lead.id,
+        submitted_by: employee.id,
+        approver_id: emp.reports_to,
+      })
+    }
+
+    toast.success('Lead created!')
+    router.refresh()
+    onClose()
     setLoading(false)
   }
 
