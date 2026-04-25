@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+export async function POST(req: NextRequest) {
+  const employee = await requireAuth()
+  const { name, phone, source, location, lead_type, preferred_course, comments } = await req.json()
+
+  if (!name || !phone) return NextResponse.json({ error: 'Name and phone required' }, { status: 400 })
+
+  const supabase = createAdminClient()
+
+  // Get org + manager info
+  const { data: emp } = await supabase
+    .from('employees')
+    .select('org_id, reports_to')
+    .eq('id', employee.id)
+    .single()
+
+  if (!emp) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
+
+  // Insert lead
+  const { data: lead, error: leadError } = await supabase.from('leads').insert({
+    org_id: emp.org_id,
+    name,
+    phone,
+    source,
+    main_stage: '0',
+    owner_id: employee.id,
+    reporting_manager_id: emp.reports_to,
+    location: location || null,
+    lead_type: lead_type || null,
+    preferred_course: preferred_course || null,
+    comments: comments || null,
+    approved: false,
+  }).select().single()
+
+  if (leadError || !lead) return NextResponse.json({ error: leadError?.message || 'Failed to create lead' }, { status: 400 })
+
+  // Log activity
+  await supabase.from('activities').insert({
+    org_id: emp.org_id,
+    lead_id: lead.id,
+    employee_id: employee.id,
+    activity_type: 'lead_created',
+    note: `Lead created via ${source}`,
+  })
+
+  // Create approval request if employee has a manager
+  if (emp.reports_to) {
+    await supabase.from('offline_lead_approvals').insert({
+      org_id: emp.org_id,
+      lead_id: lead.id,
+      submitted_by: employee.id,
+      approver_id: emp.reports_to,
+    })
+  }
+
+  return NextResponse.json({ data: lead })
+}

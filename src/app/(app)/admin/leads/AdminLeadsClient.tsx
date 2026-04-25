@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { Employee, Lead, STAGE_LABELS, LeadStage } from '@/types'
-import { createClient } from '@/lib/supabase/client'
 import { LeadCard } from '@/components/leads/LeadCard'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -59,12 +58,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
   async function handleTransfer() {
     if (!newOwner || selected.length === 0) return
     setTransferring(true)
-    const supabase = createClient()
-    const { data: emp } = await supabase.from('employees').select('reports_to').eq('id', newOwner).single()
-    const { error } = await supabase
-      .from('leads').update({ owner_id: newOwner, reporting_manager_id: emp?.reports_to || null }).in('id', selected)
-    if (error) toast.error(error.message)
-    else {
+    if (await callBulk('transfer', newOwner)) {
       setLeads(prev => prev.map(l => selected.includes(l.id) ? { ...l, owner_id: newOwner } : l))
       setSelected([]); setTransferModal(false); setNewOwner('')
       toast.success(`${selected.length} leads transferred`)

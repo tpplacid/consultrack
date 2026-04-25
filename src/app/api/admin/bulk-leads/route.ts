@@ -36,5 +36,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  if (action === 'transfer') {
+    if (!value) return NextResponse.json({ error: 'No target employee' }, { status: 400 })
+    // Verify new owner belongs to same org
+    const { data: targetEmp } = await supabase
+      .from('employees')
+      .select('reports_to, org_id')
+      .eq('id', value)
+      .single()
+    if (!targetEmp || targetEmp.org_id !== admin.org_id)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    const { error } = await supabase.from('leads')
+      .update({ owner_id: value, reporting_manager_id: targetEmp.reports_to || null })
+      .in('id', ids)
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ ok: true })
+  }
+
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
