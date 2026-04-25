@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Employee, Lead, STAGE_LABELS } from '@/types'
+import { Employee, Lead, STAGE_LABELS, LeadStage } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { LeadCard } from '@/components/leads/LeadCard'
 import { Button } from '@/components/ui/Button'
@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { StageBadge } from '@/components/leads/StageBadge'
 import { formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { Search, ArrowRightLeft, Download } from 'lucide-react'
+import { Search, ArrowRightLeft, Download, Layers, Tag, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props { admin: Employee; leads: Lead[]; employees: Employee[] }
@@ -21,9 +21,26 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
   const [ownerFilter, setOwnerFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [selected, setSelected] = useState<string[]>([])
+
+  // Transfer
   const [transferModal, setTransferModal] = useState(false)
   const [newOwner, setNewOwner] = useState('')
   const [transferring, setTransferring] = useState(false)
+
+  // Mass stage update
+  const [stageModal, setStageModal] = useState(false)
+  const [newStage, setNewStage] = useState('')
+  const [stagingBusy, setStagingBusy] = useState(false)
+
+  // Mass source update
+  const [sourceModal, setSourceModal] = useState(false)
+  const [newSource, setNewSource] = useState('')
+  const [sourcingBusy, setSourcingBusy] = useState(false)
+
+  // Mass delete — two-step
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0)
+  const [deleteText, setDeleteText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const filtered = useMemo(() => {
     let l = leads
@@ -37,33 +54,66 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
   function toggleSelect(id: string) {
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
-
-  function selectAll() {
-    setSelected(filtered.map(l => l.id))
-  }
+  function selectAll() { setSelected(filtered.map(l => l.id)) }
 
   async function handleTransfer() {
     if (!newOwner || selected.length === 0) return
     setTransferring(true)
     const supabase = createClient()
-
-    // Find new owner's manager
     const { data: emp } = await supabase.from('employees').select('reports_to').eq('id', newOwner).single()
-
     const { error } = await supabase
-      .from('leads')
-      .update({ owner_id: newOwner, reporting_manager_id: emp?.reports_to || null })
-      .in('id', selected)
-
+      .from('leads').update({ owner_id: newOwner, reporting_manager_id: emp?.reports_to || null }).in('id', selected)
     if (error) toast.error(error.message)
     else {
       setLeads(prev => prev.map(l => selected.includes(l.id) ? { ...l, owner_id: newOwner } : l))
-      setSelected([])
-      setTransferModal(false)
-      setNewOwner('')
+      setSelected([]); setTransferModal(false); setNewOwner('')
       toast.success(`${selected.length} leads transferred`)
     }
     setTransferring(false)
+  }
+
+  async function callBulk(action: string, value?: string) {
+    const res = await fetch('/api/admin/bulk-leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ids: selected, value }),
+    })
+    const json = await res.json()
+    if (!res.ok) { toast.error(json.error || 'Failed'); return false }
+    return true
+  }
+
+  async function handleBulkStage() {
+    if (!newStage) return
+    setStagingBusy(true)
+    if (await callBulk('update_stage', newStage)) {
+      setLeads(prev => prev.map(l => selected.includes(l.id) ? { ...l, main_stage: newStage as LeadStage } : l))
+      toast.success(`${selected.length} leads moved to stage ${newStage}`)
+      setSelected([]); setStageModal(false); setNewStage('')
+    }
+    setStagingBusy(false)
+  }
+
+  async function handleBulkSource() {
+    if (!newSource) return
+    setSourcingBusy(true)
+    if (await callBulk('update_source', newSource)) {
+      setLeads(prev => prev.map(l => selected.includes(l.id) ? { ...l, source: newSource as Lead['source'] } : l))
+      toast.success(`${selected.length} leads source updated`)
+      setSelected([]); setSourceModal(false); setNewSource('')
+    }
+    setSourcingBusy(false)
+  }
+
+  async function handleBulkDelete() {
+    if (deleteText !== 'delete') return
+    setDeleting(true)
+    if (await callBulk('delete')) {
+      setLeads(prev => prev.filter(l => !selected.includes(l.id)))
+      toast.success(`${selected.length} leads deleted`)
+      setSelected([]); setDeleteStep(0); setDeleteText('')
+    }
+    setDeleting(false)
   }
 
   function exportCSV() {
@@ -86,23 +136,33 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
         <h1 className="text-xl font-bold text-slate-900">All Leads</h1>
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={exportCSV}>
-            <Download size={14} />
-            Export CSV ({filtered.length})
+            <Download size={14} />Export CSV ({filtered.length})
           </Button>
           {selected.length > 0 && (
-            <Button size="sm" onClick={() => setTransferModal(true)}>
-              <ArrowRightLeft size={14} />
-              Transfer {selected.length}
-            </Button>
+            <>
+              <Button size="sm" variant="secondary" onClick={() => setTransferModal(true)}>
+                <ArrowRightLeft size={14} />Transfer
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => { setNewStage(''); setStageModal(true) }}>
+                <Layers size={14} />Stage
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => { setNewSource(''); setSourceModal(true) }}>
+                <Tag size={14} />Source
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => setDeleteStep(1)}>
+                <Trash2 size={14} />Delete {selected.length}
+              </Button>
+            </>
           )}
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1 relative">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="flex-1 relative min-w-[180px]">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…" className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
         <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
           <option value="">All Stages</option>
@@ -118,15 +178,25 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
           <option value="offline">Offline</option>
           <option value="referral">Referral</option>
         </select>
-        <button onClick={selectAll} className="text-sm text-indigo-600 hover:underline whitespace-nowrap">Select all ({filtered.length})</button>
+        <button onClick={selectAll} className="text-sm text-indigo-600 hover:underline whitespace-nowrap">
+          Select all ({filtered.length})
+        </button>
       </div>
 
-      {/* Lead Table (desktop) / Cards (mobile) */}
-      <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm">
+      {selected.length > 0 && (
+        <p className="text-xs text-slate-500">{selected.length} lead(s) selected</p>
+      )}
+
+      {/* Desktop table */}
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm min-w-[700px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3 text-left"><input type="checkbox" onChange={e => e.target.checked ? selectAll() : setSelected([])} /></th>
+              <th className="px-4 py-3 text-left">
+                <input type="checkbox"
+                  checked={filtered.length > 0 && filtered.every(l => selected.includes(l.id))}
+                  onChange={e => e.target.checked ? selectAll() : setSelected([])} />
+              </th>
               <th className="px-4 py-3 text-left font-medium text-slate-600">Name</th>
               <th className="px-4 py-3 text-left font-medium text-slate-600">Phone</th>
               <th className="px-4 py-3 text-left font-medium text-slate-600">Stage</th>
@@ -158,9 +228,8 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       </div>
 
       {/* Transfer Modal */}
-      <Modal open={transferModal} onClose={() => setTransferModal(false)} title="Transfer Leads">
+      <Modal open={transferModal} onClose={() => setTransferModal(false)} title={`Transfer ${selected.length} Lead(s)`}>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-600">Transferring <strong>{selected.length} lead(s)</strong> to:</p>
           <select value={newOwner} onChange={e => setNewOwner(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">Select employee…</option>
             {employees.map(e => <option key={e.id} value={e.id}>{e.name} ({e.role})</option>)}
@@ -168,6 +237,78 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setTransferModal(false)}>Cancel</Button>
             <Button className="flex-1" loading={transferring} disabled={!newOwner} onClick={handleTransfer}>Transfer</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Stage Update Modal */}
+      <Modal open={stageModal} onClose={() => setStageModal(false)} title={`Update Stage — ${selected.length} lead(s)`}>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-500">All selected leads will be moved to the chosen stage.</p>
+          <select value={newStage} onChange={e => setNewStage(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Select stage…</option>
+            {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setStageModal(false)}>Cancel</Button>
+            <Button className="flex-1" loading={stagingBusy} disabled={!newStage} onClick={handleBulkStage}>Update Stage</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Source Update Modal */}
+      <Modal open={sourceModal} onClose={() => setSourceModal(false)} title={`Update Source — ${selected.length} lead(s)`}>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-500">All selected leads will have their source updated.</p>
+          <select value={newSource} onChange={e => setNewSource(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">Select source…</option>
+            <option value="meta">Meta</option>
+            <option value="offline">Offline</option>
+            <option value="referral">Referral</option>
+          </select>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setSourceModal(false)}>Cancel</Button>
+            <Button className="flex-1" loading={sourcingBusy} disabled={!newSource} onClick={handleBulkSource}>Update Source</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Step 1 — first confirmation */}
+      <Modal open={deleteStep === 1} onClose={() => setDeleteStep(0)} title="Delete Leads?">
+        <div className="p-5 space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm font-semibold text-red-800">You are about to permanently delete {selected.length} lead(s).</p>
+            <p className="text-xs text-red-700 mt-1">This cannot be undone. All associated activities will also be removed.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteStep(0)}>Cancel</Button>
+            <Button variant="danger" className="flex-1" onClick={() => { setDeleteStep(2); setDeleteText('') }}>
+              Yes, continue
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Step 2 — type 'delete' to confirm */}
+      <Modal open={deleteStep === 2} onClose={() => { setDeleteStep(0); setDeleteText('') }} title="Final Confirmation">
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-700">
+            Type <strong className="font-mono bg-red-50 text-red-600 px-1 rounded">delete</strong> to permanently remove{' '}
+            <strong>{selected.length} lead(s)</strong>.
+          </p>
+          <input
+            value={deleteText}
+            onChange={e => setDeleteText(e.target.value)}
+            placeholder="Type: delete"
+            autoFocus
+            className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => { setDeleteStep(0); setDeleteText('') }}>Cancel</Button>
+            <Button variant="danger" className="flex-1" loading={deleting}
+              disabled={deleteText !== 'delete'} onClick={handleBulkDelete}>
+              Delete Permanently
+            </Button>
           </div>
         </div>
       </Modal>
