@@ -50,10 +50,10 @@ export default async function InvitePage({ params }: Props) {
     )
   }
 
-  // Get org name
+  // Get org details
   const { data: org } = await supabase
     .from('orgs')
-    .select('name, slug')
+    .select('name, slug, logo_url')
     .eq('id', invite.org_id)
     .single()
 
@@ -62,6 +62,7 @@ export default async function InvitePage({ params }: Props) {
       token={token}
       orgName={org?.name || 'your organisation'}
       orgSlug={org?.slug || ''}
+      orgLogoUrl={org?.logo_url ?? null}
       prefillName={invite.name || ''}
       prefillEmail={invite.email || ''}
       role={invite.role}

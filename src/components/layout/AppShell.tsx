@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { Employee, formatRole } from '@/types'
 import { createClient } from '@/lib/supabase/client'
@@ -103,12 +102,10 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
     <div className="flex flex-col h-full bg-brand-800">
       {/* Logo */}
       <div className="px-5 py-4 border-b border-brand-700 flex items-center justify-center">
-        <Image
+        <img
           src={orgLogoUrl || '/Admishine Logo.png'}
           alt={orgName || 'logo'}
-          width={160} height={60}
           className="object-contain h-12 w-auto brightness-0 invert"
-          priority
         />
       </div>
 
@@ -186,10 +183,9 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
           <button onClick={() => setSidebarOpen(true)} className="text-white p-1">
             <Menu size={22} />
           </button>
-          <Image
+          <img
             src={orgLogoUrl || '/Admishine Logo.png'}
             alt={orgName || 'logo'}
-            width={110} height={36}
             className="object-contain h-8 w-auto brightness-0 invert"
           />
           <div className="flex items-center gap-3">

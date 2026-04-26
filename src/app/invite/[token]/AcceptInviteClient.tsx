@@ -9,12 +9,13 @@ interface Props {
   token: string
   orgName: string
   orgSlug: string
+  orgLogoUrl: string | null
   prefillName: string
   prefillEmail: string
   role: string
 }
 
-export default function AcceptInviteClient({ token, orgName, orgSlug, prefillName, prefillEmail, role }: Props) {
+export default function AcceptInviteClient({ token, orgName, orgSlug, orgLogoUrl, prefillName, prefillEmail, role }: Props) {
   const router = useRouter()
   const [name, setName] = useState(prefillName)
   const [email, setEmail] = useState(prefillEmail)
@@ -59,12 +60,24 @@ export default function AcceptInviteClient({ token, orgName, orgSlug, prefillNam
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-brand-800 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
-            </div>
-            <span className="text-slate-800 font-bold text-xl">Consultrack</span>
+          {/* Consultrack brand */}
+          <div className="flex items-center justify-center gap-2 mb-5">
+            <img
+              src="/Consultrack Logo.png"
+              alt="Consultrack"
+              className="h-7 object-contain"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <span className="text-slate-700 font-bold text-base">Consultrack</span>
           </div>
+          {/* Org logo / name */}
+          {orgLogoUrl ? (
+            <img src={orgLogoUrl} alt={orgName} className="h-14 object-contain mx-auto mb-3" />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-brand-800 flex items-center justify-center mx-auto mb-3">
+              <span className="text-white font-bold text-2xl uppercase">{orgName.charAt(0)}</span>
+            </div>
+          )}
           <h1 className="text-slate-900 font-bold text-xl">You're invited!</h1>
           <p className="text-slate-500 text-sm mt-1">
             Join <span className="font-semibold text-slate-700">{orgName}</span> as{' '}
