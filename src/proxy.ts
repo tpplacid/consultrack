@@ -25,26 +25,13 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+  // Refresh the session cookie if needed — auth protection is handled
+  // server-side via requireAuth() / requireRole() in each layout/page.
   const { data: { user } } = await supabase.auth.getUser()
-  const { pathname } = request.nextUrl
 
-  // Public routes — no auth required
-  const isPublic =
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/superadmin') ||
-    pathname.startsWith('/invite') ||
-    pathname.startsWith('/api/')
-
-  if (isPublic) {
-    // Redirect logged-in users away from the login page
-    if (user && pathname === '/login') {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-    return supabaseResponse
-  }
-
-  if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Only redirect logged-in users away from /login to avoid a loop
+  if (user && request.nextUrl.pathname === '/login') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse
