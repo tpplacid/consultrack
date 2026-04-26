@@ -12,10 +12,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [workspaceLoading, setWorkspaceLoading] = useState(false)
 
   function handleWorkspace(e: React.FormEvent) {
     e.preventDefault()
-    if (slug.trim()) router.push(`/${slug.trim().toLowerCase()}`)
+    const s = slug.trim().toLowerCase()
+    if (!s) return
+    setWorkspaceLoading(true)
+    window.location.href = `/${s}`
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -71,9 +75,10 @@ export default function LoginPage() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-sm font-bold transition"
+                  disabled={workspaceLoading}
+                  className="w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-sm font-bold transition disabled:opacity-60"
                 >
-                  Continue
+                  {workspaceLoading ? 'Loading…' : 'Continue'}
                 </button>
               </form>
               <div className="mt-4 text-center">
