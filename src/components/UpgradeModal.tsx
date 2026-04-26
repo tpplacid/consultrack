@@ -77,9 +77,12 @@ export function UpgradeModal({ featureLabel, featureKey, description, onClose }:
             <p className="text-sm text-slate-500 leading-relaxed">
               Your request has been sent to the Consultrack team. We'll get back to you within 1 business day.
             </p>
-            <button onClick={onClose}
-              className="mt-6 w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-sm font-bold transition">
-              Done
+            <a href="/admin/support" onClick={onClose}
+              className="mt-6 w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+              View your support tickets →
+            </a>
+            <button onClick={onClose} className="mt-2 w-full py-2 text-slate-400 hover:text-slate-600 text-sm transition">
+              Close
             </button>
           </div>
         ) : (

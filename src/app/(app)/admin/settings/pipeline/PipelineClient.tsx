@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import toast from 'react-hot-toast'
@@ -111,7 +111,12 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
   // Flow map state
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null) // "draw arrow" source
+  const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
+
+  // Drag-to-draw state
+  const [drawing, setDrawing] = useState<{ fromKey: string; x1: number; y1: number } | null>(null)
+  const [drawPos, setDrawPos] = useState<{ x: number; y: number } | null>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   const supabase = createClient()
 
@@ -217,9 +222,68 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
   }
 
   function handleCanvasClick() {
+    if (drawing) return // don't clear selection when finishing a drag
     setConnectingFrom(null)
     setSelectedKey(null)
   }
+
+  function handleHandleDragStart(e: React.MouseEvent, stageKey: string) {
+    e.stopPropagation()
+    e.preventDefault()
+    const pos = positions[stageKey]
+    if (!pos) return
+    setDrawing({ fromKey: stageKey, x1: pos.x + NW, y1: pos.y + NH / 2 })
+    setDrawPos({ x: pos.x + NW + 10, y: pos.y + NH / 2 })
+  }
+
+  // Global mouse listeners during drag
+  useEffect(() => {
+    if (!drawing) return
+
+    function onMove(e: MouseEvent) {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      setDrawPos({
+        x: e.clientX - rect.left + canvas.scrollLeft,
+        y: e.clientY - rect.top + canvas.scrollTop,
+      })
+    }
+
+    function onUp(e: MouseEvent) {
+      const canvas = canvasRef.current
+      const snap = drawing // capture before state clears
+      if (canvas && snap) {
+        const rect = canvas.getBoundingClientRect()
+        const x = e.clientX - rect.left + canvas.scrollLeft
+        const y = e.clientY - rect.top + canvas.scrollTop
+        // Find which node (if any) the cursor is over
+        for (const s of sorted) {
+          const p = positions[s.key]
+          if (!p || s.key === snap.fromKey) continue
+          if (x >= p.x && x <= p.x + NW && y >= p.y && y <= p.y + NH) {
+            toggleFlow(snap.fromKey, s.key)
+            setSelectedKey(snap.fromKey)
+            setConnectingFrom(snap.fromKey)
+            break
+          }
+        }
+      }
+      setDrawing(null)
+      setDrawPos(null)
+      document.body.style.cursor = ''
+    }
+
+    document.body.style.cursor = 'crosshair'
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawing])
 
   const sorted = [...stages].sort((a, b) => a.position - b.position)
   const mainStages = sorted.filter(s => !s.is_won && !s.is_lost)
@@ -366,6 +430,7 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
 
           {/* ── Canvas ── */}
           <div
+            ref={canvasRef}
             className="flex-1 overflow-auto relative select-none"
             style={{
               background: '#f4f6f8',
@@ -430,6 +495,16 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
                     />
                   )
                 })}
+
+                {/* Drag-to-draw preview line */}
+                {drawing && drawPos && (
+                  <line
+                    x1={drawing.x1} y1={drawing.y1}
+                    x2={drawPos.x}  y2={drawPos.y}
+                    stroke="#14b8a6" strokeWidth="2.5" strokeDasharray="6 3"
+                    markerEnd="url(#ah-teal)"
+                  />
+                )}
               </svg>
 
               {/* Row labels */}
@@ -502,18 +577,23 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
                         </p>
                       </div>
 
-                      {/* Right edge: connect hint (always on hover, or pulsing when source) */}
-                      <div className={`flex items-center justify-center w-6 flex-shrink-0 transition-all ${
-                        isSource
-                          ? 'opacity-100'
-                          : 'opacity-0 group-hover:opacity-100'
-                      }`}>
+                      {/* Right edge: drag handle to draw arrow */}
+                      <div
+                        className={`flex items-center justify-center w-6 flex-shrink-0 transition-all cursor-grab active:cursor-grabbing ${
+                          isSource || drawing?.fromKey === s.key ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                        onMouseDown={e => handleHandleDragStart(e, s.key)}
+                        title="Drag to draw a connection"
+                        onClick={e => e.stopPropagation()}
+                      >
                         <div className={`w-3 h-3 rounded-full border-2 transition-all ${
-                          isSource
+                          drawing?.fromKey === s.key
+                            ? 'border-teal-400 bg-teal-400 scale-125'
+                            : isSource
                             ? 'border-teal-400 bg-teal-400 animate-pulse'
                             : isConnectedToSource
-                              ? 'border-teal-500 bg-teal-100'
-                              : 'border-slate-300 bg-white'
+                            ? 'border-teal-500 bg-teal-100'
+                            : 'border-slate-300 bg-white hover:border-teal-400 hover:bg-teal-50'
                         }`} />
                       </div>
                     </div>
@@ -540,7 +620,7 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
               onClick={() => setSidebarOpen(v => !v)}
               className="absolute -left-7 top-1/2 -translate-y-1/2 z-10 w-7 h-14 bg-white border border-r-0 border-slate-200 rounded-l-lg flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm"
             >
-              {sidebarOpen ? <ChevronRight size={13} className="text-slate-400" /> : <ChevronLeft size={13} className="text-slate-400" />}
+              {sidebarOpen ? <ChevronRight size={13} className="text-slate-500" /> : <ChevronLeft size={13} className="text-slate-500" />}
             </button>
 
             <div className="w-64 flex flex-col h-full overflow-hidden">
@@ -605,9 +685,9 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
                   <p className="text-sm font-semibold text-slate-600 mb-1">How to use</p>
                   <div className="text-left space-y-2.5 mt-2 w-full">
                     {[
-                      { icon: '①', text: 'Click a stage node to select it as the source' },
-                      { icon: '②', text: 'Click any other stage to add or remove a connection' },
-                      { icon: '③', text: 'Click the canvas background to deselect' },
+                      { icon: '①', text: 'Drag the dot on the right edge of a stage to draw an arrow' },
+                      { icon: '②', text: 'Or click a stage then click another to toggle a connection' },
+                      { icon: '③', text: 'Use the panel checkboxes to fine-tune transitions' },
                     ].map(step => (
                       <div key={step.icon} className="flex items-start gap-2.5">
                         <span className="text-sm font-bold text-slate-400 flex-shrink-0">{step.icon}</span>
