@@ -12,20 +12,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   try {
     const supabase = createAdminClient()
-    const [{ data: stageRows }, { data: roleRows }] = await Promise.all([
-      supabase
-        .from('org_stages')
-        .select('*, substages:org_stage_substages(label)')
-        .eq('org_id', employee.org_id)
-        .order('position'),
-      supabase
-        .from('org_roles')
-        .select('*')
-        .eq('org_id', employee.org_id)
-        .order('position'),
+    const [{ data: stageRows }, { data: substageRows }, { data: roleRows }] = await Promise.all([
+      supabase.from('org_stages').select('*').eq('org_id', employee.org_id).order('position'),
+      supabase.from('org_stage_substages').select('stage_key, label').eq('org_id', employee.org_id).order('position'),
+      supabase.from('org_roles').select('*').eq('org_id', employee.org_id).order('position'),
     ])
     if (stageRows && stageRows.length > 0) {
-      stages = stageRows.map(s => ({ ...s, substages: (s.substages ?? []).map((ss: { label: string }) => ss.label) }))
+      const subMap: Record<string, string[]> = {}
+      for (const ss of substageRows || []) {
+        if (!subMap[ss.stage_key]) subMap[ss.stage_key] = []
+        subMap[ss.stage_key].push(ss.label)
+      }
+      stages = stageRows.map(s => ({ ...s, substages: subMap[s.key] ?? [] }))
     } else {
       stages = DEFAULT_STAGES.map((s, i) => ({ ...s, id: i.toString() }))
     }

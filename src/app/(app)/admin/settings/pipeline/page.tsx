@@ -10,14 +10,14 @@ export default async function PipelinePage() {
   const supabase = createAdminClient()
   const orgId = employee.org_id
 
-  // Fetch or seed stages
-  let { data: stages } = await supabase
+  // Fetch stages (two queries — no FK between substages and stages)
+  let { data: stageRows } = await supabase
     .from('org_stages')
-    .select('*, substages:org_stage_substages(id,label,position)')
+    .select('*')
     .eq('org_id', orgId)
     .order('position')
 
-  if (!stages || stages.length === 0) {
+  if (!stageRows || stageRows.length === 0) {
     // Seed defaults
     for (const s of DEFAULT_STAGES) {
       const { data: inserted } = await supabase.from('org_stages').insert({
@@ -32,22 +32,36 @@ export default async function PipelinePage() {
         )
       }
     }
-    // Seed flows
     await supabase.from('org_stage_flows').insert(
       DEFAULT_FLOWS.map(f => ({ org_id: orgId, ...f }))
     )
     const { data: fresh } = await supabase
-      .from('org_stages')
-      .select('*, substages:org_stage_substages(id,label,position)')
-      .eq('org_id', orgId)
-      .order('position')
-    stages = fresh
+      .from('org_stages').select('*').eq('org_id', orgId).order('position')
+    stageRows = fresh
   }
+
+  // Fetch substages separately
+  const { data: substageRows } = await supabase
+    .from('org_stage_substages')
+    .select('id, stage_key, label, position')
+    .eq('org_id', orgId)
+    .order('position')
+
+  const substagesByKey: Record<string, { id: string; label: string; position: number }[]> = {}
+  for (const ss of substageRows || []) {
+    if (!substagesByKey[ss.stage_key]) substagesByKey[ss.stage_key] = []
+    substagesByKey[ss.stage_key].push({ id: ss.id, label: ss.label, position: ss.position })
+  }
+
+  const stages = (stageRows || []).map(s => ({
+    ...s,
+    substages: substagesByKey[s.key] || [],
+  }))
 
   const { data: flows } = await supabase
     .from('org_stage_flows')
     .select('from_stage, to_stage')
     .eq('org_id', orgId)
 
-  return <PipelineClient orgId={orgId} initialStages={stages || []} initialFlows={flows || []} />
+  return <PipelineClient orgId={orgId} initialStages={stages} initialFlows={flows || []} />
 }
