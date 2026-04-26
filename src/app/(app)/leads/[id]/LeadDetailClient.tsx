@@ -74,9 +74,14 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   }, [lead.id])
 
   function validateStageTransition(from: LeadStage, to: LeadStage): string | null {
+    if (from === '0') {
+      const detailFields = ['lead_type', 'location', 'twelfth_score', 'preferred_course', 'decision_maker', 'income_status'] as const
+      const anyFilled = detailFields.some(f => !!fields[f as keyof typeof fields])
+      if (!anyFilled) return 'Fill at least one lead detail (location, course, lead type, etc.) before moving out of Lead Gen'
+    }
     if (from === 'A' && to === 'B') {
       const missing = STAGE_A_TO_B_REQUIRED.filter(f => !fields[f as keyof typeof fields])
-      if (missing.length > 0) return `Fill required fields before moving to B: ${missing.join(', ')}`
+      if (missing.length > 0) return `Fill required fields before moving to Follow Up: ${missing.join(', ')}`
       if (!fields.interested_colleges) return 'At least one interested college required'
     }
     return null
