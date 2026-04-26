@@ -80,9 +80,13 @@ export default function LoginPage() {
         {/* Org brand — shown on org-login */}
         {mode === 'org-login' && org && (
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-brand-800 flex items-center justify-center mx-auto mb-3">
-              <span className="text-white font-bold text-3xl uppercase">{org.name.charAt(0)}</span>
-            </div>
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={org.name} className="h-16 object-contain mx-auto mb-3" />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-brand-800 flex items-center justify-center mx-auto mb-3">
+                <span className="text-white font-bold text-3xl uppercase">{org.name.charAt(0)}</span>
+              </div>
+            )}
             <h1 className="text-xl font-bold text-slate-900">{org.name}</h1>
             <p className="text-slate-400 text-sm mt-0.5">Sign in to your workspace</p>
           </div>
