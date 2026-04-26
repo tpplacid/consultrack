@@ -9,9 +9,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   let stages: OrgStage[] = []
   let roles: OrgRole[] = []
+  const supabase = createAdminClient()
 
   try {
-    const supabase = createAdminClient()
     const [{ data: stageRows }, { data: substageRows }, { data: roleRows }] = await Promise.all([
       supabase.from('org_stages').select('*').eq('org_id', employee.org_id).order('position'),
       supabase.from('org_stage_substages').select('stage_key, label').eq('org_id', employee.org_id).order('position'),

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
@@ -39,7 +38,7 @@ export default function OrgLoginClient({ orgName, orgSlug, logoUrl }: Props) {
           {/* Logo / org name */}
           <div className="flex flex-col items-center mb-8">
             {logoUrl ? (
-              <Image src={logoUrl} alt={orgName} width={160} height={64} className="object-contain mb-3" priority />
+              <img src={logoUrl} alt={orgName} className="h-16 object-contain mb-3" />
             ) : (
               <div className="w-14 h-14 rounded-2xl bg-brand-800 flex items-center justify-center mb-3">
                 <span className="text-white font-bold text-2xl uppercase">{orgName.charAt(0)}</span>
