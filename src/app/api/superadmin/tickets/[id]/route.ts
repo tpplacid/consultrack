@@ -6,12 +6,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!(await isSuperAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { status, admin_notes } = await req.json()
+  const body = await req.json()
   const supabase = createAdminClient()
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (body.status !== undefined) updates.status = body.status
+  if (body.admin_notes !== undefined) updates.admin_notes = body.admin_notes
 
   const { data, error } = await supabase
     .from('support_tickets')
-    .update({ status, admin_notes, updated_at: new Date().toISOString() })
+    .update(updates)
     .eq('id', id)
     .select()
     .single()

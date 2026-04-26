@@ -8,7 +8,7 @@ export async function GET() {
   const supabase = createAdminClient()
   const { data: tickets } = await supabase
     .from('support_tickets')
-    .select('*')
+    .select('*, ticket_messages(id, sender_type, sender_name, body, created_at)')
     .order('created_at', { ascending: false })
 
   return NextResponse.json({ tickets: tickets ?? [] })

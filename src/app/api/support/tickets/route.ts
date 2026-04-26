@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient()
   const { data: tickets } = await admin
     .from('support_tickets')
-    .select('*')
+    .select('*, ticket_messages(id, sender_type, sender_name, body, created_at)')
     .eq('org_id', employee.org_id)
     .order('created_at', { ascending: false })
 
