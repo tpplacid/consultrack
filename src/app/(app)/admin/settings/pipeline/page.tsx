@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { PipelineClient } from './PipelineClient'
-import { DEFAULT_STAGES, DEFAULT_FLOWS } from '@/context/OrgConfigContext'
+import { DEFAULT_STAGES, DEFAULT_FLOWS } from '@/context/orgDefaults'
 
 export const dynamic = 'force-dynamic'
 

@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RolesClient } from './RolesClient'
-import { DEFAULT_ROLES } from '@/context/OrgConfigContext'
+import { DEFAULT_ROLES } from '@/context/orgDefaults'
 
 export const dynamic = 'force-dynamic'
 

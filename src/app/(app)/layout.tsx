@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/auth'
 import { AppShell } from '@/components/layout/AppShell'
-import { OrgConfigProvider, OrgStage, OrgRole, DEFAULT_STAGES, DEFAULT_ROLES } from '@/context/OrgConfigContext'
+import { OrgConfigProvider, OrgStage, OrgRole } from '@/context/OrgConfigContext'
+import { DEFAULT_STAGES, DEFAULT_ROLES } from '@/context/orgDefaults'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
