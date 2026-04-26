@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const TABS = [
-  { href: '/admin/sla-mgmt/thresholds', label: 'SLA Thresholds' },
+  { href: '/admin/sla-mgmt/thresholds', label: 'Deadline Thresholds' },
   { href: '/admin/sla-mgmt/log', label: 'Breach Log' },
 ]
 

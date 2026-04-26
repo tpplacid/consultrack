@@ -55,7 +55,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">SLA Breach Log</h1>
+      <h1 className="text-xl font-bold text-slate-900">Deadline Breach Log</h1>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">

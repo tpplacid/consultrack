@@ -62,7 +62,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-bold text-slate-900">SLA Breaches</h1>
+        <h1 className="text-xl font-bold text-brand-800">Deadline Breaches</h1>
         {bulkSelected.length > 0 && (
           <Button size="sm" variant="danger" onClick={handleBulkClose} loading={closing}>
             <CheckCircle size={14} />
@@ -164,7 +164,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
       {breaches.length === 0 && (
         <div className="text-center py-16 text-slate-400">
           <CheckCircle size={40} className="mx-auto mb-3 text-green-300" />
-          <p>No SLA breaches</p>
+          <p>No deadline breaches</p>
         </div>
       )}
 
@@ -172,7 +172,7 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
         <Modal open={!!explanationModal} onClose={() => setExplanationModal(null)} title="Request Explanation">
           <div className="p-5 space-y-4">
             <p className="text-sm text-slate-600">
-              Request an explanation from <strong>{(explanationModal.owner as Employee)?.name}</strong> for the SLA breach on lead{' '}
+              Request an explanation from <strong>{(explanationModal.owner as Employee)?.name}</strong> for the deadline breach on lead{' '}
               <strong>{(explanationModal.lead as Lead)?.name}</strong> (Stage {explanationModal.stage}).
             </p>
             <div className="flex gap-2">

@@ -133,7 +133,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-brand-800">All Leads</h1>
-          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mt-0.5">Organisation-wide view of every lead — select multiple to perform bulk actions</p>
+          <p className="text-[8px] text-brand-400 font-semibold mt-0.5">Organisation-wide view of every lead — select multiple to perform bulk actions</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={exportCSV}>
@@ -192,45 +192,48 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       })()}
 
       {/* Filters */}
-      <div>
-        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Filters — combine stage, owner, source, and date range to isolate specific lead segments</p>
-        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-          <div className="flex-1 relative min-w-[180px]">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
-              className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-800" />
-          </div>
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-            <option value="">All Stages</option>
-            {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
-          </select>
-          <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-            <option value="">All Owners</option>
-            {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-          </select>
-          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-            <option value="">All Sources</option>
-            <option value="meta">Meta</option>
-            <option value="offline">Offline</option>
-            <option value="referral">Referral</option>
-          </select>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700" />
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700" />
-          <button onClick={selectAll} className="text-sm font-bold text-brand-600 hover:underline whitespace-nowrap">
-            Select all ({filtered.length})
-          </button>
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="flex-1 relative min-w-[180px]">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
+            className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-800" />
         </div>
+        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+          <option value="">All Stages</option>
+          {Object.entries(STAGE_LABELS).map(([k,v]) => <option key={k} value={k}>{k} — {v}</option>)}
+        </select>
+        <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+          <option value="">All Owners</option>
+          {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+        </select>
+        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+          <option value="">All Sources</option>
+          <option value="meta">Meta</option>
+          <option value="offline">Offline</option>
+          <option value="referral">Referral</option>
+        </select>
+        <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
+          <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+        </div>
+        <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
+          <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+        </div>
+        <button onClick={selectAll} className="text-sm font-bold text-brand-600 hover:underline whitespace-nowrap">
+          Select all ({filtered.length})
+        </button>
       </div>
 
       {selected.length > 0 && (
-        <p className="text-[8px] text-brand-500 uppercase tracking-widest font-semibold">{selected.length} lead(s) selected — use the action buttons above to transfer, re-stage, or delete</p>
+        <p className="text-[8px] text-brand-500 font-semibold">{selected.length} lead(s) selected — use the action buttons above to transfer, re-stage, or delete</p>
       )}
 
       {/* Desktop table */}
       <div>
-        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Lead table — click a name to open the full lead record</p>
+        <p className="text-[8px] text-brand-400 font-semibold mb-2">Lead table — click a name to open the full lead record</p>
         <div className="hidden md:block bg-white rounded-xl border border-brand-100 overflow-hidden overflow-x-auto">
           <table className="w-full text-sm min-w-[700px]">
             <thead className="bg-brand-50 border-b border-brand-100">
@@ -267,8 +270,11 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden grid gap-3">
-        {filtered.map(l => <LeadCard key={l.id} lead={l} />)}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0
+          ? <p className="py-10 text-center text-brand-400 text-sm">No leads match the selected filters.</p>
+          : filtered.map(l => <LeadCard key={l.id} lead={l} />)
+        }
       </div>
 
       {/* Transfer Modal */}

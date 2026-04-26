@@ -43,7 +43,7 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
 
       const items: Notif[] = []
       breaches?.forEach(b => {
-        items.push({ id: b.id, type: 'breach', message: `Unresolved SLA breach in stage ${b.stage}` })
+        items.push({ id: b.id, type: 'breach', message: `Unresolved deadline breach in stage ${b.stage}` })
       })
       leads?.forEach(l => {
         items.push({ id: l.id, type: 'lead', message: `New lead assigned: ${l.name}` })
@@ -80,9 +80,9 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">
             {breachCount > 0 && leadCount > 0
-              ? `${breachCount} SLA breach${breachCount > 1 ? 'es' : ''} · ${leadCount} new lead${leadCount > 1 ? 's' : ''}`
+              ? `${breachCount} deadline breach${breachCount > 1 ? 'es' : ''} · ${leadCount} new lead${leadCount > 1 ? 's' : ''}`
               : breachCount > 0
-              ? `${breachCount} unresolved SLA breach${breachCount > 1 ? 'es' : ''}`
+              ? `${breachCount} unresolved deadline breach${breachCount > 1 ? 'es' : ''}`
               : `${leadCount} new lead${leadCount > 1 ? 's' : ''} assigned`}
           </p>
           <div className="mt-1 space-y-0.5">

@@ -128,7 +128,7 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
         {/* Performance overview */}
         <div>
-          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Performance Overview — counts reflect leads assigned to you within visible date range</p>
+          <p className="text-[8px] text-brand-400 font-semibold mb-2">Performance overview — counts reflect leads assigned to you within visible date range</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
               { label: 'Total Leads',     value: stats.total.toString(),                                    desc: 'All active leads' },
@@ -147,29 +147,32 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
         </div>
 
         {/* Filters */}
-        <div>
-          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Filters — narrow results by pipeline stage, lead source, or date range</p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
-                className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm" />
-            </div>
-            <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
-              {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-            <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
-              <option value="">All Sources</option>
-              <option value="meta">Meta</option>
-              <option value="offline">Offline</option>
-              <option value="referral">Referral</option>
-            </select>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1 relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
+              className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm" />
+          </div>
+          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+            className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+            {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+            className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+            <option value="">All Sources</option>
+            <option value="meta">Meta</option>
+            <option value="offline">Offline</option>
+            <option value="referral">Referral</option>
+          </select>
+          <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
             <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700" />
+              className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+          </div>
+          <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
             <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700" />
+              className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
           </div>
         </div>
 
@@ -181,7 +184,6 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
           </div>
         ) : (
           <div>
-            <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-3">Lead Cards — click any card to view full details, timeline, and edit fields</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map(lead => (
                 <LeadCard

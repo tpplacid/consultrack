@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { href: '/templates',        label: 'WA Templates',     icon: <MessageSquare size={17} /> },
   { href: '/sla-explanations', label: 'SLA Explanations', icon: <Bell size={17} /> },
   { href: '/team',             label: 'My Team',          icon: <Users size={17} />, roles: ['tl','ad'] },
-  { href: '/team/sla',         label: 'SLA Breaches',     icon: <Bell size={17} />, roles: ['tl','ad'] },
+  { href: '/team/sla',         label: 'Deadline Breaches', icon: <Bell size={17} />, roles: ['tl','ad'] },
   { href: '/team/activity',    label: 'Team Activity',    icon: <BarChart3 size={17} />, roles: ['tl','ad'] },
 ]
 
@@ -123,7 +123,7 @@ export function AppShell({ employee, children, notifCount = 0 }: Props) {
             </div>
             {teamNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">
-              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">SLA</p>
+              <p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Deadlines</p>
             </div>
             {slaNavItems.map(item => <NavLink key={item.href} item={item} />)}
             <div className="pt-4 pb-1 px-3">

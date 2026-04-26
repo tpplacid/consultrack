@@ -301,7 +301,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <div className="space-y-3">
         <div>
           <h1 className="text-xl font-bold text-brand-800">Analytics Dashboard</h1>
-          <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mt-0.5">All charts reflect the active filters — use Group By to change time-series granularity</p>
+          <p className="text-[8px] text-brand-400 font-semibold mt-0.5">All charts reflect the active filters — use Group By to change time-series granularity</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
@@ -341,13 +341,13 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* ── Pipeline Summary ── */}
       <div>
-        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Pipeline Summary — high-level counts for the selected period and filters</p>
+        <p className="text-[8px] text-brand-400 font-semibold mb-2">Pipeline Summary — high-level counts for the selected period and filters</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Total Leads',  value: String(filteredLeads.length),                                        desc: 'All leads in range' },
             { label: 'Hot Leads',    value: String(filteredLeads.filter(l => l.main_stage === 'C').length),       desc: 'Stage C — high intent' },
             { label: 'Closed Won',   value: String(filteredLeads.filter(l => l.main_stage === 'F').length),       desc: 'Confirmed admissions' },
-            { label: 'SLA Breaches', value: String(slaBreaches.filter(b => b.resolution === 'pending').length),   desc: 'Unresolved violations' },
+            { label: 'Deadline Breaches', value: String(slaBreaches.filter(b => b.resolution === 'pending').length),   desc: 'Unresolved violations' },
           ].map(s => (
             <div key={s.label} className="bg-white border border-brand-100 rounded-xl p-4">
               <p className="text-xs text-brand-600 font-semibold">{s.label}</p>
@@ -360,7 +360,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* ── Revenue Summary ── */}
       <div>
-        <p className="text-[8px] text-brand-400 uppercase tracking-widest font-semibold mb-2">Revenue Summary — total fees collected across all leads in the selected period</p>
+        <p className="text-[8px] text-brand-400 font-semibold mb-2">Revenue Summary — total fees collected across all leads in the selected period</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-brand-800 border border-brand-700 rounded-xl p-4">
             <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
@@ -386,7 +386,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Lead Inflow</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">New leads and closed-won over time — granularity follows the Group By setting above</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">New leads and closed-won over time — granularity follows the Group By setting above</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
@@ -416,7 +416,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Lead Funnel</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Volume at each pipeline stage — identifies drop-off points in the admission journey</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Volume at each pipeline stage — identifies drop-off points in the admission journey</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
@@ -438,7 +438,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>Stage Conversion Rates</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Percentage of leads that reach each subsequent stage — low rates indicate friction or drop-off at that transition</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Percentage of leads that reach each subsequent stage — low rates indicate friction or drop-off at that transition</p>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
@@ -460,7 +460,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Lead Source Breakdown</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Distribution by acquisition channel — Meta ads, offline walk-ins, and referrals</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Distribution by acquisition channel — Meta ads, offline walk-ins, and referrals</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -478,7 +478,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Win Rate by Source</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Conversion rate to Closed Won for each lead source — reveals which channel produces the highest-quality leads</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Conversion rate to Closed Won for each lead source — reveals which channel produces the highest-quality leads</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -501,7 +501,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>Counsellor Performance</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Leads assigned, contacted, converted, and revenue collected per team member for the selected period</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Leads assigned, contacted, converted, and revenue collected per team member for the selected period</p>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
@@ -540,7 +540,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>Current Workload by Stage</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Each employee's active leads broken down by pipeline stage — identifies imbalanced workloads</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Each employee's active leads broken down by pipeline stage — identifies imbalanced workloads</p>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={280}>
@@ -565,7 +565,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Avg Days per Stage</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Average time leads currently spend at each active stage — longer bars signal bottlenecks</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Average time leads currently spend at each active stage — longer bars signal bottlenecks</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -583,7 +583,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Response Deadline Compliance</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Percentage of deadline violations resolved per counsellor — 100% means no outstanding breaches</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Percentage of deadline violations resolved per counsellor — 100% means no outstanding breaches</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -605,7 +605,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Payment Collections by Employee</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Application, booking, and tuition fees collected per counsellor — stacked to show contribution mix</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Application, booking, and tuition fees collected per counsellor — stacked to show contribution mix</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -629,7 +629,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Lead Age Distribution</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">How long leads have been in the system — a large 90+ bucket indicates pipeline stagnation</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">How long leads have been in the system — a large 90+ bucket indicates pipeline stagnation</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -649,7 +649,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Location Distribution — Top 15</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Cities with the most leads — useful for understanding geographic demand and planning outreach</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Cities with the most leads — useful for understanding geographic demand and planning outreach</p>
           </CardHeader>
           <CardContent>
             {locationData.length > 0 ? (
@@ -671,7 +671,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>College Interest — Top 15</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Institutions most frequently listed by leads — highlights high-demand college partnerships</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Institutions most frequently listed by leads — highlights high-demand college partnerships</p>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -690,7 +690,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>Conversion by Course</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Lead volume and confirmed admissions by preferred course — reveals which programmes close most effectively</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Lead volume and confirmed admissions by preferred course — reveals which programmes close most effectively</p>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -713,7 +713,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Decision Maker</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Who makes the final admission call — helps focus counselling on the right person</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Who makes the final admission call — helps focus counselling on the right person</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
@@ -732,7 +732,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Loan Requirement</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Proportion of leads that need a loan — informs partnership with financial institutions</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Proportion of leads that need a loan — informs partnership with financial institutions</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
@@ -751,7 +751,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         <Card>
           <CardHeader>
             <CardTitle>Income Status</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Family income brackets across your leads — helps position scholarship and loan options appropriately</p>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Family income brackets across your leads — helps position scholarship and loan options appropriately</p>
           </CardHeader>
           <CardContent>
             {incomeData.length > 0 ? (
@@ -773,7 +773,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       <Card>
         <CardHeader>
           <CardTitle>Activity Heatmap — Last 7 Days</CardTitle>
-          <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Daily action count per team member — green indicates active engagement, red indicates no recorded actions that day</p>
+          <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Daily action count per team member — green indicates active engagement, red indicates no recorded actions that day</p>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {activityHeatmap.length > 0 ? (

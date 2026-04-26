@@ -97,7 +97,7 @@ export function RealtimeNotifier({ employeeId, role, orgId }: Props) {
       }, (p) => {
         if (p.new.resolution === 'explanation_requested' && p.old.resolution !== 'explanation_requested') {
           playSound('breach')
-          notify('Explanation requested for your SLA breach', 'error')
+          notify('Explanation requested for your deadline breach', 'error')
         }
       })
       .subscribe()
@@ -123,7 +123,7 @@ export function RealtimeNotifier({ employeeId, role, orgId }: Props) {
         }, (p) => {
           if (p.new.owner_id !== employeeId) {
             playSound('breach')
-            notify(`Team SLA breach — stage ${p.new.stage}`, 'error')
+            notify(`Team deadline breach — stage ${p.new.stage}`, 'error')
           }
         })
         .subscribe()

@@ -195,7 +195,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
             {overdue && (
               <span className="flex items-center gap-1 text-xs text-red-600 font-semibold">
                 <AlertTriangle size={12} />
-                SLA Overdue
+                Deadline Breached
               </span>
             )}
           </div>
@@ -221,7 +221,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Stage & Pipeline</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Move the lead through the admission pipeline — stage changes trigger SLA deadline resets automatically</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Move the lead through the admission pipeline — stage changes trigger deadline resets automatically</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -253,7 +253,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {lead.sla_deadline && (
                   <div className={`p-3 rounded-lg ${overdue ? 'bg-red-50 border border-red-200' : 'bg-slate-50 border border-slate-200'}`}>
-                    <p className="text-xs font-medium text-slate-500 mb-1">SLA Deadline</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1">Response Deadline</p>
                     <p className={`font-semibold ${overdue ? 'text-red-600' : 'text-slate-700'}`}>{formatDateTime(lead.sla_deadline)}</p>
                   </div>
                 )}
@@ -279,7 +279,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Lead Information</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Academic profile and course preferences — completing this section enables advancement to the Follow Up stage</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Academic profile and course preferences — completing this section enables advancement to the Follow Up stage</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -297,7 +297,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Parent & Financial</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Decision-maker details and financial profile — helps counsel the right stakeholder and assess loan eligibility</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Decision-maker details and financial profile — helps counsel the right stakeholder and assess loan eligibility</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -329,7 +329,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Payments</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Record fees collected from this lead — amounts feed into the dashboard and analytics payment summaries</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Record fees collected from this lead — amounts feed into the dashboard and analytics payment summaries</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
@@ -378,7 +378,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Ownership</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Assigned counsellor and their reporting manager — use Transfer to reassign this lead</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Assigned counsellor and their reporting manager — use Transfer to reassign this lead</p>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div>
@@ -405,7 +405,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Activity Timeline</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 uppercase tracking-widest font-semibold">Chronological log of all actions taken on this lead — stage changes, comments, and field updates</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Chronological log of all actions taken on this lead — stage changes, comments, and field updates</p>
             </CardHeader>
             <div className="divide-y divide-brand-50 max-h-[500px] overflow-y-auto">
               {activities.length === 0 ? (

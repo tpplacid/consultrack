@@ -92,7 +92,7 @@ export const LeadCard = memo(function LeadCard({
       {lead.sla_deadline && (
         <div className={`flex items-center gap-1 mt-2.5 text-xs ${overdue ? 'text-red-500 font-medium' : 'text-brand-400'}`}>
           {overdue ? <AlertTriangle size={10} /> : <Clock size={10} />}
-          <span>SLA: {formatDateTime(lead.sla_deadline)}</span>
+          <span>Deadline: {formatDateTime(lead.sla_deadline)}</span>
         </div>
       )}
       {lead.next_followup_at && (
