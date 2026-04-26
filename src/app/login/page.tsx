@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
+async function lookupOrg(slug: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('orgs')
+    .select('id, name, slug, logo_url')
+    .eq('slug', slug)
+    .single()
+  if (error || !data) return null
+  return data
+}
+
 type Mode = 'workspace' | 'org-login' | 'email'
 
 export default function LoginPage() {
@@ -21,19 +32,13 @@ export default function LoginPage() {
     const s = slug.trim().toLowerCase()
     if (!s) return
     setLoading(true)
-    const res = await fetch(`/api/org/${s}`)
-    if (res.status === 404) {
+    const found = await lookupOrg(s)
+    if (!found) {
       toast.error(`No workspace found for "${s}". Check the URL and try again.`)
       setLoading(false)
       return
     }
-    if (!res.ok) {
-      toast.error('Something went wrong. Try again in a moment.')
-      setLoading(false)
-      return
-    }
-    const { org } = await res.json()
-    setOrg(org)
+    setOrg(found)
     setMode('org-login')
     setLoading(false)
   }
