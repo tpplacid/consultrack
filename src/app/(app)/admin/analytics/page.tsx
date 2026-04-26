@@ -1,5 +1,5 @@
 import { requireRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AnalyticsClient } from './AnalyticsClient'
 import { Lead, Employee } from '@/types'
 import { unstable_cache } from 'next/cache'
@@ -8,7 +8,7 @@ import { subDays, subMonths, format } from 'date-fns'
 // Cache analytics data per org for 3 minutes — safe because each cache key is org-scoped.
 const getAnalyticsData = unstable_cache(
   async (orgId: string) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const thirtyDaysAgo  = format(subDays(new Date(), 30), 'yyyy-MM-dd')
     const twelveMonthsAgo = format(subMonths(new Date(), 12), 'yyyy-MM-dd')
 

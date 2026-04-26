@@ -1,12 +1,12 @@
 import { requireRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminLeadsClient } from './AdminLeadsClient'
 import { Employee, Lead } from '@/types'
 import { unstable_cache } from 'next/cache'
 
 const getAdminLeadsData = unstable_cache(
   async (orgId: string) => {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const [{ data: leads }, { data: employees }] = await Promise.all([
       supabase
         .from('leads')
