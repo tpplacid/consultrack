@@ -46,9 +46,9 @@ interface Props {
   orgRoles: OrgRole[]
 }
 
-const INPUT = 'w-full px-3 py-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition'
-const BTN_PRIMARY = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50'
-const BTN_GHOST = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] transition-all'
+const INPUT = 'w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-white placeholder-neutral-700 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30 transition'
+const BTN_PRIMARY = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-white text-black hover:bg-neutral-200 transition-all disabled:opacity-40'
+const BTN_GHOST = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-neutral-500 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all'
 
 export default function OrgDetailClient({ org, employees: initialEmployees, invites: initialInvites, orgRoles }: Props) {
   const [employees, setEmployees] = useState(initialEmployees)
@@ -151,65 +151,64 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const enabledCount = Object.values(features).filter(Boolean).length
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
+    <div className="min-h-screen p-6 md:p-10" style={{ background: '#000' }}>
       <div className="max-w-3xl mx-auto">
 
         {/* Back */}
         <Link href="/superadmin/orgs"
-          className="inline-flex items-center gap-1.5 text-slate-500 hover:text-white text-sm mb-6 transition-colors">
-          <ArrowLeft size={14} />
+          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-white text-sm mb-6 transition-colors">
+          <ArrowLeft size={13} />
           All organisations
         </Link>
 
         {/* Header */}
         <div className="flex items-start justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.25) 0%, rgba(13,148,136,0.15) 100%)', color: '#2dd4bf', border: '1px solid rgba(20,184,166,0.2)' }}>
-              {orgName.charAt(0).toUpperCase()}
-            </div>
+            {org.logo_url ? (
+              <img src={org.logo_url} alt={orgName}
+                className="w-11 h-11 rounded-xl object-contain flex-shrink-0 bg-white/[0.05]" />
+            ) : (
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-base flex-shrink-0 bg-white/[0.06] text-white">
+                {orgName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white">{orgName}</h1>
+                <h1 className="text-xl font-semibold text-white tracking-tight">{orgName}</h1>
                 {isLive
-                  ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
-                      <Radio size={8} className="fill-green-400" />LIVE
+                  ? <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <Radio size={7} className="fill-emerald-400" />LIVE
                     </span>
-                  : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-400 border border-slate-500/20">
+                  : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-white/[0.05] text-neutral-600 border border-white/[0.06]">
                       OFFLINE
                     </span>
                 }
               </div>
-              <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-1.5">
+              <p className="text-neutral-600 text-sm mt-0.5 flex items-center gap-1.5">
                 <span>/{orgSlug}</span>
-                <span className="text-slate-700">·</span>
+                <span className="text-neutral-800">·</span>
                 <span>{employees.length} employee{employees.length !== 1 ? 's' : ''}</span>
-                <span className="text-slate-700">·</span>
+                <span className="text-neutral-800">·</span>
                 <span>{enabledCount}/6 features</span>
               </p>
             </div>
           </div>
           <a href={`/${org.slug}`} target="_blank" rel="noopener noreferrer"
             className={BTN_GHOST}>
-            <ExternalLink size={13} />
+            <ExternalLink size={12} />
             Open login
           </a>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl mb-6 w-fit border border-white/[0.06]"
-          style={{ background: 'rgba(255,255,255,0.03)' }}>
+        <div className="flex gap-1 p-1 rounded-lg mb-6 w-fit border border-white/[0.06] bg-white/[0.02]">
           {(['employees', 'invites', 'settings'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all capitalize ${
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                 tab === t
-                  ? 'text-white'
-                  : 'text-slate-500 hover:text-white'
+                  ? 'text-white bg-white/[0.1] border border-white/[0.1]'
+                  : 'text-neutral-600 hover:text-white'
               }`}
-              style={tab === t ? {
-                background: 'linear-gradient(135deg, rgba(20,184,166,0.25) 0%, rgba(20,184,166,0.1) 100%)',
-                boxShadow: 'inset 0 0 0 1px rgba(20,184,166,0.3)',
-              } : undefined}
             >
               {t === 'employees' ? `Employees (${employees.length})` : t === 'invites' ? `Invites (${invites.length})` : 'Settings'}
             </button>
@@ -222,7 +221,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className="flex justify-end mb-4">
               <button onClick={() => setShowAddEmployee(v => !v)}
                 className={BTN_PRIMARY}
-                style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)', boxShadow: '0 4px 14px rgba(20,184,166,0.25)' }}>
+                style={{ background: '#fff', color: '#000' }}>
                 <Plus size={14} />Add Employee
               </button>
             </div>
@@ -230,7 +229,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             {showAddEmployee && (
               <form onSubmit={handleAddEmployee}
                 className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <h3 className="text-sm font-semibold text-slate-300 mb-1">New employee</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -256,7 +255,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={addingEmp}
                     className={BTN_PRIMARY}
-                    style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)' }}>
+                    style={{ background: '#fff', color: '#000' }}>
                     {addingEmp ? <Loader2 size={13} className="animate-spin" /> : null}
                     {addingEmp ? 'Adding…' : 'Add employee'}
                   </button>
@@ -276,10 +275,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 {employees.map(emp => (
                   <div key={emp.id}
                     className="flex items-center justify-between rounded-xl px-4 py-3 border border-white/[0.06]"
-                    style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    style={{ background: 'rgba(255,255,255,0.02)' }}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ background: 'rgba(20,184,166,0.15)', color: '#2dd4bf' }}>
+                        style={{ background: 'rgba(255,255,255,0.07)', color: '#fff' }}>
                         {emp.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -309,7 +308,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className="flex justify-end mb-4">
               <button onClick={() => setShowAddInvite(v => !v)}
                 className={BTN_PRIMARY}
-                style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)', boxShadow: '0 4px 14px rgba(20,184,166,0.25)' }}>
+                style={{ background: '#fff', color: '#000' }}>
                 <Link2 size={14} />Generate Invite Link
               </button>
             </div>
@@ -317,7 +316,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             {showAddInvite && (
               <form onSubmit={handleAddInvite}
                 className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <h3 className="text-sm font-semibold text-slate-300 mb-1">Generate invite link</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -341,7 +340,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={addingInv}
                     className={BTN_PRIMARY}
-                    style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)' }}>
+                    style={{ background: '#fff', color: '#000' }}>
                     {addingInv ? <Loader2 size={13} className="animate-spin" /> : null}
                     {addingInv ? 'Generating…' : 'Generate'}
                   </button>
@@ -366,7 +365,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       className={`rounded-xl px-4 py-3 border transition-all ${
                         isUsed ? 'opacity-50' : isExpired ? 'border-red-900/40' : 'border-white/[0.06]'
                       }`}
-                      style={{ background: 'rgba(255,255,255,0.03)' }}>
+                      style={{ background: 'rgba(255,255,255,0.02)' }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -382,7 +381,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                         </div>
                         {!isUsed && !isExpired && (
                           <button onClick={() => copyLink(inv.token, inv.link)}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-white/[0.07] hover:bg-white/[0.07] transition-all">
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-white/[0.06] hover:bg-white/[0.07] transition-all">
                             {copiedToken === inv.token ? <><Check size={11} className="text-green-400" />Copied</> : <><Copy size={11} />Copy</>}
                           </button>
                         )}
@@ -408,11 +407,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className={`rounded-2xl p-5 border transition-all ${
               isLive ? 'border-green-500/20' : 'border-white/[0.07]'
             }`}
-              style={{ background: isLive ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)' }}>
+              style={{ background: isLive ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)' }}>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <h2 className="text-sm font-semibold text-slate-300">Live status</h2>
+                    <h2 className="text-sm font-medium text-white">Live status</h2>
                     {isLive
                       ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
                           <Radio size={8} className="fill-green-400" />LIVE
@@ -430,26 +429,26 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 </div>
                 <button type="button" onClick={() => setIsLive(v => !v)}
                   className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    isLive ? 'bg-green-500' : 'bg-white/[0.1]'
+                    isLive ? 'bg-emerald-500' : 'bg-white/[0.08]'
                   }`}>
                   <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${
-                    isLive ? 'translate-x-5' : 'translate-x-0.5'
+                    isLive ? 'translate-x-5' : 'translate-x-0.5 bg-white'
                   }`} />
                 </button>
               </div>
             </div>
 
             {/* Org details */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.07]"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <h2 className="text-sm font-semibold text-slate-300">Organisation details</h2>
+            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <h2 className="text-sm font-medium text-white">Organisation details</h2>
               <div>
                 <label className="block text-xs text-slate-500 mb-1.5">Name</label>
                 <input type="text" required value={orgName} onChange={e => setOrgName(e.target.value)} className={INPUT} />
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1.5">URL slug</label>
-                <div className="flex items-center rounded-xl overflow-hidden border border-white/[0.1] bg-white/[0.05] focus-within:ring-2 focus-within:ring-teal-500/40 focus-within:border-teal-500/40 transition">
+                <div className="flex items-center rounded-xl overflow-hidden border border-white/[0.1] bg-white/[0.05] focus-within:ring-1 focus-within:ring-white/20 focus-within:border-white/20 transition">
                   <span className="px-3 py-2.5 text-sm text-slate-600 border-r border-white/[0.08] shrink-0">consultrackk.vercel.app/</span>
                   <input type="text" required value={orgSlug}
                     onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
@@ -459,11 +458,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Brand palette */}
-            <div className="rounded-2xl p-5 border border-white/[0.07]"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
+            <div className="rounded-2xl p-5 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
               <div className="mb-4">
-                <h2 className="text-sm font-semibold text-slate-300">Brand palette</h2>
-                <p className="text-xs text-slate-600 mt-0.5">Customises the sidebar and accent colour for this org</p>
+                <h2 className="text-sm font-medium text-white">Brand palette</h2>
+                <p className="text-xs text-neutral-600 mt-0.5">Customises the sidebar and accent colour for this org</p>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {PALETTES.map(p => (
@@ -488,11 +487,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Feature flags */}
-            <div className="rounded-2xl p-5 space-y-1 border border-white/[0.07]"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
+            <div className="rounded-2xl p-5 space-y-1 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
               <div className="mb-4">
-                <h2 className="text-sm font-semibold text-slate-300">Feature access</h2>
-                <p className="text-xs text-slate-600 mt-0.5">Control which modules this organisation can access</p>
+                <h2 className="text-sm font-medium text-white">Feature access</h2>
+                <p className="text-xs text-neutral-600 mt-0.5">Control which modules this organisation can access</p>
               </div>
               {FEATURE_CONFIG.map(f => (
                 <div key={f.key}
@@ -507,10 +506,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   </div>
                   <button type="button" onClick={() => setFeatures(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                      features[f.key] ? 'bg-teal-500' : 'bg-white/[0.1]'
+                      features[f.key] ? 'bg-white' : 'bg-white/[0.08]'
                     }`}>
                     <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${
-                      features[f.key] ? 'translate-x-5' : 'translate-x-0.5'
+                      features[f.key] ? 'translate-x-5 bg-black' : 'translate-x-0.5 bg-white'
                     }`} />
                   </button>
                 </div>
@@ -518,11 +517,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Meta integration config */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.07]"
-              style={{ background: 'rgba(255,255,255,0.03)' }}>
+            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
               <div>
-                <h2 className="text-sm font-semibold text-slate-300">Meta integration</h2>
-                <p className="text-xs text-slate-600 mt-0.5">Connects this org to a specific Facebook/Instagram page for auto-importing leads</p>
+                <h2 className="text-sm font-medium text-white">Meta integration</h2>
+                <p className="text-xs text-neutral-600 mt-0.5">Connects this org to a specific Facebook/Instagram page for auto-importing leads</p>
               </div>
               <div>
                 <label className="block text-xs text-slate-500 mb-1.5">Facebook Page ID</label>
@@ -550,7 +549,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
             <button type="submit" disabled={savingSettings}
               className={BTN_PRIMARY}
-              style={{ background: 'linear-gradient(135deg, #14b8a6, #0d9488)', boxShadow: '0 4px 14px rgba(20,184,166,0.25)' }}>
+              style={{ background: '#fff', color: '#000' }}>
               {savingSettings ? <Loader2 size={14} className="animate-spin" /> : null}
               {savingSettings ? 'Saving…' : 'Save Changes'}
             </button>
