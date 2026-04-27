@@ -17,12 +17,6 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  function handleLogout() {
-    // Navigate directly to the logout GET route. The server clears the cookie
-    // and redirects to /login in a single response — no client-side fetch race
-    // that Arc and other strict browsers can interrupt before Set-Cookie lands.
-    window.location.href = '/api/superadmin/logout'
-  }
 
   const NavContent = () => (
     <div className="flex flex-col h-full" style={{ background: 'linear-gradient(180deg, #0c1c28 0%, #091520 100%)' }}>
@@ -75,11 +69,14 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
 
       {/* Footer */}
       <div className="p-3 border-t border-white/[0.06]">
-        <button onClick={handleLogout}
+        {/* Plain <a> — no JS, no React routing. Browser does a native GET to
+            the logout route which clears the cookie and 302s to /login.
+            Most reliable logout across all browsers including Arc. */}
+        <a href="/api/superadmin/logout"
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-white hover:bg-white/[0.05] transition-all">
           <LogOut size={16} />
           Sign out
-        </button>
+        </a>
       </div>
     </div>
   )

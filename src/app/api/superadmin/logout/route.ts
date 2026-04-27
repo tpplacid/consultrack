@@ -23,6 +23,10 @@ export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin
   const res = NextResponse.redirect(`${origin}/superadmin/login`, { status: 302 })
   clearCookie(res)
+  // Prevent Arc / CDN / browser from caching this redirect —
+  // every logout must hit the server so the Set-Cookie is always sent fresh.
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  res.headers.set('Pragma', 'no-cache')
   return res
 }
 
