@@ -19,9 +19,11 @@ export default async function SuperAdminOrgsPage() {
   await requireSuperAdmin()
   const supabase = createAdminClient()
 
+  // Select * so the query never breaks if optional columns (is_live, etc.)
+  // haven't been migrated yet — those fields just come back as undefined.
   const { data: orgs } = await supabase
     .from('orgs')
-    .select('id, name, slug, created_at, features, is_live')
+    .select('*')
     .order('created_at', { ascending: false })
 
   const orgIds = (orgs || []).map(o => o.id)

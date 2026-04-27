@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function SuperAdminLoginPage() {
-  const router = useRouter()
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -19,7 +17,11 @@ export default function SuperAdminLoginPage() {
       body: JSON.stringify({ password }),
     })
     if (res.ok) {
-      router.push('/superadmin/orgs')
+      // Hard redirect — forces full server re-render so the protected layout
+      // picks up the new cookie. router.push does client-side navigation only
+      // and can miss the cookie in some browsers.
+      window.location.href = '/superadmin/orgs'
+      return
     } else {
       const { error } = await res.json()
       setError(error || 'Invalid password')

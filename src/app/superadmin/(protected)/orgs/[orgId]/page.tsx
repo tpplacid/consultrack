@@ -12,9 +12,11 @@ export default async function OrgDetailPage({ params }: Props) {
   const { orgId } = await params
   const supabase = createAdminClient()
 
+  // Select * so optional columns (is_live, brand_palette, meta_config, etc.)
+  // don't break the query if the DB migration hasn't run yet.
   const { data: org } = await supabase
     .from('orgs')
-    .select('id, name, slug, logo_url, features, brand_palette, meta_config, is_live, created_at')
+    .select('*')
     .eq('id', orgId)
     .single()
 
