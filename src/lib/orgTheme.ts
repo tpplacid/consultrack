@@ -1,10 +1,12 @@
 // Per-org brand palette presets.
 // Each palette overrides the CSS custom properties used in @theme.
+// Custom hex colours are also supported — getPalette() auto-derives all
+// shade variants from the primary hex so orgs aren't limited to presets.
 
 export interface Palette {
   key: string
   label: string
-  /** Tailwind preview class for the swatch */
+  /** Hex colour used for the swatch preview */
   swatch: string
   css: {
     '--color-brand-50': string
@@ -23,7 +25,7 @@ export interface Palette {
 export const PALETTES: Palette[] = [
   {
     key: 'teal',
-    label: 'Teal (default)',
+    label: 'Teal',
     swatch: '#3d9191',
     css: {
       '--color-brand-50':  '#e6f4f4',
@@ -40,7 +42,7 @@ export const PALETTES: Palette[] = [
   },
   {
     key: 'blue',
-    label: 'Ocean Blue',
+    label: 'Blue',
     swatch: '#2563eb',
     css: {
       '--color-brand-50':  '#eff6ff',
@@ -57,7 +59,7 @@ export const PALETTES: Palette[] = [
   },
   {
     key: 'green',
-    label: 'Forest Green',
+    label: 'Green',
     swatch: '#16a34a',
     css: {
       '--color-brand-50':  '#f0fdf4',
@@ -142,7 +144,7 @@ export const PALETTES: Palette[] = [
   },
   {
     key: 'slate',
-    label: 'Midnight Slate',
+    label: 'Slate',
     swatch: '#475569',
     css: {
       '--color-brand-50':  '#f8fafc',
@@ -161,7 +163,79 @@ export const PALETTES: Palette[] = [
 
 export const DEFAULT_PALETTE = 'teal'
 
+// ── Custom colour support ──────────────────────────────────────────────────
+// When brand_palette is a hex string (e.g. "#c0392b") instead of a key,
+// we derive all 10 shade variants algorithmically from the primary hue.
+
+function hexToHsl(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l   = (max + min) / 2
+  if (max === min) return [0, 0, l * 100]
+  const d = max - min
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+  let h = 0
+  if (max === r)      h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+  else if (max === g) h = ((b - r) / d + 2) / 6
+  else                h = ((r - g) / d + 4) / 6
+  return [h * 360, s * 100, l * 100]
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360
+  s = Math.max(0, Math.min(100, s)) / 100
+  l = Math.max(0, Math.min(100, l)) / 100
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) => {
+    const k     = (n + h / 30) % 12
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+    return Math.round(255 * color).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+
+export function generatePaletteFromHex(primaryHex: string): Palette['css'] {
+  const [h, s, l] = hexToHsl(primaryHex)
+  // Light shades — tinted, progressively lighter
+  const l50  = 96
+  const l100 = 90
+  const l200 = 80
+  const l300 = 67
+  // Dark shades — sidebar-suitable: brand-800 is always ≤ 22% lightness
+  const l500 = Math.max(l - 8,  5)
+  const l600 = Math.max(l - 16, 4)
+  const l700 = Math.min(Math.max(l * 0.45, 3), 24)
+  const l800 = Math.min(Math.max(l * 0.30, 2), 20)
+  const l900 = Math.min(Math.max(l * 0.18, 2), 14)
+  const sDark = Math.min(s + 8, 90)
+  return {
+    '--color-brand-50':  hslToHex(h, Math.max(s * 0.2, 8),  l50),
+    '--color-brand-100': hslToHex(h, Math.max(s * 0.35, 12), l100),
+    '--color-brand-200': hslToHex(h, Math.max(s * 0.55, 20), l200),
+    '--color-brand-300': hslToHex(h, Math.max(s * 0.75, 30), l300),
+    '--color-brand-400': primaryHex,
+    '--color-brand-500': hslToHex(h, sDark, l500),
+    '--color-brand-600': hslToHex(h, sDark, l600),
+    '--color-brand-700': hslToHex(h, sDark, l700),
+    '--color-brand-800': hslToHex(h, sDark, l800),
+    '--color-brand-900': hslToHex(h, sDark, l900),
+  }
+}
+
 export function getPalette(key: string | null | undefined): Palette {
+  if (!key) return PALETTES[0]
+  // Custom hex colour — derive shades algorithmically
+  if (key.startsWith('#') && key.length >= 4) {
+    return {
+      key,
+      label: 'Custom',
+      swatch: key,
+      css: generatePaletteFromHex(key),
+    }
+  }
   return PALETTES.find(p => p.key === key) ?? PALETTES[0]
 }
 

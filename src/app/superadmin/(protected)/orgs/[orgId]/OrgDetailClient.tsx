@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
-  Users, Mail, Link2, Loader2, Radio,
+  Users, Mail, Link2, Loader2, Radio, Pipette,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 
@@ -68,6 +68,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
   const [savingSettings, setSavingSettings] = useState(false)
+  const colorInputRef = useRef<HTMLInputElement>(null)
 
   const [showAddEmployee, setShowAddEmployee] = useState(false)
   const [empName, setEmpName] = useState('')
@@ -461,29 +462,115 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className="rounded-2xl p-5 border border-white/[0.06]"
               style={{ background: 'rgba(255,255,255,0.02)' }}>
               <div className="mb-4">
-                <h2 className="text-sm font-medium text-white">Brand palette</h2>
-                <p className="text-xs text-neutral-600 mt-0.5">Customises the sidebar and accent colour for this org</p>
+                <h2 className="text-sm font-medium text-white">Brand colour</h2>
+                <p className="text-xs text-neutral-600 mt-0.5">Sets the sidebar and accent colour for this org</p>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {PALETTES.map(p => (
-                  <button key={p.key} type="button" onClick={() => setBrandPalette(p.key)}
-                    className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all ${
-                      brandPalette === p.key
-                        ? 'border-white/30 bg-white/[0.08]'
-                        : 'border-transparent hover:bg-white/[0.04]'
-                    }`}>
-                    <div className="w-8 h-8 rounded-full flex-shrink-0 relative"
-                      style={{ backgroundColor: p.swatch }}>
-                      {brandPalette === p.key && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Check size={14} className="text-white drop-shadow" />
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-400 text-center leading-tight">{p.label}</span>
+
+              {/* Preset swatches */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {PALETTES.map(p => {
+                  const active = brandPalette === p.key
+                  return (
+                    <button key={p.key} type="button" onClick={() => setBrandPalette(p.key)}
+                      className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all ${
+                        active ? 'border-white/30 bg-white/[0.08]' : 'border-transparent hover:bg-white/[0.04]'
+                      }`}>
+                      <div className="w-8 h-8 rounded-full flex-shrink-0 relative"
+                        style={{ backgroundColor: p.swatch }}>
+                        {active && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Check size={14} className="text-white drop-shadow" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-neutral-500 text-center leading-tight">{p.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px bg-white/[0.06]" />
+                <span className="text-[10px] text-neutral-700 font-medium uppercase tracking-wide">or custom</span>
+                <div className="flex-1 h-px bg-white/[0.06]" />
+              </div>
+
+              {/* Custom colour picker */}
+              <div className="flex items-center gap-3">
+                {/* Swatch preview + opens native colour wheel */}
+                <div className="relative flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => colorInputRef.current?.click()}
+                    title="Pick a custom colour"
+                    className={`w-10 h-10 rounded-xl border-2 transition-all flex items-center justify-center overflow-hidden ${
+                      brandPalette.startsWith('#')
+                        ? 'border-white/40 ring-1 ring-white/20'
+                        : 'border-white/[0.08] hover:border-white/20'
+                    }`}
+                    style={{
+                      background: brandPalette.startsWith('#')
+                        ? brandPalette
+                        : 'conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+                    }}
+                  >
+                    {!brandPalette.startsWith('#') && (
+                      <Pipette size={14} className="text-white drop-shadow-sm" />
+                    )}
+                    {brandPalette.startsWith('#') && (
+                      <Check size={14} className="text-white drop-shadow" />
+                    )}
                   </button>
-                ))}
+                  {/* Hidden native colour input — triggers OS colour wheel */}
+                  <input
+                    ref={colorInputRef}
+                    type="color"
+                    className="sr-only"
+                    value={brandPalette.startsWith('#') ? brandPalette : '#3d9191'}
+                    onChange={e => setBrandPalette(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex-1">
+                  {brandPalette.startsWith('#') ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={brandPalette}
+                        onChange={e => {
+                          const v = e.target.value.trim()
+                          if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBrandPalette(v)
+                        }}
+                        maxLength={7}
+                        className="w-28 px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-white font-mono focus:outline-none focus:ring-1 focus:ring-white/20 uppercase"
+                        placeholder="#000000"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setBrandPalette(DEFAULT_PALETTE)}
+                        className="text-xs text-neutral-600 hover:text-white transition-colors"
+                      >
+                        Reset to preset
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-neutral-400">Custom colour</p>
+                      <p className="text-xs text-neutral-700 mt-0.5">Click the wheel to open the colour picker</p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Live preview bar */}
+              {brandPalette.startsWith('#') && brandPalette.length === 7 && (
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="h-2 flex-1 rounded-full"
+                    style={{ background: `linear-gradient(to right, ${brandPalette}22, ${brandPalette}88, ${brandPalette})` }} />
+                  <span className="text-[10px] text-neutral-700">preview</span>
+                </div>
+              )}
             </div>
 
             {/* Feature flags */}
