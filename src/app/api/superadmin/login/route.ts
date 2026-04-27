@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { COOKIE_NAME, createSessionToken } from '@/lib/superadmin'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // ── In-memory rate limiter ─────────────────────────────────────────────────
 // Max 5 failed attempts per IP in a 15-minute window.
@@ -76,7 +77,19 @@ export async function POST(req: NextRequest) {
 
   clearFailures(ip)
 
-  const token = createSessionToken(expected)
+  // Generate a random, one-time-use token and persist it.
+  // Logout deletes the row — any browser holding the cookie becomes invalid.
+  const token   = createSessionToken()
+  const supabase = createAdminClient()
+  const { error: dbErr } = await supabase
+    .from('superadmin_sessions')
+    .insert({ token })
+
+  if (dbErr) {
+    console.error('Failed to create superadmin session:', dbErr.message)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+
   const res = NextResponse.json({ ok: true })
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,

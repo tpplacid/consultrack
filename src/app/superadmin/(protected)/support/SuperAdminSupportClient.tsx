@@ -36,27 +36,27 @@ interface Ticket {
 }
 
 const STATUS_STYLES: Record<TicketStatus, string> = {
-  open: 'bg-amber-50 text-amber-700 border-amber-200',
-  in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-  resolved: 'bg-green-50 text-green-700 border-green-200',
+  open:        'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  in_progress: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  resolved:    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
 }
 const STATUS_LABELS: Record<TicketStatus, string> = {
-  open: 'Open',
+  open:        'Open',
   in_progress: 'In Progress',
-  resolved: 'Resolved',
+  resolved:    'Resolved',
 }
 const TYPE_LABELS: Record<TicketType, string> = {
   upgrade_request: '🔒 Upgrade',
-  general: 'General',
-  bug: '🐛 Bug',
+  general:         'General',
+  bug:             '🐛 Bug',
 }
 const FEATURE_LABELS: Record<string, string> = {
-  lead_crm: 'Lead CRM',
-  sla: 'Deadline Breach',
-  pipeline: 'Pipeline',
-  roles: 'Roles',
+  lead_crm:   'Lead CRM',
+  sla:        'Deadline Breach',
+  pipeline:   'Pipeline',
+  roles:      'Roles',
   attendance: 'Attendance',
-  meta: 'Meta Integration',
+  meta:       'Meta Integration',
 }
 
 interface Props { initialTickets: Ticket[] }
@@ -69,13 +69,12 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
     ),
   })
 
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets.map(normalise))
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [tickets, setTickets]       = useState<Ticket[]>(initialTickets.map(normalise))
+  const [expanded, setExpanded]     = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<TicketStatus | 'all'>('all')
 
-  // Per-ticket state
   const [statusSaving, setStatusSaving] = useState<string | null>(null)
-  const [replyBody, setReplyBody] = useState<Record<string, string>>({})
+  const [replyBody, setReplyBody]       = useState<Record<string, string>>({})
   const [sendingReply, setSendingReply] = useState<string | null>(null)
 
   const bottomRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -125,31 +124,35 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
     setSendingReply(null)
   }
 
-  const openCount = tickets.filter(t => t.status === 'open').length
+  const openCount       = tickets.filter(t => t.status === 'open').length
   const inProgressCount = tickets.filter(t => t.status === 'in_progress').length
+  const resolvedCount   = tickets.filter(t => t.status === 'resolved').length
 
   return (
-    <div className="min-h-screen p-6 md:p-10">
+    <div className="min-h-screen p-6 md:p-10" style={{ background: '#000' }}>
       <div className="max-w-4xl mx-auto">
+
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Support Tickets</h1>
-          <p className="text-slate-400 text-sm mt-0.5">Requests raised by orgs across all workspaces</p>
+        <div className="mb-10">
+          <p className="text-[10px] font-semibold tracking-widest uppercase text-neutral-600 mb-2">
+            Customer support
+          </p>
+          <h1 className="text-2xl font-semibold text-white tracking-tight">Support Tickets</h1>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: 'Open',        count: openCount,       color: 'text-amber-400', icon: <AlertCircle size={18} /> },
-            { label: 'In Progress', count: inProgressCount, color: 'text-blue-400',  icon: <Clock size={18} /> },
-            { label: 'Resolved',    count: tickets.filter(t => t.status === 'resolved').length, color: 'text-green-400', icon: <CheckCircle2 size={18} /> },
+            { label: 'Open',        count: openCount,       icon: <AlertCircle size={14} />,  color: 'text-amber-400'   },
+            { label: 'In Progress', count: inProgressCount, icon: <Clock size={14} />,        color: 'text-blue-400'    },
+            { label: 'Resolved',    count: resolvedCount,   icon: <CheckCircle2 size={14} />, color: 'text-emerald-400' },
           ].map(s => (
-            <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex items-center gap-3">
-              <span className={s.color}>{s.icon}</span>
-              <div>
-                <p className={`text-xl font-bold ${s.color}`}>{s.count}</p>
-                <p className="text-xs text-slate-500">{s.label}</p>
+            <div key={s.label} className="rounded-xl px-4 py-3 border border-white/[0.08] bg-[#111]">
+              <div className={`flex items-center gap-1.5 mb-1 ${s.color}`}>
+                {s.icon}
+                <p className="text-xl font-semibold tabular-nums">{s.count}</p>
               </div>
+              <p className="text-[11px] text-neutral-600">{s.label}</p>
             </div>
           ))}
         </div>
@@ -159,11 +162,13 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
           {(['all', 'open', 'in_progress', 'resolved'] as const).map(f => (
             <button key={f} onClick={() => setFilterStatus(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition capitalize ${
-                filterStatus === f ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white bg-slate-900 border border-slate-800'
+                filterStatus === f
+                  ? 'bg-white text-black'
+                  : 'text-neutral-500 hover:text-white bg-white/[0.04] border border-white/[0.07]'
               }`}>
               {f === 'all' ? 'All' : f === 'in_progress' ? 'In Progress' : f.charAt(0).toUpperCase() + f.slice(1)}
               {f !== 'all' && (
-                <span className="ml-1.5 opacity-70">{tickets.filter(t => t.status === f).length}</span>
+                <span className="ml-1.5 opacity-60">{tickets.filter(t => t.status === f).length}</span>
               )}
             </button>
           ))}
@@ -171,48 +176,50 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
 
         {/* Tickets */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-slate-500 text-sm">
-            No tickets {filterStatus !== 'all' ? `with status "${STATUS_LABELS[filterStatus as TicketStatus]}"` : 'yet'}.
+          <div className="text-center py-16 rounded-xl border border-white/[0.08] bg-[#111]">
+            <p className="text-neutral-600 text-sm">
+              No tickets {filterStatus !== 'all' ? `with status "${STATUS_LABELS[filterStatus as TicketStatus]}"` : 'yet'}.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
             {filtered.map(ticket => {
               const hasUnread = ticket.ticket_messages.some(m => m.sender_type === 'org')
               return (
-                <div key={ticket.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <div key={ticket.id} className="bg-[#111] border border-white/[0.08] rounded-xl overflow-hidden">
                   {/* Row */}
                   <button
                     onClick={() => setExpanded(expanded === ticket.id ? null : ticket.id)}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/50 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.04] transition-colors"
                   >
                     {ticket.status === 'resolved'
-                      ? <CheckCircle2 size={15} className="text-green-400 flex-shrink-0" />
+                      ? <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0" />
                       : ticket.status === 'in_progress'
                       ? <Clock size={15} className="text-blue-400 flex-shrink-0" />
                       : <AlertCircle size={15} className="text-amber-400 flex-shrink-0" />}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-white truncate">{ticket.subject}</span>
-                        <span className="text-[10px] text-slate-500 font-mono shrink-0">#{ticket.id.slice(0,8).toUpperCase()}</span>
+                        <span className="text-sm font-medium text-white truncate">{ticket.subject}</span>
+                        <span className="text-[10px] text-neutral-700 font-mono shrink-0">#{ticket.id.slice(0, 8).toUpperCase()}</span>
                         {hasUnread && expanded !== ticket.id && (
-                          <span className="w-2 h-2 rounded-full bg-teal-400 flex-shrink-0" title="New message from org" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-white flex-shrink-0" title="New message from org" />
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        <span className="text-teal-400 font-semibold">{ticket.org_name}</span>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        <span className="text-neutral-300 font-medium">{ticket.org_name}</span>
                         {' · '}{ticket.employee_name}
                         {' · '}{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
                         {ticket.ticket_messages.length > 0 && (
-                          <span className="text-slate-500"> · {ticket.ticket_messages.length} msg</span>
+                          <span className="text-neutral-700"> · {ticket.ticket_messages.length} msg</span>
                         )}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[10px] font-semibold text-slate-500">{TYPE_LABELS[ticket.type]}</span>
+                      <span className="text-[10px] font-semibold text-neutral-600">{TYPE_LABELS[ticket.type]}</span>
                       {ticket.feature_key && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-900/40 text-amber-400 font-semibold border border-amber-800/40">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.05] text-neutral-400 font-semibold border border-white/[0.08]">
                           {FEATURE_LABELS[ticket.feature_key] || ticket.feature_key}
                         </span>
                       )}
@@ -220,37 +227,37 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
                         {STATUS_LABELS[ticket.status]}
                       </span>
                       {expanded === ticket.id
-                        ? <ChevronUp size={14} className="text-slate-500" />
-                        : <ChevronDown size={14} className="text-slate-500" />}
+                        ? <ChevronUp size={14} className="text-neutral-600" />
+                        : <ChevronDown size={14} className="text-neutral-600" />}
                     </div>
                   </button>
 
                   {/* Expanded */}
                   {expanded === ticket.id && (
-                    <div className="border-t border-slate-800">
+                    <div className="border-t border-white/[0.07]">
                       {/* Status + meta bar */}
-                      <div className="flex items-center gap-4 px-4 py-3 bg-slate-800/30 border-b border-slate-800">
+                      <div className="flex items-center gap-4 px-4 py-3 bg-white/[0.02] border-b border-white/[0.06]">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Status</span>
+                          <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wide">Status</span>
                           <div className="relative">
                             <select
                               value={ticket.status}
                               onChange={e => updateStatus(ticket.id, e.target.value as TicketStatus)}
                               disabled={statusSaving === ticket.id}
-                              className="pl-3 pr-8 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none cursor-pointer disabled:opacity-60"
+                              className="pl-3 pr-8 py-1.5 bg-white/[0.06] border border-white/[0.1] rounded-lg text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none cursor-pointer disabled:opacity-60"
                             >
                               <option value="open">Open</option>
                               <option value="in_progress">In Progress</option>
                               <option value="resolved">Resolved</option>
                             </select>
                             {statusSaving === ticket.id
-                              ? <Loader2 size={10} className="animate-spin absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                              : <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />}
+                              ? <Loader2 size={10} className="animate-spin absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                              : <ChevronDown size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-600 pointer-events-none" />}
                           </div>
                         </div>
-                        <div className="text-xs text-slate-500">
-                          <span className="font-semibold text-slate-300">{ticket.employee_name}</span>
-                          {' '}·{' '}{ticket.employee_email}
+                        <div className="text-xs text-neutral-600">
+                          <span className="font-medium text-neutral-300">{ticket.employee_name}</span>
+                          {' · '}{ticket.employee_email}
                         </div>
                       </div>
 
@@ -258,10 +265,10 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
                       <div className="px-4 pt-4 pb-2 space-y-3 max-h-96 overflow-y-auto">
                         {/* Original message (org, right) */}
                         <div className="flex justify-end">
-                          <div className="max-w-[75%] bg-slate-700 rounded-2xl rounded-tr-sm px-4 py-2.5">
-                            <p className="text-[10px] font-bold text-teal-400 mb-1">{ticket.employee_name} · {ticket.org_name}</p>
+                          <div className="max-w-[75%] bg-white/[0.06] border border-white/[0.08] rounded-2xl rounded-tr-sm px-4 py-2.5">
+                            <p className="text-[10px] font-bold text-neutral-400 mb-1">{ticket.employee_name} · {ticket.org_name}</p>
                             <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">{ticket.message}</p>
-                            <p className="text-[10px] text-slate-400 mt-1">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</p>
+                            <p className="text-[10px] text-neutral-700 mt-1">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</p>
                           </div>
                         </div>
 
@@ -270,14 +277,14 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
                           <div key={msg.id} className={`flex ${msg.sender_type === 'org' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                               msg.sender_type === 'org'
-                                ? 'bg-slate-700 rounded-tr-sm'
-                                : 'bg-teal-900/60 border border-teal-800/40 rounded-tl-sm'
+                                ? 'bg-white/[0.06] border border-white/[0.08] rounded-tr-sm'
+                                : 'bg-white/[0.1] border border-white/[0.12] rounded-tl-sm'
                             }`}>
-                              <p className={`text-[10px] font-bold mb-1 ${msg.sender_type === 'org' ? 'text-teal-400' : 'text-teal-300'}`}>
+                              <p className="text-[10px] font-bold text-neutral-500 mb-1">
                                 {msg.sender_name}
                               </p>
                               <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">{msg.body}</p>
-                              <p className="text-[10px] text-slate-400 mt-1">
+                              <p className="text-[10px] text-neutral-700 mt-1">
                                 {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                               </p>
                             </div>
@@ -288,7 +295,7 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
                       </div>
 
                       {/* Reply input */}
-                      <div className="px-4 pb-4 pt-2 flex gap-2 items-end border-t border-slate-800 mt-2">
+                      <div className="px-4 pb-4 pt-2 flex gap-2 items-end border-t border-white/[0.06] mt-2">
                         <textarea
                           rows={2}
                           value={replyBody[ticket.id] ?? ''}
@@ -297,12 +304,12 @@ export default function SuperAdminSupportClient({ initialTickets }: Props) {
                             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendReply(ticket.id) }
                           }}
                           placeholder="Reply to this org… (Enter to send, Shift+Enter for new line)"
-                          className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                          className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder-neutral-700 focus:outline-none focus:ring-1 focus:ring-white/20 resize-none"
                         />
                         <button
                           onClick={() => handleSendReply(ticket.id)}
                           disabled={!replyBody[ticket.id]?.trim() || sendingReply === ticket.id}
-                          className="p-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl transition disabled:opacity-40 flex-shrink-0"
+                          className="p-2.5 bg-white hover:bg-neutral-200 text-black rounded-xl transition disabled:opacity-30 flex-shrink-0"
                         >
                           {sendingReply === ticket.id
                             ? <Loader2 size={16} className="animate-spin" />

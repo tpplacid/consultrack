@@ -2,24 +2,32 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // ── Superadmin cookie auth ─────────────────────────────────────────────────
-// Uses Web Crypto API (Edge-runtime safe). Must match createSessionToken()
-// in src/lib/superadmin.ts: HMAC-SHA256(key='ct-superadmin-session', data=password)
+// Random UUID token stored in superadmin_sessions table.
+// Revocation is immediate — deleting the row invalidates the session even if
+// Arc or any other browser holds onto the cookie forever.
 const SA_COOKIE = '__ct_sa'
 const NO_CACHE  = 'no-store, no-cache, must-revalidate'
 
 async function isSuperAdminToken(token: string | undefined): Promise<boolean> {
-  const password = process.env.SUPERADMIN_PASSWORD
-  if (!token || !password) return false
+  if (!token) return false
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceKey) return false
   try {
-    const enc = new TextEncoder()
-    const key = await crypto.subtle.importKey(
-      'raw', enc.encode('ct-superadmin-session'),
-      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/superadmin_sessions?token=eq.${encodeURIComponent(token)}&select=token&limit=1`,
+      {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+        },
+        // Edge runtime — must opt out of Next.js's default cache
+        cache: 'no-store',
+      },
     )
-    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(password))
-    const expected = Array.from(new Uint8Array(sig))
-      .map(b => b.toString(16).padStart(2, '0')).join('')
-    return token === expected
+    if (!res.ok) return false
+    const data = await res.json()
+    return Array.isArray(data) && data.length > 0
   } catch {
     return false
   }

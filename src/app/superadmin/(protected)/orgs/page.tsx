@@ -67,7 +67,7 @@ export default async function SuperAdminOrgsPage() {
             { label: 'Total employees', value: totalEmps },
             { label: 'Live',            value: liveCount },
           ].map(s => (
-            <div key={s.label} className="rounded-xl px-4 py-3 border border-white/[0.06] bg-white/[0.02]">
+            <div key={s.label} className="rounded-xl px-4 py-3 border border-white/[0.08] bg-[#111]">
               <p className="text-xl font-semibold text-white tabular-nums">{s.value}</p>
               <p className="text-[11px] text-neutral-600 mt-0.5">{s.label}</p>
             </div>
@@ -76,12 +76,12 @@ export default async function SuperAdminOrgsPage() {
 
         {/* Org list */}
         {!orgs || orgs.length === 0 ? (
-          <div className="text-center py-20 rounded-xl border border-white/[0.06]">
+          <div className="text-center py-20 rounded-xl border border-white/[0.08] bg-[#111]">
             <Building2 size={20} className="text-neutral-700 mx-auto mb-3" />
             <p className="text-neutral-400 text-sm font-medium">No organisations yet</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+          <div className="rounded-xl border border-white/[0.08] bg-[#111] overflow-hidden">
             {orgs.map((org, i) => {
               const features        = (org.features ?? {}) as Record<string, boolean>
               const empCount        = counts[org.id] ?? 0
@@ -94,8 +94,8 @@ export default async function SuperAdminOrgsPage() {
 
               return (
                 <div key={org.id}
-                  className={`flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.03] transition-colors group ${
-                    i !== 0 ? 'border-t border-white/[0.05]' : ''
+                  className={`flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.05] transition-colors group ${
+                    i !== 0 ? 'border-t border-white/[0.07]' : ''
                   }`}>
 
                   {/* Main clickable area */}

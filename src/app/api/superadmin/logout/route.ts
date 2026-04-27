@@ -1,54 +1,44 @@
 // GET /api/superadmin/logout
 //
-// Returns a 200 HTML page — NOT a redirect.
-// Why: every previous approach (302/307 + Set-Cookie) had a race condition in Arc
-// where the browser could navigate before fully committing the Set-Cookie header.
+// 1. Reads the session cookie.
+// 2. Deletes the token from superadmin_sessions (server-side revocation).
+// 3. Clears the cookie.
+// 4. Redirects to /superadmin/login.
 //
-// With a 200 response, the browser:
-//   1. Receives the response headers (including Set-Cookie) → cookie cleared
-//   2. Parses the HTML body
-//   3. Runs the inline <script> → navigates to /superadmin/login
-// Steps 1 and 2 always complete before step 3. No race possible.
-//
-// Set-Cookie is written as a raw header (not via Next.js cookies API)
-// to bypass any framework abstractions.
+// Because the row is deleted, any browser that holds onto the cookie (e.g. Arc)
+// will be refused by the proxy on the next protected request — no race condition.
 
-const COOKIE = '__ct_sa'
-const CLEAR  = `${COOKIE}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax`
+import { NextRequest, NextResponse } from 'next/server'
+import { COOKIE_NAME } from '@/lib/superadmin'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET() {
-  return new Response(
-    `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Signing out…</title>
-</head>
-<body style="margin:0;background:#000;color:#fff;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px">
-  Signing out…
-  <script>window.location.replace('/superadmin/login')</script>
-</body>
-</html>`,
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Set-Cookie': CLEAR,
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-        'Pragma': 'no-cache',
-      },
-    },
-  )
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get(COOKIE_NAME)?.value
+
+  // Revoke server-side — this is what makes logout actually work
+  if (token) {
+    try {
+      const supabase = createAdminClient()
+      await supabase.from('superadmin_sessions').delete().eq('token', token)
+    } catch {
+      // Non-fatal — proceed with redirect regardless
+    }
+  }
+
+  const res = NextResponse.redirect(new URL('/superadmin/login', req.url))
+  res.cookies.set(COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/',
+  })
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  res.headers.set('Pragma', 'no-cache')
+  return res
 }
 
 // POST kept for any programmatic callers
-export async function POST() {
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Set-Cookie': CLEAR,
-      'Cache-Control': 'no-store',
-    },
-  })
+export async function POST(req: NextRequest) {
+  return GET(req)
 }
