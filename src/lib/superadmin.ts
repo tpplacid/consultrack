@@ -3,37 +3,22 @@ import { redirect } from 'next/navigation'
 import { createHmac, timingSafeEqual } from 'crypto'
 
 export const COOKIE_NAME = '__ct_sa'
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
-// ── HMAC-signed session token ──────────────────────────────────────────────
-// Token format: <timestamp>.<hmac_hex>
-// Signed with the SUPERADMIN_PASSWORD as the HMAC key so tokens are
-// invalidated automatically when the password is rotated.
+// ── Session token ──────────────────────────────────────────────────────────
+// Token = HMAC-SHA256(password, 'ct-superadmin-session') as hex.
+// Stable — no timestamp parsing. Automatically invalidated when password rotates.
 
 export function createSessionToken(password: string): string {
-  const ts = Date.now().toString(36)
-  const sig = createHmac('sha256', password).update(ts).digest('hex')
-  return `${ts}.${sig}`
+  return createHmac('sha256', 'ct-superadmin-session').update(password).digest('hex')
 }
 
 export function verifySessionToken(token: string | undefined, password: string): boolean {
   if (!token || !password) return false
-  const dot = token.indexOf('.')
-  if (dot === -1) return false
-  const ts = token.slice(0, dot)
-  const sig = token.slice(dot + 1)
-  if (!ts || !sig) return false
-
-  // Check expiry
-  const issued = parseInt(ts, 36)
-  if (isNaN(issued) || Date.now() - issued > SESSION_TTL_MS) return false
-
-  // Constant-time comparison
   try {
-    const expected = createHmac('sha256', password).update(ts).digest('hex')
-    const a = Buffer.from(sig, 'hex')
+    const expected = createHmac('sha256', 'ct-superadmin-session').update(password).digest('hex')
+    const a = Buffer.from(token,    'hex')
     const b = Buffer.from(expected, 'hex')
-    if (a.length !== b.length) return false
+    if (a.length !== b.length || a.length === 0) return false
     return timingSafeEqual(a, b)
   } catch {
     return false
