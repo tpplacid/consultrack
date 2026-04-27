@@ -98,19 +98,7 @@ export default async function SuperAdminOrgsPage() {
                 <Link
                   key={org.id}
                   href={`/superadmin/orgs/${org.id}`}
-                  className="flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all group"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    borderColor: 'rgba(255,255,255,0.07)',
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(20,184,166,0.3)'
-                    ;(e.currentTarget as HTMLElement).style.background = 'rgba(20,184,166,0.05)'
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'
-                    ;(e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'
-                  }}
+                  className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] hover:bg-teal-500/[0.06] hover:border-teal-500/30 transition-all group"
                 >
                   {/* Avatar */}
                   <div
