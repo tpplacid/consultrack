@@ -7,16 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { Clock, Wifi, WifiOff, LogIn, LogOut, KeyRound } from 'lucide-react'
+import { Clock, Wifi, WifiOff, LogIn, LogOut, KeyRound, CalendarOff, UmbrellaOff } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Props {
   employee: Employee
   records: Attendance[]
   requireKey: boolean
+  isWeekoff?: boolean
+  isOnLeave?: boolean
 }
 
-export function AttendanceClient({ employee, records: initialRecords, requireKey }: Props) {
+export function AttendanceClient({ employee, records: initialRecords, requireKey, isWeekoff = false, isOnLeave = false }: Props) {
   const [records, setRecords] = useState(initialRecords)
   const [loading, setLoading] = useState(false)
   const [overrideOpen, setOverrideOpen] = useState(false)
@@ -97,21 +99,53 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
         </div>
       )}
 
+      {isWeekoff && (
+        <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          <CalendarOff size={14} />
+          Today is your week off — clock-in is not available.
+        </div>
+      )}
+
+      {isOnLeave && !isWeekoff && (
+        <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <UmbrellaOff size={14} />
+          You&apos;re on approved leave today — clock-in is not available.
+        </div>
+      )}
+
       <Card>
         <CardContent className="space-y-4 pt-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-700">Today — {formatDate(today)}</p>
-              <p className={`text-xs mt-0.5 font-medium ${isClockedIn ? 'text-green-600' : 'text-slate-500'}`}>
-                {isClockedIn ? '● Currently clocked in' : '○ Not clocked in'}
+              <p className={`text-xs mt-0.5 font-medium ${
+                isWeekoff ? 'text-amber-600'
+                : isOnLeave ? 'text-blue-600'
+                : isClockedIn ? 'text-green-600'
+                : 'text-slate-500'
+              }`}>
+                {isWeekoff ? '✦ Week off'
+                  : isOnLeave ? '✦ On approved leave'
+                  : isClockedIn ? '● Currently clocked in'
+                  : '○ Not clocked in'}
               </p>
             </div>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isClockedIn ? 'bg-green-100' : 'bg-slate-100'}`}>
-              <Clock size={22} className={isClockedIn ? 'text-green-600' : 'text-slate-400'} />
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              isWeekoff ? 'bg-amber-100'
+              : isOnLeave ? 'bg-blue-100'
+              : isClockedIn ? 'bg-green-100'
+              : 'bg-slate-100'
+            }`}>
+              <Clock size={22} className={
+                isWeekoff ? 'text-amber-500'
+                : isOnLeave ? 'text-blue-500'
+                : isClockedIn ? 'text-green-600'
+                : 'text-slate-400'
+              } />
             </div>
           </div>
 
-          {!isClockedIn && requireKey && (
+          {!isClockedIn && !isWeekoff && !isOnLeave && requireKey && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-slate-700">
                 WiFi Check-in Code
@@ -126,6 +160,11 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
             </div>
           )}
 
+          {(isWeekoff || isOnLeave) ? (
+            <Button variant="outline" className="flex-1 w-full opacity-50 cursor-not-allowed" disabled>
+              <Clock size={15} />Clock-in disabled
+            </Button>
+          ) : (
           <div className="flex gap-3">
             <Button
               onClick={() => handleClockAction(false)}
@@ -141,6 +180,7 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
               </Button>
             )}
           </div>
+          )}
 
           {todayRecords.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-slate-100">

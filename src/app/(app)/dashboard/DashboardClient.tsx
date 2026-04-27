@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Employee, Lead } from '@/types'
 import { LeadCard } from '@/components/leads/LeadCard'
 import { Button } from '@/components/ui/Button'
-import { Plus, Search, Bell } from 'lucide-react'
+import { Plus, Search, Bell, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import { NewLeadModal } from './NewLeadModal'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBanner } from '@/components/NotificationBanner'
@@ -28,6 +28,7 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [showNewLead, setShowNewLead] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -144,34 +145,59 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
-              className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm" />
+        <div className="space-y-2">
+          {/* Search + toggle row */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or phone…"
+                className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm" />
+            </div>
+            <button
+              onClick={() => setFiltersOpen(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 border rounded-xl text-sm font-semibold transition-colors shadow-sm whitespace-nowrap ${
+                filtersOpen || stageFilter || sourceFilter || dateFrom || dateTo
+                  ? 'border-brand-400 bg-brand-50 text-brand-600'
+                  : 'border-brand-200 bg-white text-brand-500 hover:border-brand-400'
+              }`}
+            >
+              <SlidersHorizontal size={14} />
+              Filters
+              {(stageFilter || sourceFilter || dateFrom || dateTo) && (
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-400 text-white text-[9px] font-bold">
+                  {[stageFilter, sourceFilter, dateFrom, dateTo].filter(Boolean).length}
+                </span>
+              )}
+              <ChevronDown size={13} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-          <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
-            className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
-            <option value="">All Stages</option>
-            {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-            className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
-            <option value="">All Sources</option>
-            <option value="meta">Meta</option>
-            <option value="offline">Offline</option>
-            <option value="referral">Referral</option>
-          </select>
-          <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-              className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
-          </div>
-          <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
-          </div>
+          {/* Collapsible extra filters */}
+          {filtersOpen && (
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+              <select value={stageFilter} onChange={e => setStageFilter(e.target.value)}
+                className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+                <option value="">All Stages</option>
+                {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+              <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+                className="px-3 py-2 border border-brand-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 shadow-sm text-brand-700">
+                <option value="">All Sources</option>
+                <option value="meta">Meta</option>
+                <option value="offline">Offline</option>
+                <option value="referral">Referral</option>
+              </select>
+              <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
+                <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                  className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+              </div>
+              <div className="flex items-center gap-1.5 border border-brand-200 rounded-xl bg-white px-3 py-2 shadow-sm">
+                <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                  className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Lead cards */}

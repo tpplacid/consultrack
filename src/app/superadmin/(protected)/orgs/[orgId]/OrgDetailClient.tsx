@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
-  Users, Mail, Link2, Loader2,
+  Users, Mail, Link2, Loader2, Radio,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 
@@ -17,16 +17,16 @@ type Features = {
   roles: boolean; attendance: boolean; meta: boolean
 }
 type MetaConfig = { page_id?: string; access_token?: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; created_at: string }
+type OrgRole = { key: string; label: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; is_live?: boolean; created_at: string }
 
-const ROLES = ['ad', 'tl', 'counsellor', 'telesales']
-const ROLE_LABELS: Record<string, string> = { ad: 'Admin', tl: 'Team Lead', counsellor: 'Counsellor', telesales: 'Telesales' }
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-teal-300 border-teal-500/20',
   tl: 'bg-blue-500/15 text-blue-300 border-blue-500/20',
   counsellor: 'bg-slate-500/15 text-slate-300 border-slate-500/20',
   telesales: 'bg-purple-500/15 text-purple-300 border-purple-500/20',
 }
+const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-slate-300 border-slate-500/20'
 
 const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true }
 
@@ -43,19 +43,26 @@ interface Props {
   org: Org
   employees: Employee[]
   invites: Invite[]
+  orgRoles: OrgRole[]
 }
 
 const INPUT = 'w-full px-3 py-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition'
 const BTN_PRIMARY = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50'
 const BTN_GHOST = 'inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] transition-all'
 
-export default function OrgDetailClient({ org, employees: initialEmployees, invites: initialInvites }: Props) {
+export default function OrgDetailClient({ org, employees: initialEmployees, invites: initialInvites, orgRoles }: Props) {
   const [employees, setEmployees] = useState(initialEmployees)
   const [invites, setInvites] = useState(initialInvites)
   const [tab, setTab] = useState<'employees' | 'invites' | 'settings'>('employees')
 
+  // Derived role list — org-specific roles, fall back to admin-only for new orgs
+  const roleList: OrgRole[] = orgRoles.length > 0 ? orgRoles : [{ key: 'ad', label: 'Admin/Director' }]
+  const roleLabelMap: Record<string, string> = Object.fromEntries(roleList.map(r => [r.key, r.label]))
+  const defaultRole = roleList[roleList.length - 1].key
+
   const [orgName, setOrgName] = useState(org.name)
   const [orgSlug, setOrgSlug] = useState(org.slug)
+  const [isLive, setIsLive] = useState(org.is_live ?? true)
   const [features, setFeatures] = useState<Features>(org.features ?? DEFAULT_FEATURES)
   const [brandPalette, setBrandPalette] = useState(org.brand_palette ?? DEFAULT_PALETTE)
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
@@ -66,14 +73,14 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [empName, setEmpName] = useState('')
   const [empEmail, setEmpEmail] = useState('')
   const [empPassword, setEmpPassword] = useState('')
-  const [empRole, setEmpRole] = useState('counsellor')
+  const [empRole, setEmpRole] = useState(defaultRole)
   const [addingEmp, setAddingEmp] = useState(false)
   const [empError, setEmpError] = useState('')
 
   const [showAddInvite, setShowAddInvite] = useState(false)
   const [invEmail, setInvEmail] = useState('')
   const [invName, setInvName] = useState('')
-  const [invRole, setInvRole] = useState('counsellor')
+  const [invRole, setInvRole] = useState(defaultRole)
   const [addingInv, setAddingInv] = useState(false)
   const [invError, setInvError] = useState('')
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
@@ -87,6 +94,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
       body: JSON.stringify({
         name: orgName,
         slug: orgSlug,
+        is_live: isLive,
         features,
         brand_palette: brandPalette,
         meta_config: { page_id: metaPageId || undefined, access_token: metaAccessToken || undefined },
@@ -110,7 +118,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
     else {
       setEmployees(prev => [data.employee, ...prev])
       setShowAddEmployee(false)
-      setEmpName(''); setEmpEmail(''); setEmpPassword(''); setEmpRole('counsellor')
+      setEmpName(''); setEmpEmail(''); setEmpPassword(''); setEmpRole(defaultRole)
       toast.success('Employee added')
     }
     setAddingEmp(false)
@@ -129,7 +137,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
     else {
       setInvites(prev => [data.invite, ...prev])
       setShowAddInvite(false)
-      setInvEmail(''); setInvName(''); setInvRole('counsellor')
+      setInvEmail(''); setInvName(''); setInvRole(defaultRole)
     }
     setAddingInv(false)
   }
@@ -161,7 +169,17 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
               {orgName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{orgName}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white">{orgName}</h1>
+                {isLive
+                  ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
+                      <Radio size={8} className="fill-green-400" />LIVE
+                    </span>
+                  : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-400 border border-slate-500/20">
+                      OFFLINE
+                    </span>
+                }
+              </div>
               <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-1.5">
                 <span>/{orgSlug}</span>
                 <span className="text-slate-700">·</span>
@@ -222,7 +240,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Role</label>
                     <select value={empRole} onChange={e => setEmpRole(e.target.value)} className={INPUT}>
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                      {roleList.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -273,8 +291,8 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${ROLE_COLORS[emp.role] || ROLE_COLORS.counsellor}`}>
-                        {ROLE_LABELS[emp.role] || emp.role}
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${ROLE_COLORS[emp.role] ?? ROLE_COLOR_FALLBACK}`}>
+                        {roleLabelMap[emp.role] ?? emp.role}
                       </span>
                       {!emp.is_active && <span className="text-xs text-red-400 font-medium">Inactive</span>}
                     </div>
@@ -310,7 +328,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Role</label>
                     <select value={invRole} onChange={e => setInvRole(e.target.value)} className={INPUT}>
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                      {roleList.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
                     </select>
                   </div>
                 </div>
@@ -352,8 +370,8 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border ${ROLE_COLORS[inv.role] || ROLE_COLORS.counsellor}`}>
-                              {ROLE_LABELS[inv.role] || inv.role}
+                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border ${ROLE_COLORS[inv.role] ?? ROLE_COLOR_FALLBACK}`}>
+                              {roleLabelMap[inv.role] ?? inv.role}
                             </span>
                             {inv.name && <span className="text-slate-300 text-xs font-medium">{inv.name}</span>}
                             {inv.email && <span className="text-slate-500 text-xs">{inv.email}</span>}
@@ -385,6 +403,42 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         {/* ── SETTINGS ── */}
         {tab === 'settings' && (
           <form onSubmit={handleSaveSettings} className="space-y-5">
+
+            {/* Live status */}
+            <div className={`rounded-2xl p-5 border transition-all ${
+              isLive ? 'border-green-500/20' : 'border-white/[0.07]'
+            }`}
+              style={{ background: isLive ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.03)' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h2 className="text-sm font-semibold text-slate-300">Live status</h2>
+                    {isLive
+                      ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
+                          <Radio size={8} className="fill-green-400" />LIVE
+                        </span>
+                      : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-400 border border-slate-500/20">
+                          OFFLINE
+                        </span>
+                    }
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    {isLive
+                      ? 'Org is active — employees can log in and access the platform'
+                      : 'Org is offline — login is disabled for all employees'}
+                  </p>
+                </div>
+                <button type="button" onClick={() => setIsLive(v => !v)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    isLive ? 'bg-green-500' : 'bg-white/[0.1]'
+                  }`}>
+                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${
+                    isLive ? 'translate-x-5' : 'translate-x-0.5'
+                  }`} />
+                </button>
+              </div>
+            </div>
+
             {/* Org details */}
             <div className="rounded-2xl p-5 space-y-4 border border-white/[0.07]"
               style={{ background: 'rgba(255,255,255,0.03)' }}>

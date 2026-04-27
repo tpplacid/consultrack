@@ -11,6 +11,33 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const now = new Date().toISOString()
   const today = format(new Date(), 'yyyy-MM-dd')
+  const todayDayName = format(new Date(), 'EEEE').toLowerCase()
+
+  // Block clock-in (not clock-out) during weekoffs or approved leaves
+  if (action === 'clock_in' || action === 'override') {
+    const [{ data: weekoffRows }, { data: leaveRows }] = await Promise.all([
+      supabase
+        .from('weekoffs')
+        .select('id')
+        .eq('employee_id', employee.id)
+        .or(`day_of_week.eq.${todayDayName},specific_date.eq.${today}`)
+        .limit(1),
+      supabase
+        .from('leaves')
+        .select('id')
+        .eq('employee_id', employee.id)
+        .eq('status', 'approved')
+        .lte('start_date', today)
+        .gte('end_date', today)
+        .limit(1),
+    ])
+    if ((weekoffRows?.length ?? 0) > 0) {
+      return NextResponse.json({ error: 'Today is your week off — clock-in is not allowed.' }, { status: 403 })
+    }
+    if ((leaveRows?.length ?? 0) > 0) {
+      return NextResponse.json({ error: 'You are on approved leave today — clock-in is not allowed.' }, { status: 403 })
+    }
+  }
 
   const wifiVerified = !requireKey
     ? true

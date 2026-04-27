@@ -613,16 +613,17 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
           </div>
 
           {/* ── Collapsible right panel ── */}
-          <div className={`relative flex-shrink-0 transition-all duration-200 ${sidebarOpen ? 'w-64' : 'w-0'} bg-white border-l border-slate-200 overflow-hidden`}>
+          <div className="relative flex-shrink-0 flex">
 
-            {/* Toggle button — sits on the left edge of the panel */}
+            {/* Toggle button — always visible, outside overflow-hidden container */}
             <button
               onClick={() => setSidebarOpen(v => !v)}
-              className="absolute -left-7 top-1/2 -translate-y-1/2 z-10 w-7 h-14 bg-white border border-r-0 border-slate-200 rounded-l-lg flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm"
+              className="self-center w-7 h-14 bg-white border border-r-0 border-slate-200 rounded-l-lg flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm z-10 flex-shrink-0"
             >
               {sidebarOpen ? <ChevronRight size={13} className="text-slate-500" /> : <ChevronLeft size={13} className="text-slate-500" />}
             </button>
 
+            <div className={`transition-all duration-200 ${sidebarOpen ? 'w-64' : 'w-0'} bg-white border-l border-slate-200 overflow-hidden`}>
             <div className="w-64 flex flex-col h-full overflow-hidden">
               {selectedStage ? (
                 <>
@@ -721,6 +722,7 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
                   </span>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>

@@ -14,23 +14,29 @@ export default async function OrgDetailPage({ params }: Props) {
 
   const { data: org } = await supabase
     .from('orgs')
-    .select('id, name, slug, logo_url, features, brand_palette, meta_config, created_at')
+    .select('id, name, slug, logo_url, features, brand_palette, meta_config, is_live, created_at')
     .eq('id', orgId)
     .single()
 
   if (!org) notFound()
 
-  const { data: employees } = await supabase
-    .from('employees')
-    .select('id, name, email, role, is_active, created_at')
-    .eq('org_id', orgId)
-    .order('created_at', { ascending: false })
-
-  const { data: invites } = await supabase
-    .from('org_invites')
-    .select('id, token, email, name, role, used_at, expires_at, created_at')
-    .eq('org_id', orgId)
-    .order('created_at', { ascending: false })
+  const [{ data: employees }, { data: invites }, { data: orgRoles }] = await Promise.all([
+    supabase
+      .from('employees')
+      .select('id, name, email, role, is_active, created_at')
+      .eq('org_id', orgId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('org_invites')
+      .select('id, token, email, name, role, used_at, expires_at, created_at')
+      .eq('org_id', orgId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('org_roles')
+      .select('key, label')
+      .eq('org_id', orgId)
+      .order('position'),
+  ])
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrack.vercel.app'
 
@@ -38,6 +44,7 @@ export default async function OrgDetailPage({ params }: Props) {
     <OrgDetailClient
       org={org}
       employees={employees || []}
+      orgRoles={orgRoles || []}
       invites={(invites || []).map(inv => ({
         ...inv,
         link: `${baseUrl}/invite/${inv.token}`,

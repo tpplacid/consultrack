@@ -2,7 +2,7 @@ import { requireSuperAdmin } from '@/lib/superadmin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { Building2, Users, Plus, ExternalLink, ChevronRight } from 'lucide-react'
+import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +21,7 @@ export default async function SuperAdminOrgsPage() {
 
   const { data: orgs } = await supabase
     .from('orgs')
-    .select('id, name, slug, created_at, features')
+    .select('id, name, slug, created_at, features, is_live')
     .order('created_at', { ascending: false })
 
   const orgIds = (orgs || []).map(o => o.id)
@@ -64,7 +64,7 @@ export default async function SuperAdminOrgsPage() {
           {[
             { label: 'Total orgs',      value: orgs?.length ?? 0,                                color: 'text-white' },
             { label: 'Total employees', value: Object.values(counts).reduce((a, b) => a + b, 0), color: 'text-teal-400' },
-            { label: 'Active',          value: orgs?.length ?? 0,                                color: 'text-green-400' },
+            { label: 'Live',             value: orgs?.filter(o => o.is_live !== false).length ?? 0, color: 'text-green-400' },
           ].map(s => (
             <div key={s.label}
               className="rounded-xl px-4 py-3 border border-white/[0.06]"
@@ -115,7 +115,17 @@ export default async function SuperAdminOrgsPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm truncate mb-0.5">{org.name}</p>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-white font-semibold text-sm truncate">{org.name}</p>
+                        {org.is_live !== false
+                          ? <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20 flex-shrink-0">
+                              <Radio size={7} className="fill-green-400" />LIVE
+                            </span>
+                          : <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-500/15 text-slate-500 border border-slate-500/20 flex-shrink-0">
+                              OFFLINE
+                            </span>
+                        }
+                      </div>
                       <p className="text-slate-500 text-xs truncate">/{org.slug}</p>
                     </div>
 

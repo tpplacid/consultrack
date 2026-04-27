@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { StageBadge } from '@/components/leads/StageBadge'
 import { formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { Search, ArrowRightLeft, Download, Layers, Tag, Trash2 } from 'lucide-react'
+import { Search, ArrowRightLeft, Download, Layers, Tag, Trash2, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props { admin: Employee; leads: Lead[]; employees: Employee[] }
@@ -24,6 +24,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selected, setSelected] = useState<string[]>([])
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Transfer
   const [transferModal, setTransferModal] = useState(false)
@@ -194,39 +195,64 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
       })()}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="flex-1 relative min-w-[180px]">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
-            className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-800" />
+      <div className="space-y-2">
+        {/* Search + toggle row */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="flex-1 relative min-w-[180px]">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name or phone…"
+              className="w-full pl-9 pr-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-800" />
+          </div>
+          <button
+            onClick={() => setFiltersOpen(v => !v)}
+            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+              filtersOpen || stageFilter || ownerFilter || sourceFilter || dateFrom || dateTo
+                ? 'border-brand-400 bg-brand-50 text-brand-600'
+                : 'border-brand-200 bg-white text-brand-500 hover:border-brand-400'
+            }`}
+          >
+            <SlidersHorizontal size={14} />
+            Filters
+            {(stageFilter || ownerFilter || sourceFilter || dateFrom || dateTo) && (
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-400 text-white text-[9px] font-bold">
+                {[stageFilter, ownerFilter, sourceFilter, dateFrom, dateTo].filter(Boolean).length}
+              </span>
+            )}
+            <ChevronDown size={13} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+          </button>
+          <button onClick={selectAll} className="text-sm font-bold text-brand-600 hover:underline whitespace-nowrap">
+            Select all ({filtered.length})
+          </button>
         </div>
-        <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-          <option value="">All Stages</option>
-          {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-        </select>
-        <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-          <option value="">All Owners</option>
-          {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-        </select>
-        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
-          <option value="">All Sources</option>
-          <option value="meta">Meta</option>
-          <option value="offline">Offline</option>
-          <option value="referral">Referral</option>
-        </select>
-        <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
-          <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
-        </div>
-        <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
-          <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
-        </div>
-        <button onClick={selectAll} className="text-sm font-bold text-brand-600 hover:underline whitespace-nowrap">
-          Select all ({filtered.length})
-        </button>
+        {/* Collapsible extra filters */}
+        {filtersOpen && (
+          <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+            <select value={stageFilter} onChange={e => setStageFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+              <option value="">All Stages</option>
+              {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+            </select>
+            <select value={ownerFilter} onChange={e => setOwnerFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+              <option value="">All Owners</option>
+              {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+            <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className="px-3 py-2 border border-brand-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-brand-700">
+              <option value="">All Sources</option>
+              <option value="meta">Meta</option>
+              <option value="offline">Offline</option>
+              <option value="referral">Referral</option>
+            </select>
+            <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
+              <span className="text-xs text-brand-400 whitespace-nowrap">From</span>
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+            </div>
+            <div className="flex items-center gap-1.5 border border-brand-200 rounded-lg bg-white px-3 py-2">
+              <span className="text-xs text-brand-400 whitespace-nowrap">To</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="text-sm bg-transparent focus:outline-none text-brand-700 w-full" />
+            </div>
+          </div>
+        )}
       </div>
 
       {selected.length > 0 && (
