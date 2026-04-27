@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Building2, LifeBuoy, LogOut, Zap, Menu, X } from 'lucide-react'
 
@@ -15,13 +15,13 @@ interface Props { openTickets?: number }
 
 export default function SuperAdminNav({ openTickets = 0 }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  async function handleLogout() {
-    await fetch('/api/superadmin/logout', { method: 'POST' })
-    // Hard redirect — forces full server re-render so layout drops the nav
-    window.location.href = '/superadmin/login'
+  function handleLogout() {
+    // Navigate directly to the logout GET route. The server clears the cookie
+    // and redirects to /login in a single response — no client-side fetch race
+    // that Arc and other strict browsers can interrupt before Set-Cookie lands.
+    window.location.href = '/api/superadmin/logout'
   }
 
   const NavContent = () => (
