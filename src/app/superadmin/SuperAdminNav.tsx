@@ -20,8 +20,8 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
 
   async function handleLogout() {
     await fetch('/api/superadmin/logout', { method: 'POST' })
-    router.push('/superadmin/login')
-    router.refresh()
+    // Hard redirect — forces full server re-render so layout drops the nav
+    window.location.href = '/superadmin/login'
   }
 
   const NavContent = () => (
