@@ -7,10 +7,11 @@ import { Employee, formatRole } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { cn, getInitials } from '@/lib/utils'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
+import { UpgradeModal } from '@/components/UpgradeModal'
 import toast from 'react-hot-toast'
 import {
   LayoutDashboard, Users, ClipboardList, Calendar, FileText,
-  BarChart3, LogOut, Menu, Bell,
+  BarChart3, LogOut, Menu, Bell, Lock,
   MessageSquare, CheckSquare, TrendingDown,
   Settings, UsersRound, AlertCircle, PieChart, Ticket,
 } from 'lucide-react'
@@ -57,6 +58,34 @@ const settingsNavItems: NavItem[] = [
   { href: '/admin/settings', label: 'Settings', icon: <Settings size={17} /> },
   { href: '/admin/support',  label: 'Support',  icon: <Ticket size={17} /> },
 ]
+
+// Labels + descriptions used in the UpgradeModal when a locked item is clicked
+const FEATURE_META: Record<string, { label: string; description: string }> = {
+  lead_crm:   {
+    label: 'Lead CRM',
+    description: 'Manage leads, pipeline stages, WA templates, and team activity — the core of your admissions workflow.',
+  },
+  sla: {
+    label: 'Deadline Breaches',
+    description: 'Set deadline windows per pipeline stage. Breach alerts keep your team accountable and on schedule.',
+  },
+  attendance: {
+    label: 'Attendance',
+    description: 'Employee clock-in/out, leave requests, and weekoff configuration for your team.',
+  },
+  pipeline: {
+    label: 'Pipeline Customisation',
+    description: 'Customise your lead stages, substages, and transition flows to match your exact admissions process.',
+  },
+  roles: {
+    label: 'Custom Roles',
+    description: 'Define custom roles and control exactly what each team member can see and do.',
+  },
+  meta: {
+    label: 'Meta Integration',
+    description: 'Auto-pull leads from your Meta (Facebook & Instagram) ad campaigns directly into Consultrack.',
+  },
+}
 
 interface Props {
   employee: Employee
@@ -108,17 +137,66 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
 
   const isAdmin = employee.role === 'ad'
 
-  function isVisible(item: NavItem): boolean {
+  // Passes role check — regardless of feature state
+  function passesRole(item: NavItem): boolean {
     if (item.roles && !item.roles.includes(employee.role)) return false
-    if (item.feature && !features[item.feature]) return false
     return true
+  }
+
+  // Feature is explicitly disabled for this item
+  function isLocked(item: NavItem): boolean {
+    return !!(item.feature && !features[item.feature])
+  }
+
+  // Used for old isVisible calls that filter out entirely (role only now)
+  function isVisible(item: NavItem): boolean {
+    return passesRole(item)
   }
 
   const visibleNav = navItems.filter(isVisible)
 
   const narrow = !collapsed && desktopW < 140
 
+  // A locked sidebar item — shows dimmed with lock, opens UpgradeModal on click
+  function LockedNavLink({ item, slim }: { item: NavItem; slim?: boolean }) {
+    const [showModal, setShowModal] = useState(false)
+    const meta = item.feature ? FEATURE_META[item.feature] : null
+    if (!meta) return null
+    return (
+      <>
+        <button
+          onClick={() => setShowModal(true)}
+          title={slim ? item.label : undefined}
+          className={cn(
+            'w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-colors opacity-40 hover:opacity-60',
+            slim ? 'px-3 py-2 justify-center' : 'px-3 py-2',
+            'text-brand-100 hover:bg-brand-700 hover:text-white',
+          )}
+        >
+          <span className="text-brand-200">{item.icon}</span>
+          {!slim && (
+            <>
+              <span className="flex-1 text-left">{item.label}</span>
+              <Lock size={11} className="text-brand-300 flex-shrink-0" />
+            </>
+          )}
+        </button>
+        {showModal && (
+          <UpgradeModal
+            featureKey={item.feature!}
+            featureLabel={meta.label}
+            description={meta.description}
+            onClose={() => setShowModal(false)}
+          />
+        )}
+      </>
+    )
+  }
+
   function NavLink({ item, slim }: { item: NavItem; slim?: boolean }) {
+    // Delegate locked items to LockedNavLink
+    if (isLocked(item)) return <LockedNavLink item={item} slim={slim} />
+
     const active = pathname === item.href || pathname.startsWith(item.href + '/')
     return (
       <Link
@@ -182,13 +260,12 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
             {slim && <div className="pt-3 pb-1 px-3"><div className="h-px bg-brand-700" /></div>}
             {teamNavItems.map(item => <NavLink key={item.href} item={item} slim={slim} />)}
 
-            {slaNavItems.some(isVisible) && (
-              <>
-                {!slim && <div className="pt-4 pb-1 px-3"><p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Deadlines</p></div>}
-                {slim && <div className="pt-3 pb-1 px-3"><div className="h-px bg-brand-700" /></div>}
-                {slaNavItems.filter(isVisible).map(item => <NavLink key={item.href} item={item} slim={slim} />)}
-              </>
-            )}
+            {/* Deadlines section — always show for admin even if SLA locked, so they see the upgrade prompt */}
+            <>
+              {!slim && <div className="pt-4 pb-1 px-3"><p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Deadlines</p></div>}
+              {slim && <div className="pt-3 pb-1 px-3"><div className="h-px bg-brand-700" /></div>}
+              {slaNavItems.filter(isVisible).map(item => <NavLink key={item.href} item={item} slim={slim} />)}
+            </>
 
             {!slim && <div className="pt-4 pb-1 px-3"><p className="text-[10px] font-bold text-brand-300 uppercase tracking-widest">Config</p></div>}
             {slim && <div className="pt-3 pb-1 px-3"><div className="h-px bg-brand-700" /></div>}

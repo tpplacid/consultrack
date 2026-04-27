@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { Zap } from 'lucide-react'
 
 export default function SuperAdminLoginPage() {
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,41 +31,50 @@ export default function SuperAdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#000' }}>
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <img src="/Consultrack Logo.png" alt="Consultrack" className="h-10 object-contain mx-auto mb-3"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-          <p className="text-white font-bold text-xl">Consultrack</p>
-          <p className="text-slate-400 text-sm mt-0.5">Super Admin Access</p>
+
+        {/* Logo */}
+        <div className="mb-8 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center mb-4">
+            <Zap size={18} className="text-black" fill="black" />
+          </div>
+          <p className="text-white font-semibold text-lg tracking-tight">Consultrack</p>
+          <p className="text-neutral-600 text-xs mt-1">Super Admin</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+        {/* Card */}
+        <div className="rounded-2xl border border-white/[0.08] bg-[#111] p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Admin Password</label>
+              <label className="block text-xs font-medium text-neutral-400 mb-1.5">
+                Password
+              </label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-sm text-white placeholder-neutral-700 focus:outline-none focus:ring-1 focus:ring-white/20 transition"
                 placeholder="••••••••"
                 autoFocus
               />
             </div>
+
             {error && (
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-xs text-red-400">{error}</p>
             )}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 bg-white hover:bg-neutral-200 text-black rounded-lg text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {loading ? 'Verifying…' : 'Sign In'}
+              {loading ? 'Verifying…' : 'Sign in'}
             </button>
           </form>
         </div>
+
       </div>
     </div>
   )
