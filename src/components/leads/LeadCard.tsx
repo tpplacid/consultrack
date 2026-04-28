@@ -69,10 +69,14 @@ export const LeadCard = memo(function LeadCard({
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-brand-900 truncate">{lead.name}</h3>
-          <div className="flex items-center gap-1 text-xs text-brand-500 mt-0.5">
+          <a
+            href={`tel:${lead.phone}`}
+            onClick={e => e.stopPropagation()}
+            className="relative z-10 flex items-center gap-1 text-xs text-brand-500 hover:text-brand-700 mt-0.5 w-fit"
+          >
             <Phone size={10} />
             <span>{lead.phone}</span>
-          </div>
+          </a>
         </div>
         <StageBadge stage={lead.main_stage} />
       </div>

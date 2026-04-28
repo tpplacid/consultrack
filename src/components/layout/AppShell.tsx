@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Employee, formatRole } from '@/types'
@@ -23,6 +23,7 @@ interface NavItem {
   icon: React.ReactNode
   roles?: string[]
   feature?: keyof OrgFeatures
+  badgeKey?: 'slaExplanations' | 'teamBreaches' | 'pendingLeaves' | 'pendingAttendance'
 }
 
 const navItems: NavItem[] = [
@@ -30,9 +31,9 @@ const navItems: NavItem[] = [
   { href: '/attendance',       label: 'Attendance',        icon: <Calendar size={17} />,        feature: 'attendance' },
   { href: '/leaves',           label: 'Leaves',            icon: <ClipboardList size={17} />,   feature: 'attendance' },
   { href: '/templates',        label: 'WA Templates',      icon: <MessageSquare size={17} />,   feature: 'lead_crm' },
-  { href: '/sla-explanations', label: 'SLA Explanations',  icon: <Bell size={17} />,            feature: 'sla' },
+  { href: '/sla-explanations', label: 'SLA Explanations',  icon: <Bell size={17} />,            feature: 'sla', badgeKey: 'slaExplanations' },
   { href: '/team',             label: 'My Team',           icon: <Users size={17} />,           roles: ['tl','ad'] },
-  { href: '/team/sla',         label: 'Deadline Breaches', icon: <Bell size={17} />,            roles: ['tl','ad'], feature: 'sla' },
+  { href: '/team/sla',         label: 'Deadline Breaches', icon: <Bell size={17} />,            roles: ['tl','ad'], feature: 'sla', badgeKey: 'teamBreaches' },
   { href: '/team/activity',    label: 'Team Activity',     icon: <BarChart3 size={17} />,       roles: ['tl','ad'], feature: 'lead_crm' },
 ]
 
@@ -47,11 +48,11 @@ const analyticsNavItems: NavItem[] = [
 ]
 
 const teamNavItems: NavItem[] = [
-  { href: '/admin/team-mgmt', label: 'Team Management', icon: <UsersRound size={17} /> },
+  { href: '/admin/team-mgmt', label: 'Team Management', icon: <UsersRound size={17} />, badgeKey: 'pendingLeaves' },
 ]
 
 const slaNavItems: NavItem[] = [
-  { href: '/admin/sla-mgmt', label: 'SLA', icon: <AlertCircle size={17} />, feature: 'sla' },
+  { href: '/admin/sla-mgmt', label: 'SLA', icon: <AlertCircle size={17} />, feature: 'sla', badgeKey: 'teamBreaches' },
 ]
 
 const settingsNavItems: NavItem[] = [
@@ -131,6 +132,86 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
   const router = useRouter()
   const { features } = useOrgConfig()
 
+  // ── Notification badge counts ────────────────────────────────────────────
+  const [badges, setBadges] = useState({
+    slaExplanations: 0,
+    teamBreaches: 0,
+    pendingLeaves: 0,
+    pendingAttendance: 0,
+  })
+  const prevBadgesRef = useRef({ slaExplanations: 0, teamBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 })
+
+  const refreshBadges = useCallback(async () => {
+    const supabase = createClient()
+    const next = { slaExplanations: 0, teamBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 }
+
+    const [slaExp, teamB, leaves, att] = await Promise.all([
+      supabase.from('sla_breaches').select('*', { count: 'exact', head: true })
+        .eq('owner_id', employee.id).eq('resolution', 'explanation_requested'),
+      (employee.role === 'tl' || employee.role === 'ad')
+        ? supabase.from('sla_breaches').select('*', { count: 'exact', head: true })
+            .eq('org_id', employee.org_id).in('resolution', ['pending', 'explanation_requested'])
+        : Promise.resolve({ count: 0 }),
+      employee.role === 'ad'
+        ? supabase.from('leaves').select('*', { count: 'exact', head: true })
+            .eq('org_id', employee.org_id).eq('status', 'pending')
+        : Promise.resolve({ count: 0 }),
+      employee.role === 'ad'
+        ? supabase.from('attendance').select('*', { count: 'exact', head: true })
+            .eq('org_id', employee.org_id).eq('status', 'questioned')
+        : Promise.resolve({ count: 0 }),
+    ])
+
+    next.slaExplanations  = slaExp.count  ?? 0
+    next.teamBreaches     = teamB.count   ?? 0
+    next.pendingLeaves    = leaves.count  ?? 0
+    next.pendingAttendance = att.count    ?? 0
+
+    // Play sound if any count increased since last check
+    const prev = prevBadgesRef.current
+    const anyNew = (
+      next.slaExplanations  > prev.slaExplanations  ||
+      next.teamBreaches     > prev.teamBreaches      ||
+      next.pendingLeaves    > prev.pendingLeaves      ||
+      next.pendingAttendance > prev.pendingAttendance
+    )
+    if (anyNew) {
+      try {
+        const Ctx = (window as typeof window & { webkitAudioContext?: typeof AudioContext }).AudioContext
+          || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (Ctx) {
+          const ctx = new Ctx()
+          const gain = ctx.createGain()
+          gain.connect(ctx.destination)
+          gain.gain.setValueAtTime(0.08, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+          ;[523.25, 659.25].forEach((freq, i) => {
+            const osc = ctx.createOscillator()
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12)
+            osc.connect(gain)
+            osc.start(ctx.currentTime + i * 0.12)
+            osc.stop(ctx.currentTime + i * 0.12 + 0.3)
+          })
+        }
+      } catch { /* audio unavailable */ }
+    }
+    prevBadgesRef.current = next
+    setBadges(next)
+  }, [employee.id, employee.org_id, employee.role])
+
+  useEffect(() => {
+    refreshBadges()
+    const supabase = createClient()
+    const ch = supabase
+      .channel('badge-counts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sla_breaches' }, refreshBadges)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leaves' }, refreshBadges)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, refreshBadges)
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [refreshBadges])
+
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -202,6 +283,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
     if (isLocked(item)) return <LockedNavLink item={item} slim={slim} />
 
     const active = pathname === item.href || pathname.startsWith(item.href + '/')
+    const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0
     return (
       <Link
         href={item.href}
@@ -215,8 +297,20 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
             : 'text-brand-100 hover:bg-brand-700 hover:text-white'
         )}
       >
-        <span className={active ? 'text-white' : 'text-brand-200'}>{item.icon}</span>
-        {!slim && item.label}
+        <span className={cn('relative', active ? 'text-white' : 'text-brand-200')}>
+          {item.icon}
+          {badgeCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none shadow">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
+        </span>
+        {!slim && <span className="flex-1">{item.label}</span>}
+        {!slim && badgeCount > 0 && (
+          <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        )}
       </Link>
     )
   }

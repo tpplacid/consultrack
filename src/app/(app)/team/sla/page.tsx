@@ -17,8 +17,8 @@ export default async function TeamSlaPage() {
     .from('sla_breaches')
     .select(`
       *,
-      lead:leads(id,name,phone,main_stage,sub_stage),
-      owner:employees!sla_breaches_owner_id_fkey(id,name,role)
+      lead:leads(id,name,phone,main_stage,sub_stage,current_owner:employees!leads_owner_id_fkey(id,name,role)),
+      breach_owner:employees!sla_breaches_owner_id_fkey(id,name,role)
     `)
     .in('owner_id', ownerIds)
     .order('created_at', { ascending: false })

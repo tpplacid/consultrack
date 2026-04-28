@@ -112,9 +112,14 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <Link href={`/leads/${b.lead_id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600">
-                        {(b.lead as Lead)?.name}
+                        {(b.lead as Lead & { current_owner?: Employee })?.name}
                       </Link>
-                      <p className="text-xs text-slate-500">{(b.owner as Employee)?.name} — Stage {b.stage}</p>
+                      <p className="text-xs text-slate-500">
+                        {((b.lead as Lead & { current_owner?: Employee })?.current_owner as Employee)?.name
+                          || (b as unknown as Record<string,unknown>).breach_owner as string
+                          || '—'}
+                        {' '} — Stage {b.stage}
+                      </p>
                     </div>
                     <StageBadge stage={b.stage} />
                   </div>

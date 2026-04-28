@@ -13,10 +13,10 @@ import { Button } from '@/components/ui/Button'
 import { subDays, format } from 'date-fns'
 
 interface ReportConfig {
-  metric: 'leads' | 'activities' | 'sla_breaches'
+  metric: 'leads' | 'activities' | 'sla_breaches' | 'productivity'
   groupBy: string
-  chartType: 'bar' | 'line' | 'pie'
-  dateRange: 7 | 30 | 90
+  chartType: 'bar' | 'line' | 'pie' | 'table'
+  dateRange: 1 | 7 | 30 | 90
 }
 
 interface Props {
@@ -32,12 +32,18 @@ const METRICS = [
     { value: 'stage', label: 'Stage' },
     { value: 'source', label: 'Source' },
     { value: 'owner', label: 'Owner' },
+    { value: 'lead_type', label: 'Lead Type' },
+    { value: 'location', label: 'Location' },
+    { value: 'preferred_course', label: 'Preferred Course' },
     { value: 'date', label: 'Date' },
   ]},
   { value: 'activities' as const, label: 'Activities', groupByOptions: [
     { value: 'activity_type', label: 'Activity Type' },
     { value: 'owner', label: 'Owner' },
     { value: 'date', label: 'Date' },
+  ]},
+  { value: 'productivity' as const, label: 'Employee Productivity', groupByOptions: [
+    { value: 'employee', label: 'Employee' },
   ]},
   { value: 'sla_breaches' as const, label: 'SLA Breaches', groupByOptions: [
     { value: 'stage', label: 'Stage' },
@@ -46,13 +52,22 @@ const METRICS = [
   ]},
 ]
 
-const DATE_RANGES: { value: 7 | 30 | 90; label: string }[] = [
-  { value: 7, label: 'Last 7 days' },
+const DATE_RANGES: { value: 1 | 7 | 30 | 90; label: string }[] = [
+  { value: 1,  label: 'Today' },
+  { value: 7,  label: 'Last 7 days' },
   { value: 30, label: 'Last 30 days' },
   { value: 90, label: 'Last 90 days' },
 ]
 
 type ChartDataPoint = { name: string; value: number }
+interface ProductivityRow {
+  employee: string
+  calls: number
+  whatsapp: number
+  stage_changes: number
+  comments: number
+  total: number
+}
 
 function aggregateByKey<T extends Record<string, unknown>>(
   data: T[],
@@ -66,7 +81,73 @@ function aggregateByKey<T extends Record<string, unknown>>(
   return Object.entries(counts).map(([name, value]) => ({ name, value }))
 }
 
-function renderChart(chartType: 'bar' | 'line' | 'pie', data: ChartDataPoint[]) {
+function renderProductivityTable(rows: ProductivityRow[]) {
+  if (rows.length === 0) return (
+    <div className="flex items-center justify-center h-64 text-slate-400 text-sm">No data</div>
+  )
+  const cols = [
+    { key: 'employee', label: 'Employee' },
+    { key: 'calls', label: 'Calls' },
+    { key: 'whatsapp', label: 'WhatsApp' },
+    { key: 'stage_changes', label: 'Stage Changes' },
+    { key: 'comments', label: 'Comments' },
+    { key: 'total', label: 'Total' },
+  ] as const
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200">
+            {cols.map(c => (
+              <th key={c.key} className="py-2 px-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((r, i) => (
+            <tr key={i} className="hover:bg-slate-50">
+              <td className="py-2 px-3 font-medium text-slate-800">{r.employee}</td>
+              <td className="py-2 px-3 text-slate-600">{r.calls}</td>
+              <td className="py-2 px-3 text-slate-600">{r.whatsapp}</td>
+              <td className="py-2 px-3 text-slate-600">{r.stage_changes}</td>
+              <td className="py-2 px-3 text-slate-600">{r.comments}</td>
+              <td className="py-2 px-3 font-bold text-slate-900">{r.total}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function renderDataTable(data: ChartDataPoint[]) {
+  const sorted = [...data].sort((a, b) => b.value - a.value)
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-200">
+            <th className="py-2 px-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
+            <th className="py-2 px-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Count</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {sorted.map((row, i) => (
+            <tr key={i} className="hover:bg-slate-50">
+              <td className="py-2 px-3 font-medium text-slate-800">{row.name}</td>
+              <td className="py-2 px-3 text-right font-bold text-slate-900">{row.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function renderChart(chartType: 'bar' | 'line' | 'pie' | 'table', data: ChartDataPoint[]) {
+  if (chartType === 'table') return renderDataTable(data)
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400 text-sm">
@@ -141,6 +222,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
   const [dateRange, setDateRange] = useState<ReportConfig['dateRange']>(30)
   const [visibleToTeam, setVisibleToTeam] = useState(false)
   const [previewData, setPreviewData] = useState<ChartDataPoint[] | null>(null)
+  const [productivityData, setProductivityData] = useState<ProductivityRow[] | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -183,17 +265,20 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
   async function handlePreview() {
     setLoadingPreview(true)
     setPreviewData(null)
+    setProductivityData(null)
     setSaveError('')
 
     try {
       const supabase = createClient()
-      const cutoff = subDays(new Date(), dateRange).toISOString()
+      const cutoff = dateRange === 1
+        ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
+        : subDays(new Date(), dateRange).toISOString()
       let data: ChartDataPoint[] = []
 
       if (metric === 'leads') {
         const { data: rows, error } = await supabase
           .from('leads')
-          .select('main_stage, source, owner_id, created_at, owner:employees!leads_owner_id_fkey(name)')
+          .select('main_stage, source, owner_id, lead_type, location, preferred_course, created_at, owner:employees!leads_owner_id_fkey(name)')
           .eq('org_id', orgId)
           .gte('created_at', cutoff)
 
@@ -213,11 +298,43 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
             const owner = l.owner as { name?: string } | null
             return owner?.name || employees.find(e => e.id === l.owner_id)?.name || 'Unassigned'
           })
+        } else if (groupBy === 'lead_type') {
+          data = aggregateByKey(leads, (l) => (l.lead_type as string) || 'Not set')
+        } else if (groupBy === 'location') {
+          data = aggregateByKey(leads, (l) => (l.location as string) || 'Not set')
+        } else if (groupBy === 'preferred_course') {
+          data = aggregateByKey(leads, (l) => (l.preferred_course as string) || 'Not set')
         } else if (groupBy === 'date') {
           data = aggregateByKey(leads, (l) =>
             l.created_at ? format(new Date(l.created_at as string), 'dd MMM') : ''
           )
         }
+      } else if (metric === 'productivity') {
+        const { data: rows, error } = await supabase
+          .from('activities')
+          .select('activity_type, employee_id, created_at, employee:employees(name)')
+          .eq('org_id', orgId)
+          .gte('created_at', cutoff)
+        if (error) throw error
+
+        const acts = rows || []
+        const map: Record<string, ProductivityRow> = {}
+        for (const a of acts) {
+          const emp = a.employee as { name?: string } | null
+          const name = emp?.name || employees.find(e => e.id === a.employee_id)?.name || 'Unknown'
+          if (!map[name]) map[name] = { employee: name, calls: 0, whatsapp: 0, stage_changes: 0, comments: 0, total: 0 }
+          const t = a.activity_type as string
+          if (t === 'call_log')     map[name].calls++
+          if (t === 'whatsapp_sent') map[name].whatsapp++
+          if (t === 'stage_change') map[name].stage_changes++
+          if (t === 'comment')      map[name].comments++
+          map[name].total++
+        }
+        const rows2 = Object.values(map).sort((a, b) => b.total - a.total)
+        setProductivityData(rows2)
+        setPreviewData([]) // signal preview loaded
+        setLoadingPreview(false)
+        return
       } else if (metric === 'activities') {
         const { data: rows, error } = await supabase
           .from('activities')
@@ -363,18 +480,21 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
               </div>
 
               {/* Chart Type */}
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700">Chart Type</label>
-                <select
-                  value={chartType}
-                  onChange={e => setChartType(e.target.value as ReportConfig['chartType'])}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="bar">Bar Chart</option>
-                  {groupBy === 'date' && <option value="line">Line Chart</option>}
-                  <option value="pie">Pie Chart</option>
-                </select>
-              </div>
+              {metric !== 'productivity' && (
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-slate-700">Chart Type</label>
+                  <select
+                    value={chartType}
+                    onChange={e => setChartType(e.target.value as ReportConfig['chartType'])}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="bar">Bar Chart</option>
+                    {groupBy === 'date' && <option value="line">Line Chart</option>}
+                    <option value="pie">Pie Chart</option>
+                    <option value="table">Table</option>
+                  </select>
+                </div>
+              )}
 
               {/* Date Range */}
               <div className="space-y-1.5">
@@ -463,6 +583,8 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
                   </svg>
                   Loading data...
                 </div>
+              ) : productivityData !== null ? (
+                renderProductivityTable(productivityData)
               ) : previewData !== null ? (
                 renderChart(chartType, previewData)
               ) : (

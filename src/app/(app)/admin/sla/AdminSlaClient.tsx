@@ -27,7 +27,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
       .select().single()
     if (error) toast.error(error.message)
     else {
-      setBreaches(prev => prev.map(b => b.id === data.id ? { ...data, lead: b.lead, owner: b.owner } : b))
+      setBreaches(prev => prev.map(b => b.id === data.id ? { ...data, lead: b.lead, breach_owner: (b as unknown as Record<string,unknown>).breach_owner } : b))
       toast.success('Breach closed')
     }
     setLoading(null)
@@ -43,7 +43,7 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
       .select().single()
     if (error) toast.error(error.message)
     else {
-      setBreaches(prev => prev.map(b => b.id === data.id ? { ...data, lead: b.lead, owner: b.owner } : b))
+      setBreaches(prev => prev.map(b => b.id === data.id ? { ...data, lead: b.lead, breach_owner: (b as unknown as Record<string,unknown>).breach_owner } : b))
       toast.success('Explanation requested')
     }
     setLoading(null)
@@ -80,8 +80,10 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
 
       <div className="space-y-3">
         {filtered.map(b => {
-          const lead = b.lead as Lead
-          const owner = b.owner as Employee
+          const lead = b.lead as Lead & { current_owner?: Employee }
+          const breachOwner = (b as unknown as Record<string, unknown>).breach_owner as Employee | undefined
+          const currentOwner = lead?.current_owner as Employee | undefined
+          const transferred = breachOwner && currentOwner && breachOwner.id !== currentOwner.id
           return (
             <div key={b.id} className="bg-white rounded-xl border border-slate-200 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -94,7 +96,11 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
                     <span className={`text-xs font-medium px-2 py-0.5 rounded ${statusColors[b.resolution]}`}>{b.resolution.replace('_', ' ')}</span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Owner: <strong>{owner?.name}</strong> • Breached {timeAgo(b.breached_at)}
+                    Current owner: <strong>{currentOwner?.name || breachOwner?.name || '—'}</strong>
+                    {transferred && (
+                      <span className="ml-1 text-amber-600 font-medium">(transferred from {breachOwner?.name})</span>
+                    )}
+                    {' '}• Breached {timeAgo(b.breached_at)}
                   </p>
                   {b.explanation && (
                     <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2">
