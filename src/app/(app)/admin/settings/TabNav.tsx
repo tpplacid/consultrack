@@ -18,6 +18,10 @@ interface Tab {
 
 const TABS: Tab[] = [
   {
+    href: '/admin/settings/layouts',
+    label: 'Lead Fields',
+  },
+  {
     href: '/admin/settings/pipeline',
     label: 'Pipeline',
     feature: 'pipeline',

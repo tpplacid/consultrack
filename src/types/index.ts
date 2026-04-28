@@ -63,6 +63,7 @@ export interface Lead {
   application_fees: number | null
   booking_fees: number | null
   tuition_fees: number | null
+  custom_data: Record<string, unknown> | null
   created_at: string
   updated_at: string
   // joined

@@ -1,8 +1,10 @@
 import { requireAuth } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import { LeadDetailClient } from './LeadDetailClient'
 import { Employee } from '@/types'
+import { SectionLayout } from '@/lib/fieldLayouts'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -21,7 +23,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   if (!lead) notFound()
 
-  const [{ data: activities }, { data: templates }, { data: orgEmployees }, { data: org }] = await Promise.all([
+  const adminSupabase = createAdminClient()
+  const [{ data: activities }, { data: templates }, { data: orgEmployees }, { data: org }, { data: layouts }] = await Promise.all([
     supabase
       .from('activities')
       .select('*, employee:employees(id,name,role)')
@@ -43,6 +46,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       .select('sla_config')
       .eq('id', lead.org_id)
       .single(),
+    adminSupabase
+      .from('org_field_layouts')
+      .select('*')
+      .eq('org_id', lead.org_id)
+      .order('position', { ascending: true }),
   ])
 
   const slaConfig = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
@@ -55,6 +63,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       employee={employee}
       orgEmployees={(orgEmployees || []) as unknown as Employee[]}
       slaConfig={slaConfig}
+      sections={(layouts || []) as SectionLayout[]}
     />
   )
 }

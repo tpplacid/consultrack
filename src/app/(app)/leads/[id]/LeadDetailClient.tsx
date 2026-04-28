@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES, STAGE_A_TO_B_REQUIRED, SLA_EXCLUDED_SOURCES } from '@/types'
+import { SectionLayout, FieldDef, evaluateFormula } from '@/lib/fieldLayouts'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
@@ -25,9 +26,10 @@ interface Props {
   employee: Employee
   orgEmployees: Employee[]
   slaConfig: Record<string, number>
+  sections: SectionLayout[]
 }
 
-export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig }: Props) {
+export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, sections }: Props) {
   const { stages } = useOrgConfig()
   const router = useRouter()
   const [lead, setLead] = useState(initialLead)
@@ -39,6 +41,11 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const [transferring, setTransferring] = useState(false)
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
+
+  // Custom fields state
+  const [customData, setCustomData] = useState<Record<string, unknown>>(
+    (initialLead.custom_data as Record<string, unknown>) || {}
+  )
 
   // Editable fields
   const [stageDraft, setStageDraft] = useState(lead.main_stage)
@@ -105,6 +112,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       tuition_fees: fields.tuition_fees ? parseFloat(fields.tuition_fees) : null,
       next_followup_at: followupDraft || null,
       sub_stage: subStageDraft || null,
+      custom_data: customData,
     }
 
     // Stage change
@@ -353,6 +361,16 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
             </CardContent>
           </Card>
 
+          {/* Custom sections */}
+          {sections.map(section => (
+            <CustomSection
+              key={section.id}
+              section={section}
+              customData={customData}
+              onChange={(key, value) => setCustomData(prev => ({ ...prev, [key]: value }))}
+            />
+          ))}
+
           {/* Save */}
           <Button onClick={handleSave} loading={saving} className="w-full">
             <Save size={15} />
@@ -453,7 +471,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       />
 
       {/* Transfer Modal */}
-      <Modal open={transferOpen} onClose={() => setTransferOpen(false)} title="Transfer Lead">
+      <Modal open={transferOpen} onClose={() => { setTransferOpen(false) }} title="Transfer Lead">
         <div className="p-5 space-y-4">
           <p className="text-sm text-slate-600">Transfer <strong>{lead.name}</strong> to another team member or AD.</p>
           <select
@@ -473,6 +491,149 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           </div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+// ── Custom section renderer ────────────────────────────────────────────────────
+function CustomSection({
+  section,
+  customData,
+  onChange,
+}: {
+  section: SectionLayout
+  customData: Record<string, unknown>
+  onChange: (key: string, value: unknown) => void
+}) {
+  if (!section.fields || section.fields.length === 0) return null
+  const sorted = [...section.fields].sort((a, b) => a.position - b.position)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{section.section_name}</CardTitle>
+        <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Custom fields defined by your organisation</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {sorted.map(field => (
+            <CustomFieldInput
+              key={field.id}
+              field={field}
+              value={customData[field.key]}
+              customData={customData}
+              onChange={v => onChange(field.key, v)}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function CustomFieldInput({
+  field,
+  value,
+  customData,
+  onChange,
+}: {
+  field: FieldDef
+  value: unknown
+  customData: Record<string, unknown>
+  onChange: (v: unknown) => void
+}) {
+  const strVal = value !== undefined && value !== null ? String(value) : ''
+  const labelEl = (
+    <label className="block text-sm font-medium text-slate-700">
+      {field.label}
+      {field.required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+  )
+  const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+
+  if (field.type === 'formula') {
+    const computed = evaluateFormula(field.formula, customData)
+    return (
+      <div className="space-y-1">
+        {labelEl}
+        <div className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-700 font-mono">
+          {computed || '—'}
+        </div>
+        {field.formula && (
+          <p className="text-[10px] text-slate-400">= {field.formula}</p>
+        )}
+      </div>
+    )
+  }
+
+  if (field.type === 'boolean') {
+    return (
+      <div className="space-y-1">
+        {labelEl}
+        <select
+          value={strVal}
+          onChange={e => onChange(e.target.value === '' ? null : e.target.value === 'true')}
+          className={inputClass + ' bg-white'}
+        >
+          <option value="">—</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+    )
+  }
+
+  if (field.type === 'select') {
+    return (
+      <div className="space-y-1">
+        {labelEl}
+        <select
+          value={strVal}
+          onChange={e => onChange(e.target.value || null)}
+          className={inputClass + ' bg-white'}
+        >
+          <option value="">Select…</option>
+          {field.options.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <div className="space-y-1 col-span-2">
+        {labelEl}
+        <textarea
+          rows={3}
+          value={strVal}
+          onChange={e => onChange(e.target.value || null)}
+          placeholder={field.placeholder}
+          className={inputClass + ' resize-none'}
+        />
+      </div>
+    )
+  }
+
+  const inputType =
+    field.type === 'number' ? 'number' :
+    field.type === 'date' ? 'date' :
+    field.type === 'email' ? 'email' :
+    field.type === 'phone' ? 'tel' :
+    field.type === 'url' ? 'url' :
+    'text'
+
+  return (
+    <div className="space-y-1">
+      {labelEl}
+      <input
+        type={inputType}
+        value={strVal}
+        onChange={e => onChange(e.target.value || null)}
+        placeholder={field.placeholder}
+        className={inputClass}
+      />
     </div>
   )
 }
