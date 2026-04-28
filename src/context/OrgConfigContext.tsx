@@ -28,21 +28,23 @@ export interface OrgRole {
 }
 
 export interface OrgFeatures {
-  lead_crm: boolean   // Dashboard, leads, CSV upload
-  sla: boolean        // Deadline breach tracking
-  pipeline: boolean   // Pipeline stage customisation
-  roles: boolean      // Role management
-  attendance: boolean // Attendance & leave management
-  meta: boolean       // Meta / Facebook lead integration
+  lead_crm:    boolean // Dashboard, leads, pipeline management
+  sla:         boolean // Deadline breach tracking
+  pipeline:    boolean // Pipeline stage customisation
+  roles:       boolean // Role management
+  attendance:  boolean // Attendance & leave management
+  meta:        boolean // Meta / Facebook lead integration
+  bulk_upload: boolean // Bulk CSV lead import
 }
 
 export const DEFAULT_FEATURES: OrgFeatures = {
-  lead_crm: true,
-  sla: true,
-  pipeline: true,
-  roles: true,
-  attendance: true,
-  meta: true,
+  lead_crm:    true,
+  sla:         true,
+  pipeline:    true,
+  roles:       true,
+  attendance:  true,
+  meta:        true,
+  bulk_upload: true,
 }
 
 interface OrgConfig {

@@ -85,6 +85,10 @@ const FEATURE_META: Record<string, { label: string; description: string }> = {
     label: 'Meta Integration',
     description: 'Auto-pull leads from your Meta (Facebook & Instagram) ad campaigns directly into Consultrack.',
   },
+  bulk_upload: {
+    label: 'Bulk CSV Upload',
+    description: 'Import hundreds of leads at once from a CSV file — map columns, validate data, and push straight into your pipeline.',
+  },
 }
 
 interface Props {

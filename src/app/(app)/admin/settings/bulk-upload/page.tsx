@@ -8,10 +8,10 @@ export default async function SettingsBulkUploadPage() {
   const employee = await requireRole(['ad'])
   const features = await getOrgFeatures(employee.org_id)
 
-  if (!features.lead_crm) {
+  if (!features.bulk_upload) {
     return (
       <FeatureGate
-        featureKey="lead_crm"
+        featureKey="bulk_upload"
         featureLabel="Bulk CSV Upload"
         description="Import hundreds of leads at once from a CSV file — map columns, validate data, and push them straight into your pipeline. Upgrade to enable bulk upload."
       />

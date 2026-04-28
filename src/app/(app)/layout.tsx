@@ -50,12 +50,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const raw = (orgData?.features ?? {}) as Record<string, boolean>
   const features: OrgFeatures = {
-    lead_crm:   raw.lead_crm   ?? DEFAULT_FEATURES.lead_crm,
-    sla:        raw.sla        ?? DEFAULT_FEATURES.sla,
-    pipeline:   raw.pipeline   ?? DEFAULT_FEATURES.pipeline,
-    roles:      raw.roles      ?? DEFAULT_FEATURES.roles,
-    attendance: raw.attendance ?? DEFAULT_FEATURES.attendance,
-    meta:       raw.meta       ?? DEFAULT_FEATURES.meta,
+    lead_crm:    raw.lead_crm    ?? DEFAULT_FEATURES.lead_crm,
+    sla:         raw.sla         ?? DEFAULT_FEATURES.sla,
+    pipeline:    raw.pipeline    ?? DEFAULT_FEATURES.pipeline,
+    roles:       raw.roles       ?? DEFAULT_FEATURES.roles,
+    attendance:  raw.attendance  ?? DEFAULT_FEATURES.attendance,
+    meta:        raw.meta        ?? DEFAULT_FEATURES.meta,
+    bulk_upload: raw.bulk_upload ?? DEFAULT_FEATURES.bulk_upload,
   }
 
   const palette = getPalette((orgData as unknown as Record<string, string> | null)?.brand_palette)

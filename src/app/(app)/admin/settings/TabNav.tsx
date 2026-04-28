@@ -52,8 +52,8 @@ const TABS: Tab[] = [
   {
     href: '/admin/settings/bulk-upload',
     label: 'Bulk Upload',
-    feature: 'lead_crm',
-    featureKey: 'lead_crm',
+    feature: 'bulk_upload',
+    featureKey: 'bulk_upload',
     upgradeLabel: 'Bulk CSV Upload',
     upgradeDesc: 'Import hundreds of leads at once from a CSV file — map columns, validate data, and push straight into your pipeline.',
   },

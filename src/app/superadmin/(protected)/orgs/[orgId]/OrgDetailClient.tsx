@@ -14,7 +14,7 @@ type Employee = { id: string; name: string; email: string; role: string; is_acti
 type Invite = { id: string; token: string; email: string | null; name: string | null; role: string; used_at: string | null; expires_at: string; created_at: string; link: string }
 type Features = {
   lead_crm: boolean; sla: boolean; pipeline: boolean
-  roles: boolean; attendance: boolean; meta: boolean
+  roles: boolean; attendance: boolean; meta: boolean; bulk_upload: boolean
 }
 type MetaConfig = { page_id?: string; access_token?: string }
 type OrgRole = { key: string; label: string }
@@ -28,7 +28,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-slate-300 border-slate-500/20'
 
-const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true }
+const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, bulk_upload: true }
 
 const FEATURE_CONFIG: { key: keyof Features; label: string; description: string; color: string }[] = [
   { key: 'lead_crm',   label: 'Lead CRM',           description: 'Dashboard, lead pipeline, bulk CSV upload, offline approvals', color: '#14b8a6' },
@@ -36,7 +36,8 @@ const FEATURE_CONFIG: { key: keyof Features; label: string; description: string;
   { key: 'sla',        label: 'Deadline Breach',     description: 'Stage-level deadline tracking with breach alerts and logs',   color: '#f59e0b' },
   { key: 'attendance', label: 'Attendance & Leaves', description: 'Clock-in/out with wifi verification, leave approvals',       color: '#3b82f6' },
   { key: 'roles',      label: 'Role Management',     description: 'Custom roles with granular access permissions',               color: '#ec4899' },
-  { key: 'meta',       label: 'Meta Integration',    description: 'Auto-import leads from Facebook & Instagram ad campaigns',   color: '#6366f1' },
+  { key: 'meta',        label: 'Meta Integration',    description: 'Auto-import leads from Facebook & Instagram ad campaigns',   color: '#6366f1' },
+  { key: 'bulk_upload', label: 'Bulk CSV Upload',     description: 'Import leads in bulk via CSV — map columns and push to pipeline', color: '#10b981' },
 ]
 
 interface Props {
@@ -190,7 +191,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <span className="text-neutral-800">·</span>
                 <span>{employees.length} employee{employees.length !== 1 ? 's' : ''}</span>
                 <span className="text-neutral-800">·</span>
-                <span>{enabledCount}/6 features</span>
+                <span>{enabledCount}/{FEATURE_CONFIG.length} features</span>
               </p>
             </div>
           </div>
