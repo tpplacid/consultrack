@@ -20,7 +20,6 @@ interface WaTemplateModalProps {
 export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: WaTemplateModalProps) {
   const [selected, setSelected] = useState<WaTemplate | null>(null)
   const [customText, setCustomText] = useState('')
-  const [sending, setSending] = useState(false)
 
   function renderTemplate(body: string): string {
     return body.replace('{{name}}', lead.name)
@@ -28,18 +27,13 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
 
   const messageBody = selected ? renderTemplate(selected.body) : customText
 
-  async function handleSend() {
-    setSending(true)
-    const url = buildWAUrl(lead.phone, messageBody)
-
-    // window.open must be called synchronously — before any await — so that
-    // iOS Safari and Android Chrome still treat it as a direct user gesture.
-    // Programmatic anchor.click() with target="_blank" is blocked on mobile
-    // browsers regardless of gesture origin.
-    window.open(url, '_blank', 'noopener,noreferrer')
-
+  // Fire-and-forget activity log — called from the <a> tag's onClick so the
+  // browser navigates via the href natively (the only approach iOS Safari
+  // won't block). No async here — we don't want anything that could delay
+  // or intercept the native link navigation.
+  function logAndClose() {
     const supabase = createClient()
-    await supabase.from('activities').insert({
+    supabase.from('activities').insert({
       org_id: lead.org_id,
       lead_id: lead.id,
       employee_id: employeeId,
@@ -47,10 +41,8 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
       note: selected
         ? `WhatsApp sent via template: ${selected.name}`
         : 'WhatsApp opened (no template)',
-    })
-
+    }).then()
     toast.success('WhatsApp opened! Activity logged.')
-    setSending(false)
     onClose()
   }
 
@@ -113,10 +105,18 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
             <Copy size={14} />
             Copy
           </Button>
-          <Button size="sm" onClick={handleSend} loading={sending} className="flex-1">
+          {/* Real <a> tag — the browser follows href natively on tap.
+              window.open() / programmatic clicks are blocked by iOS Safari. */}
+          <a
+            href={buildWAUrl(lead.phone, messageBody)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={logAndClose}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-brand-800 hover:bg-brand-700 text-white transition-colors"
+          >
             <ExternalLink size={14} />
             Open WhatsApp
-          </Button>
+          </a>
         </div>
       </div>
     </Modal>
