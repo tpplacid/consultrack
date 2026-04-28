@@ -32,16 +32,14 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
     setSending(true)
     const url = buildWAUrl(lead.phone, messageBody)
 
-    const a = document.createElement('a')
-    a.href = url
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    // window.open must be called synchronously — before any await — so that
+    // iOS Safari and Android Chrome still treat it as a direct user gesture.
+    // Programmatic anchor.click() with target="_blank" is blocked on mobile
+    // browsers regardless of gesture origin.
+    window.open(url, '_blank', 'noopener,noreferrer')
 
     const supabase = createClient()
-    supabase.from('activities').insert({
+    await supabase.from('activities').insert({
       org_id: lead.org_id,
       lead_id: lead.id,
       employee_id: employeeId,
@@ -49,7 +47,7 @@ export function WaTemplateModal({ open, onClose, lead, templates, employeeId }: 
       note: selected
         ? `WhatsApp sent via template: ${selected.name}`
         : 'WhatsApp opened (no template)',
-    }).then()
+    })
 
     toast.success('WhatsApp opened! Activity logged.')
     setSending(false)
