@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES, STAGE_A_TO_B_REQUIRED, SLA_EXCLUDED_SOURCES } from '@/types'
-import { SectionLayout, FieldDef, evaluateFormula } from '@/lib/fieldLayouts'
+import { SectionLayout, FieldDef, evaluateFormula, LEAD_COLUMN_KEYS } from '@/lib/fieldLayouts'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
-import { Input, Select, Textarea } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { StageBadge } from '@/components/leads/StageBadge'
@@ -42,30 +41,33 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
 
-  // Custom fields state
-  const [customData, setCustomData] = useState<Record<string, unknown>>(
-    (initialLead.custom_data as Record<string, unknown>) || {}
-  )
+  // Unified field values — column-based and custom_data merged into one string map
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
+    const cd = (initialLead.custom_data as Record<string, unknown>) || {}
+    return {
+      // existing columns (stringified for uniform handling)
+      lead_type:           initialLead.lead_type || '',
+      location:            initialLead.location || '',
+      twelfth_score:       initialLead.twelfth_score?.toString() || '',
+      preferred_course:    initialLead.preferred_course || '',
+      interested_colleges: initialLead.interested_colleges?.join(', ') || '',
+      alternate_courses:   initialLead.alternate_courses?.join(', ') || '',
+      father_phone:        initialLead.father_phone || '',
+      decision_maker:      initialLead.decision_maker || '',
+      income_status:       initialLead.income_status || '',
+      loan_status:         initialLead.loan_status || '',
+      application_fees:    initialLead.application_fees?.toString() || '',
+      booking_fees:        initialLead.booking_fees?.toString() || '',
+      tuition_fees:        initialLead.tuition_fees?.toString() || '',
+      // custom_data values
+      ...Object.fromEntries(Object.entries(cd).map(([k, v]) => [k, v !== null && v !== undefined ? String(v) : ''])),
+    }
+  })
 
-  // Editable fields
+  // Editable pipeline fields
   const [stageDraft, setStageDraft] = useState(lead.main_stage)
   const [subStageDraft, setSubStageDraft] = useState(lead.sub_stage || '')
   const [followupDraft, setFollowupDraft] = useState(lead.next_followup_at ? lead.next_followup_at.slice(0, 16) : '')
-  const [fields, setFields] = useState({
-    lead_type: lead.lead_type || '',
-    location: lead.location || '',
-    twelfth_score: lead.twelfth_score?.toString() || '',
-    preferred_course: lead.preferred_course || '',
-    interested_colleges: lead.interested_colleges?.join(', ') || '',
-    alternate_courses: lead.alternate_courses?.join(', ') || '',
-    father_phone: lead.father_phone || '',
-    decision_maker: lead.decision_maker || '',
-    income_status: lead.income_status || '',
-    loan_status: lead.loan_status || '',
-    application_fees: lead.application_fees?.toString() || '',
-    booking_fees: lead.booking_fees?.toString() || '',
-    tuition_fees: lead.tuition_fees?.toString() || '',
-  })
 
   const supabase = createClient()
 
@@ -82,38 +84,44 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
 
   function validateStageTransition(from: LeadStage, to: LeadStage): string | null {
     if (from === '0') {
-      const detailFields = ['lead_type', 'location', 'twelfth_score', 'preferred_course', 'decision_maker', 'income_status'] as const
-      const anyFilled = detailFields.some(f => !!fields[f as keyof typeof fields])
+      const detailFields = ['lead_type', 'location', 'twelfth_score', 'preferred_course', 'decision_maker', 'income_status']
+      const anyFilled = detailFields.some(f => !!fieldValues[f])
       if (!anyFilled) return 'Fill at least one lead detail (location, course, lead type, etc.) before moving out of Lead Gen'
     }
     if (from === 'A' && to === 'B') {
-      const missing = STAGE_A_TO_B_REQUIRED.filter(f => !fields[f as keyof typeof fields])
+      const missing = STAGE_A_TO_B_REQUIRED.filter(f => !fieldValues[f])
       if (missing.length > 0) return `Fill required fields before moving to Follow Up: ${missing.join(', ')}`
-      if (!fields.interested_colleges) return 'At least one interested college required'
+      if (!fieldValues.interested_colleges) return 'At least one interested college required'
     }
     return null
   }
 
   async function handleSave() {
     setSaving(true)
+
+    // Split fieldValues into column updates vs custom_data
+    const customData: Record<string, unknown> = {}
     const updates: Record<string, unknown> = {
-      lead_type: fields.lead_type || null,
-      location: fields.location || null,
-      twelfth_score: fields.twelfth_score ? parseInt(fields.twelfth_score) : null,
-      preferred_course: fields.preferred_course || null,
-      interested_colleges: fields.interested_colleges ? fields.interested_colleges.split(',').map(s => s.trim()).filter(Boolean) : [],
-      alternate_courses: fields.alternate_courses ? fields.alternate_courses.split(',').map(s => s.trim()).filter(Boolean) : [],
-      father_phone: fields.father_phone || null,
-      decision_maker: fields.decision_maker || null,
-      income_status: fields.income_status || null,
-      loan_status: fields.loan_status || null,
-      application_fees: fields.application_fees ? parseFloat(fields.application_fees) : null,
-      booking_fees: fields.booking_fees ? parseFloat(fields.booking_fees) : null,
-      tuition_fees: fields.tuition_fees ? parseFloat(fields.tuition_fees) : null,
       next_followup_at: followupDraft || null,
       sub_stage: subStageDraft || null,
-      custom_data: customData,
     }
+    for (const [key, strVal] of Object.entries(fieldValues)) {
+      if (!LEAD_COLUMN_KEYS.has(key)) {
+        customData[key] = strVal || null
+        continue
+      }
+      // Parse column values with type-appropriate conversions
+      if (key === 'twelfth_score') {
+        updates[key] = strVal ? parseInt(strVal) : null
+      } else if (key === 'application_fees' || key === 'booking_fees' || key === 'tuition_fees') {
+        updates[key] = strVal ? parseFloat(strVal) : null
+      } else if (key === 'interested_colleges' || key === 'alternate_courses') {
+        updates[key] = strVal ? strVal.split(',').map(s => s.trim()).filter(Boolean) : []
+      } else {
+        updates[key] = strVal || null
+      }
+    }
+    updates.custom_data = customData
 
     // Stage change
     if (stageDraft !== lead.main_stage) {
@@ -288,86 +296,13 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
             </CardContent>
           </Card>
 
-          {/* Lead Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Lead Information</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Academic profile and course preferences — completing this section enables advancement to the Follow Up stage</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Lead Type" value={fields.lead_type} onChange={e => setFields(p => ({...p, lead_type: e.target.value}))} placeholder="Engineering, Medical…" />
-                <Input label="Location / City" value={fields.location} onChange={e => setFields(p => ({...p, location: e.target.value}))} placeholder="Chennai" />
-                <Input label="12th Score (%)" type="number" value={fields.twelfth_score} onChange={e => setFields(p => ({...p, twelfth_score: e.target.value}))} placeholder="85" />
-                <Input label="Preferred Course" value={fields.preferred_course} onChange={e => setFields(p => ({...p, preferred_course: e.target.value}))} placeholder="B.Tech CSE" />
-              </div>
-              <Input label="Interested Colleges (comma-separated, min 1)" value={fields.interested_colleges} onChange={e => setFields(p => ({...p, interested_colleges: e.target.value}))} placeholder="SRM, VIT, Amrita" />
-              <Input label="Alternate Courses (comma-separated)" value={fields.alternate_courses} onChange={e => setFields(p => ({...p, alternate_courses: e.target.value}))} placeholder="B.Sc Physics, BCA" />
-            </CardContent>
-          </Card>
-
-          {/* Parent & Financial */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Parent & Financial</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Decision-maker details and financial profile — helps counsel the right stakeholder and assess loan eligibility</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="Father Phone" value={fields.father_phone} onChange={e => setFields(p => ({...p, father_phone: e.target.value}))} placeholder="+91 9XXXXXXXXX" />
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">Decision Maker</label>
-                  <select value={fields.decision_maker} onChange={e => setFields(p => ({...p, decision_maker: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">Select…</option>
-                    <option value="father">Father</option>
-                    <option value="mother">Mother</option>
-                    <option value="sibling">Sibling</option>
-                    <option value="relative">Relative</option>
-                  </select>
-                </div>
-                <Input label="Income Status" value={fields.income_status} onChange={e => setFields(p => ({...p, income_status: e.target.value}))} placeholder="e.g. Below 5L" />
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-slate-700">Loan Needed</label>
-                  <select value={fields.loan_status} onChange={e => setFields(p => ({...p, loan_status: e.target.value}))} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">Unknown</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payments */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Payments</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Record fees collected from this lead — amounts feed into the dashboard and analytics payment summaries</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <Input label="Application Fees (₹)" type="number" value={fields.application_fees} onChange={e => setFields(p => ({...p, application_fees: e.target.value}))} placeholder="0" />
-                <Input label="Booking Fees (₹)" type="number" value={fields.booking_fees} onChange={e => setFields(p => ({...p, booking_fees: e.target.value}))} placeholder="0" />
-                <Input label="Tuition Fees (₹)" type="number" value={fields.tuition_fees} onChange={e => setFields(p => ({...p, tuition_fees: e.target.value}))} placeholder="0" />
-              </div>
-              {(fields.application_fees || fields.booking_fees || fields.tuition_fees) && (
-                <div className="bg-brand-800 border border-brand-700 rounded-lg px-4 py-3">
-                  <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
-                  <p className="text-xl font-bold text-white">
-                    ₹{((parseFloat(fields.application_fees || '0') || 0) + (parseFloat(fields.booking_fees || '0') || 0) + (parseFloat(fields.tuition_fees || '0') || 0)).toLocaleString('en-IN')}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Custom sections */}
+          {/* Layout-driven sections — all fields (columns + custom) */}
           {sections.map(section => (
-            <CustomSection
+            <LayoutSection
               key={section.id}
               section={section}
-              customData={customData}
-              onChange={(key, value) => setCustomData(prev => ({ ...prev, [key]: value }))}
+              fieldValues={fieldValues}
+              onChange={(key, val) => setFieldValues(prev => ({ ...prev, [key]: val }))}
             />
           ))}
 
@@ -495,15 +430,18 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   )
 }
 
-// ── Custom section renderer ────────────────────────────────────────────────────
-function CustomSection({
+// ── Layout-driven section renderer ────────────────────────────────────────────
+// Handles both column-mapped fields (lead_type, location, …) and custom_data fields
+// through a unified fieldValues: Record<string, string> map.
+
+function LayoutSection({
   section,
-  customData,
+  fieldValues,
   onChange,
 }: {
   section: SectionLayout
-  customData: Record<string, unknown>
-  onChange: (key: string, value: unknown) => void
+  fieldValues: Record<string, string>
+  onChange: (key: string, val: string) => void
 }) {
   if (!section.fields || section.fields.length === 0) return null
   const sorted = [...section.fields].sort((a, b) => a.position - b.position)
@@ -512,17 +450,15 @@ function CustomSection({
     <Card>
       <CardHeader>
         <CardTitle>{section.section_name}</CardTitle>
-        <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Custom fields defined by your organisation</p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <div className="grid grid-cols-2 gap-4">
           {sorted.map(field => (
-            <CustomFieldInput
+            <LayoutFieldInput
               key={field.id}
               field={field}
-              value={customData[field.key]}
-              customData={customData}
-              onChange={v => onChange(field.key, v)}
+              fieldValues={fieldValues}
+              onChange={onChange}
             />
           ))}
         </div>
@@ -531,37 +467,37 @@ function CustomSection({
   )
 }
 
-function CustomFieldInput({
+function LayoutFieldInput({
   field,
-  value,
-  customData,
+  fieldValues,
   onChange,
 }: {
   field: FieldDef
-  value: unknown
-  customData: Record<string, unknown>
-  onChange: (v: unknown) => void
+  fieldValues: Record<string, string>
+  onChange: (key: string, val: string) => void
 }) {
-  const strVal = value !== undefined && value !== null ? String(value) : ''
+  const strVal = fieldValues[field.key] ?? ''
+  const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
   const labelEl = (
     <label className="block text-sm font-medium text-slate-700">
       {field.label}
       {field.required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
   )
-  const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
 
   if (field.type === 'formula') {
-    const computed = evaluateFormula(field.formula, customData)
+    const computed = evaluateFormula(field.formula, fieldValues)
+    const numVal = parseFloat(computed)
+    const isRupees = field.key.includes('fees') || field.key.includes('collected') || field.key.includes('amount') || field.key.includes('paid')
+    const display = isRupees && !isNaN(numVal)
+      ? '₹' + numVal.toLocaleString('en-IN')
+      : (computed || '—')
     return (
       <div className="space-y-1">
         {labelEl}
-        <div className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-700 font-mono">
-          {computed || '—'}
+        <div className={`px-3 py-2 border border-slate-200 rounded-lg text-sm bg-brand-800 text-white font-semibold ${isRupees ? 'text-base' : ''}`}>
+          {display}
         </div>
-        {field.formula && (
-          <p className="text-[10px] text-slate-400">= {field.formula}</p>
-        )}
       </div>
     )
   }
@@ -570,11 +506,7 @@ function CustomFieldInput({
     return (
       <div className="space-y-1">
         {labelEl}
-        <select
-          value={strVal}
-          onChange={e => onChange(e.target.value === '' ? null : e.target.value === 'true')}
-          className={inputClass + ' bg-white'}
-        >
+        <select value={strVal} onChange={e => onChange(field.key, e.target.value)} className={inputClass + ' bg-white'}>
           <option value="">—</option>
           <option value="true">Yes</option>
           <option value="false">No</option>
@@ -587,15 +519,9 @@ function CustomFieldInput({
     return (
       <div className="space-y-1">
         {labelEl}
-        <select
-          value={strVal}
-          onChange={e => onChange(e.target.value || null)}
-          className={inputClass + ' bg-white'}
-        >
+        <select value={strVal} onChange={e => onChange(field.key, e.target.value)} className={inputClass + ' bg-white'}>
           <option value="">Select…</option>
-          {field.options.map(opt => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
+          {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       </div>
     )
@@ -608,7 +534,7 @@ function CustomFieldInput({
         <textarea
           rows={3}
           value={strVal}
-          onChange={e => onChange(e.target.value || null)}
+          onChange={e => onChange(field.key, e.target.value)}
           placeholder={field.placeholder}
           className={inputClass + ' resize-none'}
         />
@@ -618,11 +544,10 @@ function CustomFieldInput({
 
   const inputType =
     field.type === 'number' ? 'number' :
-    field.type === 'date' ? 'date' :
-    field.type === 'email' ? 'email' :
-    field.type === 'phone' ? 'tel' :
-    field.type === 'url' ? 'url' :
-    'text'
+    field.type === 'date'   ? 'date'   :
+    field.type === 'email'  ? 'email'  :
+    field.type === 'phone'  ? 'tel'    :
+    field.type === 'url'    ? 'url'    : 'text'
 
   return (
     <div className="space-y-1">
@@ -630,7 +555,7 @@ function CustomFieldInput({
       <input
         type={inputType}
         value={strVal}
-        onChange={e => onChange(e.target.value || null)}
+        onChange={e => onChange(field.key, e.target.value)}
         placeholder={field.placeholder}
         className={inputClass}
       />
