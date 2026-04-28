@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { Employee } from '@/types'
+import { SectionLayout } from '@/lib/fieldLayouts'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -23,6 +24,7 @@ interface Props {
   orgId: string
   employeeId: string
   employees: Employee[]
+  sections: SectionLayout[]
 }
 
 const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6']
@@ -212,8 +214,32 @@ function renderChart(chartType: 'bar' | 'line' | 'pie' | 'table', data: ChartDat
   )
 }
 
-export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
+export function ReportBuilderClient({ orgId, employeeId, employees, sections }: Props) {
   const { stageMap } = useOrgConfig()
+
+  // Build dynamic groupBy options from org's custom field layout
+  // (exclude formula fields — they're computed, not filterable)
+  const customFieldOptions = sections.flatMap(s =>
+    s.fields
+      .filter(f => f.type !== 'formula')
+      .map(f => ({ value: `custom:${f.key}`, label: `${f.label} (${s.section_name})` }))
+  )
+
+  // Leads metric groupBy — static options + all org custom fields
+  const leadsGroupByOptions = [
+    { value: 'stage',            label: 'Stage' },
+    { value: 'source',           label: 'Source' },
+    { value: 'owner',            label: 'Owner' },
+    { value: 'lead_type',        label: 'Lead Type' },
+    { value: 'location',         label: 'Location' },
+    { value: 'preferred_course', label: 'Preferred Course' },
+    { value: 'date',             label: 'Date' },
+    ...customFieldOptions,
+  ]
+
+  const DYNAMIC_METRICS = METRICS.map(m =>
+    m.value === 'leads' ? { ...m, groupByOptions: leadsGroupByOptions } : m
+  )
   const [isDesktop, setIsDesktop] = useState(false)
   const [reportName, setReportName] = useState('')
   const [metric, setMetric] = useState<ReportConfig['metric']>('leads')
@@ -237,8 +263,9 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
 
   // When metric changes, reset groupBy to first option of new metric
   useEffect(() => {
-    const m = METRICS.find(m => m.value === metric)
+    const m = DYNAMIC_METRICS.find(m => m.value === metric)
     if (m) setGroupBy(m.groupByOptions[0].value)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [metric])
 
   // Line chart only valid for date groupBy
@@ -260,7 +287,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
     )
   }
 
-  const currentMetric = METRICS.find(m => m.value === metric)!
+  const currentMetric = DYNAMIC_METRICS.find(m => m.value === metric)!
 
   async function handlePreview() {
     setLoadingPreview(true)
@@ -278,7 +305,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
       if (metric === 'leads') {
         const { data: rows, error } = await supabase
           .from('leads')
-          .select('main_stage, source, owner_id, lead_type, location, preferred_course, created_at, owner:employees!leads_owner_id_fkey(name)')
+          .select('main_stage, source, owner_id, lead_type, location, preferred_course, custom_data, created_at, owner:employees!leads_owner_id_fkey(name)')
           .eq('org_id', orgId)
           .gte('created_at', cutoff)
 
@@ -308,6 +335,14 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
           data = aggregateByKey(leads, (l) =>
             l.created_at ? format(new Date(l.created_at as string), 'dd MMM') : ''
           )
+        } else if (groupBy.startsWith('custom:')) {
+          // Custom field from leads.custom_data JSONB
+          const fieldKey = groupBy.slice(7)
+          data = aggregateByKey(leads, (l) => {
+            const cd = (l as unknown as Record<string, unknown>).custom_data as Record<string, unknown> | null
+            const v = cd?.[fieldKey]
+            return v !== null && v !== undefined && v !== '' ? String(v) : 'Not set'
+          })
         }
       } else if (metric === 'productivity') {
         const { data: rows, error } = await supabase
@@ -459,7 +494,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees }: Props) {
                   onChange={e => setMetric(e.target.value as ReportConfig['metric'])}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {METRICS.map(m => (
+                  {DYNAMIC_METRICS.map(m => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>

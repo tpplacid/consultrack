@@ -23,7 +23,7 @@ interface NavItem {
   icon: React.ReactNode
   roles?: string[]
   feature?: keyof OrgFeatures
-  badgeKey?: 'slaExplanations' | 'teamBreaches' | 'pendingLeaves' | 'pendingAttendance'
+  badgeKey?: 'slaExplanations' | 'teamBreaches' | 'adminBreaches' | 'pendingLeaves' | 'pendingAttendance'
 }
 
 const navItems: NavItem[] = [
@@ -52,7 +52,7 @@ const teamNavItems: NavItem[] = [
 ]
 
 const slaNavItems: NavItem[] = [
-  { href: '/admin/sla-mgmt', label: 'SLA', icon: <AlertCircle size={17} />, feature: 'sla', badgeKey: 'teamBreaches' },
+  { href: '/admin/sla-mgmt', label: 'SLA', icon: <AlertCircle size={17} />, feature: 'sla', badgeKey: 'adminBreaches' },
 ]
 
 const settingsNavItems: NavItem[] = [
@@ -136,43 +136,63 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
   const [badges, setBadges] = useState({
     slaExplanations: 0,
     teamBreaches: 0,
+    adminBreaches: 0,
     pendingLeaves: 0,
     pendingAttendance: 0,
   })
-  const prevBadgesRef = useRef({ slaExplanations: 0, teamBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 })
+  const prevBadgesRef = useRef({ slaExplanations: 0, teamBreaches: 0, adminBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 })
 
   const refreshBadges = useCallback(async () => {
     const supabase = createClient()
-    const next = { slaExplanations: 0, teamBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 }
+    const next = { slaExplanations: 0, teamBreaches: 0, adminBreaches: 0, pendingLeaves: 0, pendingAttendance: 0 }
 
-    const [slaExp, teamB, leaves, att] = await Promise.all([
-      supabase.from('sla_breaches').select('*', { count: 'exact', head: true })
-        .eq('owner_id', employee.id).eq('resolution', 'explanation_requested'),
-      (employee.role === 'tl' || employee.role === 'ad')
-        ? supabase.from('sla_breaches').select('*', { count: 'exact', head: true })
-            .eq('org_id', employee.org_id).in('resolution', ['pending', 'explanation_requested'])
-        : Promise.resolve({ count: 0 }),
-      employee.role === 'ad'
-        ? supabase.from('leaves').select('*', { count: 'exact', head: true })
-            .eq('org_id', employee.org_id).eq('status', 'pending')
-        : Promise.resolve({ count: 0 }),
-      employee.role === 'ad'
-        ? supabase.from('attendance').select('*', { count: 'exact', head: true })
-            .eq('org_id', employee.org_id).eq('status', 'questioned')
-        : Promise.resolve({ count: 0 }),
-    ])
+    // My own pending explanations (explanation requested but I haven't submitted yet)
+    const { count: slaExpCount } = await supabase
+      .from('sla_breaches').select('*', { count: 'exact', head: true })
+      .eq('owner_id', employee.id)
+      .eq('resolution', 'explanation_requested')
+      .eq('explanation_status', 'pending')
+    next.slaExplanations = slaExpCount ?? 0
 
-    next.slaExplanations  = slaExp.count  ?? 0
-    next.teamBreaches     = teamB.count   ?? 0
-    next.pendingLeaves    = leaves.count  ?? 0
-    next.pendingAttendance = att.count    ?? 0
+    if (employee.role === 'tl' || employee.role === 'ad') {
+      // teamBreaches = pending breaches only for MY direct reports + myself
+      // (matches the filter on /team/sla page)
+      const { data: reportRows } = await supabase
+        .from('employees').select('id').eq('reports_to', employee.id)
+      const teamIds = [employee.id, ...(reportRows || []).map((r: { id: string }) => r.id)]
+      const { count: teamCount } = await supabase
+        .from('sla_breaches').select('*', { count: 'exact', head: true })
+        .in('owner_id', teamIds)
+        .eq('resolution', 'pending')
+      next.teamBreaches = teamCount ?? 0
+    }
+
+    if (employee.role === 'ad') {
+      // adminBreaches = all unresolved pending breaches org-wide (for admin SLA management)
+      const { count: adminCount } = await supabase
+        .from('sla_breaches').select('*', { count: 'exact', head: true })
+        .eq('org_id', employee.org_id)
+        .eq('resolution', 'pending')
+      next.adminBreaches = adminCount ?? 0
+
+      const { count: leaveCount } = await supabase
+        .from('leaves').select('*', { count: 'exact', head: true })
+        .eq('org_id', employee.org_id).eq('status', 'pending')
+      next.pendingLeaves = leaveCount ?? 0
+
+      const { count: attCount } = await supabase
+        .from('attendance').select('*', { count: 'exact', head: true })
+        .eq('org_id', employee.org_id).eq('status', 'questioned')
+      next.pendingAttendance = attCount ?? 0
+    }
 
     // Play sound if any count increased since last check
     const prev = prevBadgesRef.current
     const anyNew = (
-      next.slaExplanations  > prev.slaExplanations  ||
-      next.teamBreaches     > prev.teamBreaches      ||
-      next.pendingLeaves    > prev.pendingLeaves      ||
+      next.slaExplanations > prev.slaExplanations ||
+      next.teamBreaches    > prev.teamBreaches    ||
+      next.adminBreaches   > prev.adminBreaches   ||
+      next.pendingLeaves   > prev.pendingLeaves   ||
       next.pendingAttendance > prev.pendingAttendance
     )
     if (anyNew) {
