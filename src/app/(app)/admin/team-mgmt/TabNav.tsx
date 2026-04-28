@@ -1,20 +1,25 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useOrgConfig } from '@/context/OrgConfigContext'
 
-const TABS = [
-  { href: '/admin/team-mgmt/employees', label: 'Employees' },
-  { href: '/admin/team-mgmt/attendance', label: 'Attendance' },
-  { href: '/admin/team-mgmt/leaves', label: 'Leave Management' },
-  { href: '/admin/team-mgmt/allocation', label: 'Allocation & Org' },
-]
+const BASE_TABS = [
+  { href: '/admin/team-mgmt/employees',  label: 'Employees',        feature: null },
+  { href: '/admin/team-mgmt/attendance', label: 'Attendance',       feature: 'attendance' },
+  { href: '/admin/team-mgmt/leaves',     label: 'Leave Management', feature: 'attendance' },
+  { href: '/admin/team-mgmt/allocation', label: 'Allocation & Org', feature: null },
+] as const
 
 export function TeamTabNav() {
   const pathname = usePathname()
+  const { features } = useOrgConfig()
+
+  const tabs = BASE_TABS.filter(t => !t.feature || features[t.feature as keyof typeof features])
+
   return (
     <div className="bg-white border-b border-slate-200 px-4 md:px-6">
       <div className="flex items-center gap-1 overflow-x-auto">
-        {TABS.map(tab => {
+        {tabs.map(tab => {
           const active = pathname.startsWith(tab.href)
           return (
             <Link key={tab.href} href={tab.href}

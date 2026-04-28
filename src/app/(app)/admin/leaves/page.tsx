@@ -1,9 +1,15 @@
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getOrgFeatures } from '@/lib/orgFeatures'
+import { FeatureGate } from '@/components/FeatureGate'
 import { AdminLeavesClient } from './AdminLeavesClient'
 
 export default async function AdminLeavesPage() {
   const employee = await requireRole(['ad'])
+  const features = await getOrgFeatures(employee.org_id)
+  if (!features.attendance) {
+    return <FeatureGate featureKey="attendance" featureLabel="Leave Management" description="Track employee clock-in/out, manage leave requests, and configure weekoffs for your team." />
+  }
   const supabase = createAdminClient()
 
   const { data: orgEmps, error: empError } = await supabase
