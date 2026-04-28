@@ -16,9 +16,10 @@ import { Plus, X } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Metric     = 'leads' | 'activities' | 'sla_breaches' | 'productivity'
-type ChartType  = 'bar' | 'line' | 'pie' | 'table'
-type DateRange  = 1 | 7 | 30 | 90
+type Metric      = 'leads' | 'activities' | 'sla_breaches' | 'productivity'
+type ChartType   = 'bar' | 'line' | 'pie' | 'table'
+type DateRange   = 1 | 7 | 30 | 90
+type Aggregation = 'count' | 'sum' | 'avg'
 
 interface FilterRule {
   id: string
@@ -27,6 +28,12 @@ interface FilterRule {
 }
 
 interface ChartDataPoint { name: string; value: number }
+
+interface ValueFieldOption {
+  value: string   // 'count' | 'application_fees' | 'booking_fees' | 'tuition_fees' | 'total_collected' | 'custom:key'
+  label: string
+  isCurrency: boolean
+}
 
 interface ProductivityRow {
   employee: string
@@ -97,6 +104,24 @@ const STATIC_FILTER_FIELDS = [
   { value: 'sub_stage',        label: 'Sub-stage',       type: 'text'     as const },
 ]
 
+// Static numeric value fields for leads metric
+const STATIC_VALUE_FIELDS: ValueFieldOption[] = [
+  { value: 'count',            label: 'Count (# of leads)',     isCurrency: false },
+  { value: 'application_fees', label: 'Application Fees (₹)',   isCurrency: true  },
+  { value: 'booking_fees',     label: 'Booking Fees (₹)',       isCurrency: true  },
+  { value: 'tuition_fees',     label: 'Tuition Fees (₹)',       isCurrency: true  },
+  { value: 'total_collected',  label: 'Total Collected (₹)',    isCurrency: true  },
+  { value: 'twelfth_score',    label: '12th Score (avg)',        isCurrency: false },
+]
+
+function formatValue(value: number, isCurrency: boolean): string {
+  if (!isCurrency) return value.toLocaleString('en-IN')
+  if (value >= 10_000_000) return `₹${(value / 10_000_000).toFixed(1)}Cr`
+  if (value >= 100_000)    return `₹${(value / 100_000).toFixed(1)}L`
+  if (value >= 1_000)      return `₹${(value / 1_000).toFixed(1)}K`
+  return `₹${value.toLocaleString('en-IN')}`
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function aggregateByKey<T extends Record<string, unknown>>(
@@ -108,6 +133,42 @@ function aggregateByKey<T extends Record<string, unknown>>(
     if (k) counts[k] = (counts[k] || 0) + 1
   }
   return Object.entries(counts).map(([name, value]) => ({ name, value }))
+}
+
+function aggregateByKeyValue<T extends Record<string, unknown>>(
+  data: T[],
+  keyFn: (item: T) => string,
+  valueFn: (item: T) => number,
+  agg: 'sum' | 'avg',
+): ChartDataPoint[] {
+  const sums: Record<string, number>   = {}
+  const counts: Record<string, number> = {}
+  for (const item of data) {
+    const k = keyFn(item)
+    if (!k) continue
+    sums[k]   = (sums[k]   || 0) + valueFn(item)
+    counts[k] = (counts[k] || 0) + 1
+  }
+  return Object.entries(sums).map(([name, sum]) => ({
+    name,
+    value: agg === 'avg' ? Math.round(sum / counts[name]) : Math.round(sum),
+  }))
+}
+
+function getLeadNumericValue(lead: LeadRow, valueField: string): number {
+  if (valueField === 'total_collected') {
+    return (
+      (Number(lead.application_fees) || 0) +
+      (Number(lead.booking_fees)     || 0) +
+      (Number(lead.tuition_fees)     || 0)
+    )
+  }
+  if (valueField.startsWith('custom:')) {
+    const key = valueField.slice(7)
+    const cd  = lead.custom_data as Record<string, unknown> | null
+    return Number(cd?.[key]) || 0
+  }
+  return Number(lead[valueField]) || 0
 }
 
 type LeadRow = Record<string, unknown>
@@ -177,26 +238,37 @@ function renderProductivityTable(rows: ProductivityRow[]) {
   )
 }
 
-function renderDataTable(data: ChartDataPoint[]) {
+function renderDataTable(data: ChartDataPoint[], valueLabel = 'Count', isCurrency = false) {
   const sorted = [...data].sort((a, b) => b.value - a.value)
   if (!sorted.length) return <EmptyState />
+  const total = sorted.reduce((s, r) => s + r.value, 0)
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200">
             <th className="py-2 px-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
-            <th className="py-2 px-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Count</th>
+            <th className="py-2 px-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">{valueLabel}</th>
+            {!isCurrency && <th className="py-2 px-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">%</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {sorted.map((row, i) => (
             <tr key={i} className="hover:bg-slate-50">
               <td className="py-2 px-3 font-medium text-slate-800">{row.name}</td>
-              <td className="py-2 px-3 text-right font-bold text-slate-900">{row.value}</td>
+              <td className="py-2 px-3 text-right font-bold text-slate-900">{formatValue(row.value, isCurrency)}</td>
+              {!isCurrency && <td className="py-2 px-3 text-right text-slate-500">{total ? ((row.value / total) * 100).toFixed(1) : 0}%</td>}
             </tr>
           ))}
         </tbody>
+        {isCurrency && (
+          <tfoot>
+            <tr className="border-t-2 border-slate-300 bg-slate-50">
+              <td className="py-2 px-3 font-semibold text-slate-700">Total</td>
+              <td className="py-2 px-3 text-right font-bold text-indigo-700">{formatValue(total, true)}</td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   )
@@ -210,20 +282,26 @@ function EmptyState() {
   )
 }
 
-function renderChart(chartType: ChartType, data: ChartDataPoint[]) {
-  if (chartType === 'table') return renderDataTable(data)
+function renderChart(chartType: ChartType, data: ChartDataPoint[], valueLabel = 'Count', isCurrency = false) {
+  if (chartType === 'table') return renderDataTable(data, valueLabel, isCurrency)
   if (!data.length)          return <EmptyState />
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tooltipFormatter = (v: any) => [formatValue(Number(v) || 0, isCurrency), valueLabel]
 
   if (chartType === 'pie') {
     return (
       <ResponsiveContainer width="100%" height={320}>
         <PieChart>
           <Pie data={data} cx="50%" cy="50%" outerRadius={110} dataKey="value"
-            label={p => `${p.name ?? ''} ${(((p.percent as number | undefined) ?? 0) * 100).toFixed(0)}%`}
+            label={p => isCurrency
+              ? formatValue(p.value as number, true)
+              : `${p.name ?? ''} ${(((p.percent as number | undefined) ?? 0) * 100).toFixed(0)}%`
+            }
           >
             {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
           </Pie>
-          <Tooltip /><Legend />
+          <Tooltip formatter={tooltipFormatter} /><Legend />
         </PieChart>
       </ResponsiveContainer>
     )
@@ -234,9 +312,9 @@ function renderChart(chartType: ChartType, data: ChartDataPoint[]) {
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-          <YAxis allowDecimals={false} />
-          <Tooltip /><Legend />
-          <Line type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} dot={false} name="Count" />
+          <YAxis tickFormatter={v => isCurrency ? formatValue(v as number, true) : String(v)} allowDecimals={false} />
+          <Tooltip formatter={tooltipFormatter} /><Legend />
+          <Line type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} dot={false} name={valueLabel} />
         </LineChart>
       </ResponsiveContainer>
     )
@@ -246,9 +324,9 @@ function renderChart(chartType: ChartType, data: ChartDataPoint[]) {
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-        <YAxis allowDecimals={false} />
-        <Tooltip /><Legend />
-        <Bar dataKey="value" radius={[4,4,0,0]} name="Count">
+        <YAxis tickFormatter={v => isCurrency ? formatValue(v as number, true) : String(v)} allowDecimals={false} />
+        <Tooltip formatter={tooltipFormatter} /><Legend />
+        <Bar dataKey="value" radius={[4,4,0,0]} name={valueLabel}>
           {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
         </Bar>
       </BarChart>
@@ -368,6 +446,8 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
   const [reportName,     setReportName]     = useState('')
   const [metric,         setMetric]         = useState<Metric>('leads')
   const [groupBy,        setGroupBy]        = useState('stage')
+  const [valueField,     setValueField]     = useState('count')
+  const [aggregation,    setAggregation]    = useState<Aggregation>('count')
   const [chartType,      setChartType]      = useState<ChartType>('bar')
   const [dateRange,      setDateRange]      = useState<DateRange>(30)
   const [filters,        setFilters]        = useState<FilterRule[]>([])
@@ -397,6 +477,26 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
       .filter(f => f.type !== 'formula')
       .map(f => ({ value: `custom:${f.key}`, label: `${f.label} (${s.section_name})` }))
   )
+
+  // Build dynamic value field options: static numeric + numeric custom fields
+  const customNumericValueFields: ValueFieldOption[] = sections.flatMap(s =>
+    s.fields
+      .filter(f => f.type === 'number')
+      .map(f => ({ value: `custom:${f.key}`, label: `${f.label} (${s.section_name})`, isCurrency: false }))
+  )
+  const allValueFields: ValueFieldOption[] = [...STATIC_VALUE_FIELDS, ...customNumericValueFields]
+
+  // Derived helpers for current value field
+  const currentValueField = allValueFields.find(v => v.value === valueField) ?? STATIC_VALUE_FIELDS[0]
+  const isCountMode       = valueField === 'count'
+  const activeAggregation = isCountMode ? 'count' : aggregation
+
+  // Value label shown in charts/tables
+  const valueLabel = isCountMode
+    ? 'Count'
+    : aggregation === 'avg'
+      ? `Avg ${currentValueField.label}`
+      : `Sum ${currentValueField.label}`
 
   const METRICS = [
     {
@@ -476,45 +576,40 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
 
         const leads = applyFilters((rows || []) as unknown as LeadRow[], filters)
 
-        let data: ChartDataPoint[] = []
-
-        if (groupBy === 'stage') {
-          data = aggregateByKey(leads, l => {
+        // Key extractor per groupBy
+        const keyFn = (l: LeadRow): string => {
+          if (groupBy === 'stage') {
             const s = l.main_stage as string
             return s ? `${s} — ${stageMap[s]?.label ?? s}` : ''
-          })
-        } else if (groupBy === 'sub_stage') {
-          data = aggregateByKey(leads, l => (l.sub_stage as string) || '(none)')
-        } else if (groupBy === 'source') {
-          data = aggregateByKey(leads, l => (l.source as string) || 'Unknown')
-        } else if (groupBy === 'owner') {
-          data = aggregateByKey(leads, l => {
+          }
+          if (groupBy === 'sub_stage')        return (l.sub_stage as string)        || '(none)'
+          if (groupBy === 'source')           return (l.source as string)           || 'Unknown'
+          if (groupBy === 'owner') {
             const o = l.owner as { name?: string } | null
             return o?.name || employees.find(e => e.id === l.owner_id)?.name || 'Unassigned'
-          })
-        } else if (groupBy === 'lead_type') {
-          data = aggregateByKey(leads, l => (l.lead_type as string) || 'Not set')
-        } else if (groupBy === 'location') {
-          data = aggregateByKey(leads, l => (l.location as string) || 'Not set')
-        } else if (groupBy === 'preferred_course') {
-          data = aggregateByKey(leads, l => (l.preferred_course as string) || 'Not set')
-        } else if (groupBy === 'decision_maker') {
-          data = aggregateByKey(leads, l => (l.decision_maker as string) || 'Not set')
-        } else if (groupBy === 'loan_status') {
-          data = aggregateByKey(leads, l => (l.loan_status as string) || 'Unknown')
-        } else if (groupBy === 'income_status') {
-          data = aggregateByKey(leads, l => (l.income_status as string) || 'Not set')
-        } else if (groupBy === 'date') {
-          data = aggregateByKey(leads, l =>
-            l.created_at ? format(new Date(l.created_at as string), 'dd MMM') : ''
-          )
-        } else if (groupBy.startsWith('custom:')) {
-          const fieldKey = groupBy.slice(7)
-          data = aggregateByKey(leads, l => {
+          }
+          if (groupBy === 'lead_type')        return (l.lead_type as string)        || 'Not set'
+          if (groupBy === 'location')         return (l.location as string)         || 'Not set'
+          if (groupBy === 'preferred_course') return (l.preferred_course as string) || 'Not set'
+          if (groupBy === 'decision_maker')   return (l.decision_maker as string)   || 'Not set'
+          if (groupBy === 'loan_status')      return (l.loan_status as string)      || 'Unknown'
+          if (groupBy === 'income_status')    return (l.income_status as string)    || 'Not set'
+          if (groupBy === 'date')             return l.created_at ? format(new Date(l.created_at as string), 'dd MMM') : ''
+          if (groupBy.startsWith('custom:')) {
+            const k  = groupBy.slice(7)
             const cd = l.custom_data as Record<string, unknown> | null
-            const v = cd?.[fieldKey]
+            const v  = cd?.[k]
             return v !== null && v !== undefined && v !== '' ? String(v) : 'Not set'
-          })
+          }
+          return ''
+        }
+
+        let data: ChartDataPoint[]
+
+        if (isCountMode) {
+          data = aggregateByKey(leads, keyFn)
+        } else {
+          data = aggregateByKeyValue(leads, keyFn, l => getLeadNumericValue(l, valueField), activeAggregation as 'sum' | 'avg')
         }
 
         setPreviewData(data)
@@ -605,7 +700,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
     } finally {
       setLoadingPreview(false)
     }
-  }, [metric, groupBy, dateRange, filters, orgId, stageMap, employees])
+  }, [metric, groupBy, valueField, aggregation, isCountMode, activeAggregation, dateRange, filters, orgId, stageMap, employees])
 
   // ── Save ────────────────────────────────────────────────────────────────────
   async function handleSave() {
@@ -616,7 +711,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
       const { error } = await supabase.from('reports').insert({
         org_id: orgId, created_by: employeeId,
         name: reportName.trim(),
-        config: { metric, groupBy, chartType, dateRange, filters },
+        config: { metric, groupBy, valueField, aggregation, chartType, dateRange, filters },
         visible_to_team: visibleToTeam,
       })
       if (error) throw error
@@ -671,6 +766,48 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
                   {METRICS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
               </div>
+
+              {/* Value Field — only for leads */}
+              {metric === 'leads' && (
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-slate-700">Measure (Value)</label>
+                  <select value={valueField}
+                    onChange={e => {
+                      const v = e.target.value
+                      setValueField(v)
+                      if (v === 'count')   setAggregation('count')
+                      else if (aggregation === 'count') setAggregation('sum')
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <optgroup label="Count">
+                      <option value="count">Count (# of leads)</option>
+                    </optgroup>
+                    <optgroup label="Fee Fields">
+                      {STATIC_VALUE_FIELDS.filter(v => v.value !== 'count' && !v.value.startsWith('custom')).map(v =>
+                        <option key={v.value} value={v.value}>{v.label}</option>
+                      )}
+                    </optgroup>
+                    {customNumericValueFields.length > 0 && (
+                      <optgroup label="Custom Numeric Fields">
+                        {customNumericValueFields.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+              )}
+
+              {/* Aggregation — only shown when a non-count value field is selected */}
+              {metric === 'leads' && !isCountMode && (
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-slate-700">Aggregation</label>
+                  <select value={aggregation === 'count' ? 'sum' : aggregation}
+                    onChange={e => setAggregation(e.target.value as Aggregation)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="sum">Sum (total)</option>
+                    <option value="avg">Average per lead</option>
+                  </select>
+                </div>
+              )}
 
               {/* Group By */}
               {metric !== 'productivity' && (
@@ -801,7 +938,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
               ) : productivityData !== null ? (
                 renderProductivityTable(productivityData)
               ) : previewData !== null ? (
-                renderChart(chartType, previewData)
+                renderChart(chartType, previewData, valueLabel, currentValueField.isCurrency)
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
                   <svg className="h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
