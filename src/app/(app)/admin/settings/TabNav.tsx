@@ -27,7 +27,7 @@ const TABS: Tab[] = [
     feature: 'pipeline',
     featureKey: 'pipeline',
     upgradeLabel: 'Pipeline Customisation',
-    upgradeDesc: 'Customise lead stages, substages, and allowed transition flows to match your admissions process exactly.',
+    upgradeDesc: 'Model your exact sales process — every stage, sub-stage, and transition rule.',
   },
   {
     href: '/admin/settings/roles',

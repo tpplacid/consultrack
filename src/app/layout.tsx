@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'Consultrack',
-  description: 'Admissions CRM for education consultancies',
+  description: 'Built for speed. Built for your process.',
   icons: {
     icon: [
       { url: '/Consultrack Logo.png', type: 'image/png' },

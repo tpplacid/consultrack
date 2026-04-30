@@ -68,7 +68,7 @@ export default function LoginPage() {
             <img src="/Consultrack Logo.png" alt="Consultrack" className="h-12 object-contain mx-auto mb-1"
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             <p className="text-2xl font-bold text-slate-900">Consultrack</p>
-            <p className="text-slate-500 text-sm mt-0.5">Admissions CRM for education consultancies</p>
+            <p className="text-slate-500 text-sm mt-0.5">Move fast. Close faster.</p>
           </div>
         )}
 

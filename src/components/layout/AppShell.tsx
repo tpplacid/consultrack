@@ -64,7 +64,7 @@ const settingsNavItems: NavItem[] = [
 const FEATURE_META: Record<string, { label: string; description: string }> = {
   lead_crm:   {
     label: 'Lead CRM',
-    description: 'Manage leads, pipeline stages, WA templates, and team activity — the core of your admissions workflow.',
+    description: 'Your leads, your stages, your templates — all in one place. Built to move fast.',
   },
   sla: {
     label: 'Deadline Breaches',
@@ -76,7 +76,7 @@ const FEATURE_META: Record<string, { label: string; description: string }> = {
   },
   pipeline: {
     label: 'Pipeline Customisation',
-    description: 'Customise your lead stages, substages, and transition flows to match your exact admissions process.',
+    description: 'Build your pipeline exactly how you think. Every stage, every rule, your way.',
   },
   roles: {
     label: 'Custom Roles',
@@ -84,7 +84,7 @@ const FEATURE_META: Record<string, { label: string; description: string }> = {
   },
   meta: {
     label: 'Meta Integration',
-    description: 'Auto-pull leads from your Meta (Facebook & Instagram) ad campaigns directly into Consultrack.',
+    description: 'Leads from your Meta (Facebook & Instagram) campaigns land here instantly — no copy-paste, no lag.',
   },
   bulk_upload: {
     label: 'Bulk CSV Upload',
