@@ -28,6 +28,7 @@ export interface Employee {
   is_active: boolean
   is_on_leave: boolean
   wifi_ssid: string | null
+  auto_allocate?: boolean
   created_at: string
   // joined relations
   manager?: Employee

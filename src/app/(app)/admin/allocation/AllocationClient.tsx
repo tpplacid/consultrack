@@ -78,6 +78,53 @@ export function AllocationClient({ admin, employees: initialEmployees, weekoffs:
         />
       </div>
 
+      {/* Auto Allocation */}
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-800">Auto Allocation</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Employees with auto allocation off will not receive leads from Meta or bulk upload. Manual transfer still works.</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[400px]">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium text-slate-600">Employee</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-600">Auto Allocate</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {employees.map(emp => (
+                <tr key={emp.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-slate-800">{emp.name}</span>
+                    <span className="ml-2 text-xs text-slate-400 uppercase">{emp.role}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={async () => {
+                        const newValue = !(emp.auto_allocate ?? true)
+                        const supabase = createClient()
+                        const { error } = await supabase
+                          .from('employees')
+                          .update({ auto_allocate: newValue })
+                          .eq('id', emp.id)
+                        if (error) toast.error(error.message)
+                        else setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, auto_allocate: newValue } : e))
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${(emp.auto_allocate ?? true) ? 'bg-green-500' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${(emp.auto_allocate ?? true) ? 'translate-x-6' : 'translate-x-1'}`}
+                      />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Weekoff Management */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">

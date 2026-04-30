@@ -6,49 +6,34 @@ export default async function AdminSlaPage() {
   const employee = await requireRole(['ad'])
   const supabase = createAdminClient()
 
-  const [{ data: breaches }, { data: employees }] = await Promise.all([
-    supabase
-      .from('sla_breaches')
-      .select(`*, lead:leads(id,name,phone,main_stage)`)
-      .eq('org_id', employee.org_id)
-      .order('created_at', { ascending: false })
-      .limit(200),
-    supabase
-      .from('employees')
-      .select('id, name, role')
-      .eq('org_id', employee.org_id),
+  // Fetch breaches and employees in parallel (no FK joins)
+  const [{ data: rawBreaches }, { data: allEmployees }] = await Promise.all([
+    supabase.from('sla_breaches').select('*').eq('org_id', employee.org_id)
+      .order('created_at', { ascending: false }).limit(200),
+    supabase.from('employees').select('id, name, role').eq('org_id', employee.org_id),
   ])
 
-  // Build employee lookup map
   const employeeMap: Record<string, { id: string; name: string; role: string }> =
-    Object.fromEntries((employees || []).map(e => [e.id, e]))
+    Object.fromEntries((allEmployees || []).map(e => [e.id, e]))
 
-  // Attach owner names directly so the client doesn't need FK joins
-  const enriched = (breaches || []).map(b => ({
-    ...b,
-    breach_owner_name: employeeMap[b.owner_id]?.name ?? '—',
-    lead_owner_name:   (b.lead as { owner_id?: string } | null)
-      ? null  // leads.owner_id not in select, resolved separately
-      : null,
-  }))
-
-  // For current owner we need lead.owner_id — re-fetch with that column
-  const leadIds = (breaches || []).map(b => b.lead_id).filter(Boolean)
-  const { data: leadOwners } = leadIds.length
-    ? await supabase
-        .from('leads')
-        .select('id, owner_id')
-        .in('id', leadIds)
+  // Fetch leads for these breaches
+  const leadIds = [...new Set((rawBreaches || []).map((b: Record<string, unknown>) => b.lead_id as string).filter(Boolean))]
+  const { data: leadsData } = leadIds.length
+    ? await supabase.from('leads').select('id, name, phone, main_stage, owner_id').in('id', leadIds)
     : { data: [] }
 
-  const leadOwnerMap: Record<string, string> =
-    Object.fromEntries((leadOwners || []).map(l => [l.id, employeeMap[l.owner_id]?.name ?? '—']))
+  const leadMap: Record<string, { id: string; name: string; phone: string; main_stage: string; owner_id: string | null }> =
+    Object.fromEntries((leadsData || []).map((l: Record<string, unknown>) => [l.id as string, l as never]))
 
-  const enrichedFinal = enriched.map(b => ({
-    ...b,
-    breach_owner_name: employeeMap[b.owner_id]?.name ?? '—',
-    current_owner_name: leadOwnerMap[b.lead_id] ?? '—',
-  }))
+  const enriched = (rawBreaches || []).map((b: Record<string, unknown>) => {
+    const lead = leadMap[b.lead_id as string]
+    return {
+      ...b,
+      _lead: lead ?? null,
+      breach_owner_name: employeeMap[b.owner_id as string]?.name ?? '—',
+      current_owner_name: lead?.owner_id ? (employeeMap[lead.owner_id]?.name ?? '—') : '—',
+    }
+  })
 
-  return <AdminSlaClient admin={employee} breaches={enrichedFinal} />
+  return <AdminSlaClient admin={employee} breaches={enriched as never} />
 }

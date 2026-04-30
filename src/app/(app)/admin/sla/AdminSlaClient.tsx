@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { Employee, Lead, SlaBreach } from '@/types'
+import { Employee } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { StageBadge } from '@/components/leads/StageBadge'
 import { timeAgo } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { CheckCircle, MessageSquare } from 'lucide-react'
+import { CheckCircle, MessageSquare, MessageCircle, Send } from 'lucide-react'
 
-type EnrichedBreach = SlaBreach & {
-  lead?: Pick<Lead, 'id' | 'name' | 'phone' | 'main_stage'> | null
+type EnrichedBreach = {
+  id: string
+  org_id: string
+  lead_id: string
+  owner_id: string
+  stage: string
+  breached_at: string
+  resolution: 'pending' | 'closed' | 'explanation_requested'
+  resolved_by: string | null
+  explanation: string | null
+  explanation_status: 'pending' | 'resolved' | null
+  admin_response: string | null
+  created_at: string
+  _lead: { id: string; name: string; phone: string; main_stage: string } | null
   breach_owner_name: string
   current_owner_name: string
 }
@@ -22,17 +34,25 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
   const [breaches, setBreaches] = useState(initialBreaches)
   const [resolutionFilter, setResolutionFilter] = useState('')
   const [loading, setLoading] = useState<string | null>(null)
+  const [responses, setResponses] = useState<Record<string, string>>({})
 
   async function closeBreach(breach: EnrichedBreach) {
     setLoading(breach.id)
     const supabase = createClient()
+    const updatePayload: Record<string, unknown> = { resolution: 'closed', resolved_by: admin.id }
+    if (responses[breach.id]) {
+      updatePayload.admin_response = responses[breach.id]
+    }
     const { error } = await supabase
       .from('sla_breaches')
-      .update({ resolution: 'closed', resolved_by: admin.id })
+      .update(updatePayload)
       .eq('id', breach.id)
     if (error) toast.error(error.message)
     else {
-      setBreaches(prev => prev.map(b => b.id === breach.id ? { ...b, resolution: 'closed' as const } : b))
+      setBreaches(prev => prev.map(b => b.id === breach.id
+        ? { ...b, resolution: 'closed' as const, admin_response: (responses[breach.id] ?? b.admin_response) }
+        : b
+      ))
       toast.success('Breach closed')
     }
     setLoading(null)
@@ -52,6 +72,24 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
         : b
       ))
       toast.success('Explanation requested')
+    }
+    setLoading(null)
+  }
+
+  async function handleRespond(breach: EnrichedBreach) {
+    const text = responses[breach.id]
+    if (!text?.trim()) return toast.error('Type a response first')
+    setLoading(breach.id)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('sla_breaches')
+      .update({ admin_response: text })
+      .eq('id', breach.id)
+    if (error) toast.error(error.message)
+    else {
+      setBreaches(prev => prev.map(b => b.id === breach.id ? { ...b, admin_response: text } : b))
+      setResponses(prev => { const next = { ...prev }; delete next[breach.id]; return next })
+      toast.success('Response saved')
     }
     setLoading(null)
   }
@@ -97,13 +135,16 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
         {filtered.map(b => {
           const transferred = b.breach_owner_name !== b.current_owner_name &&
             b.breach_owner_name !== '—' && b.current_owner_name !== '—'
+          const isOwnBreach = b.owner_id === admin.id
+          const showChat = b.explanation && b.explanation_status === 'resolved'
+
           return (
             <div key={b.id} className="bg-white rounded-xl border border-slate-200 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link href={`/leads/${b.lead_id}`} className="text-sm font-semibold text-slate-900 hover:text-indigo-600">
-                      {b.lead?.name}
+                      {b._lead?.name ?? b.lead_id}
                     </Link>
                     <StageBadge stage={b.stage} />
                     <span className={`text-xs font-medium px-2 py-0.5 rounded ${statusColors[b.resolution] ?? ''}`}>
@@ -119,28 +160,87 @@ export function AdminSlaClient({ admin, breaches: initialBreaches }: Props) {
                     )}
                     {' '}• Breached {timeAgo(b.breached_at)}
                   </p>
-                  {b.explanation && (
+
+                  {/* Explanation-only display (not resolved yet) */}
+                  {b.explanation && !showChat && (
                     <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2">
                       <p className="text-xs font-medium text-blue-700">Explanation:</p>
                       <p className="text-sm text-blue-900">{b.explanation}</p>
                     </div>
                   )}
+
+                  {/* Chat-style thread when explanation is resolved */}
+                  {showChat && (
+                    <div className="mt-3 space-y-2">
+                      {/* Employee explanation — blue bubble left */}
+                      <div className="flex flex-col items-start gap-0.5 max-w-[85%]">
+                        <span className="text-[10px] text-slate-400 font-medium ml-1">Employee explanation</span>
+                        <div className="bg-blue-100 border border-blue-200 rounded-xl rounded-tl-sm px-3 py-2">
+                          <p className="text-sm text-blue-900">{b.explanation}</p>
+                        </div>
+                      </div>
+
+                      {/* Admin response — teal bubble right or textarea */}
+                      {b.admin_response ? (
+                        <div className="flex flex-col items-end gap-0.5 ml-auto max-w-[85%]">
+                          <span className="text-[10px] text-slate-400 font-medium mr-1">Your response</span>
+                          <div className="bg-teal-100 border border-teal-200 rounded-xl rounded-tr-sm px-3 py-2">
+                            <p className="text-sm text-teal-900">{b.admin_response}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-end gap-2 mt-1">
+                          <textarea
+                            rows={2}
+                            placeholder="Type your response…"
+                            value={responses[b.id] ?? ''}
+                            onChange={e => setResponses(prev => ({ ...prev, [b.id]: e.target.value }))}
+                            className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-teal-400"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            loading={loading === b.id}
+                            onClick={() => handleRespond(b)}
+                          >
+                            <Send size={12} /> Respond
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex gap-2 flex-shrink-0">
                   {b.resolution === 'pending' && (
                     <>
-                      <Button size="sm" variant="outline" loading={loading === b.id} onClick={() => requestExplanation(b)}>
-                        <MessageSquare size={12} /> Explain
-                      </Button>
+                      {isOwnBreach ? (
+                        <span title="Cannot request from own breach">
+                          <Button size="sm" variant="outline" disabled>
+                            <MessageSquare size={12} /> Explain
+                          </Button>
+                        </span>
+                      ) : (
+                        <Button size="sm" variant="outline" loading={loading === b.id} onClick={() => requestExplanation(b)}>
+                          <MessageSquare size={12} /> Explain
+                        </Button>
+                      )}
                       <Button size="sm" variant="secondary" loading={loading === b.id} onClick={() => closeBreach(b)}>
-                        <CheckCircle size={12} /> Close
+                        <CheckCircle size={12} /> Close breach
                       </Button>
                     </>
                   )}
                   {b.resolution === 'explanation_requested' && (
-                    <Button size="sm" variant="secondary" loading={loading === b.id} onClick={() => closeBreach(b)}>
-                      <CheckCircle size={12} /> Close
-                    </Button>
+                    <div className="flex gap-2">
+                      {!b.admin_response && (
+                        <Button size="sm" variant="outline" loading={loading === b.id} onClick={() => handleRespond(b)}>
+                          <MessageCircle size={12} /> Respond
+                        </Button>
+                      )}
+                      <Button size="sm" variant="secondary" loading={loading === b.id} onClick={() => closeBreach(b)}>
+                        <CheckCircle size={12} /> Close breach
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

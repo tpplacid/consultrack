@@ -15,6 +15,7 @@ interface Role {
   can_transfer_leads: boolean
   can_approve_leads: boolean
   can_access_admin: boolean
+  can_request_sla_explanation: boolean
   position: number
 }
 
@@ -24,10 +25,11 @@ interface Props {
 }
 
 const PERMISSION_FIELDS: { key: keyof Role; label: string }[] = [
-  { key: 'can_view_team',        label: 'View team' },
-  { key: 'can_transfer_leads',   label: 'Transfer leads' },
-  { key: 'can_approve_leads',    label: 'Approve leads' },
-  { key: 'can_access_admin',     label: 'Admin access' },
+  { key: 'can_view_team',              label: 'View team' },
+  { key: 'can_transfer_leads',         label: 'Transfer leads' },
+  { key: 'can_approve_leads',          label: 'Approve leads' },
+  { key: 'can_access_admin',           label: 'Admin access' },
+  { key: 'can_request_sla_explanation', label: 'Request SLA explanation' },
 ]
 
 export function RolesClient({ orgId, initialRoles }: Props) {
@@ -48,6 +50,7 @@ export function RolesClient({ orgId, initialRoles }: Props) {
       level: 1, position,
       can_view_team: false, can_transfer_leads: false,
       can_approve_leads: false, can_access_admin: false,
+      can_request_sla_explanation: false,
     }).select().single()
     if (error) return toast.error(error.message)
     setRoles(prev => [...prev, data])
@@ -62,6 +65,7 @@ export function RolesClient({ orgId, initialRoles }: Props) {
       can_transfer_leads: role.can_transfer_leads,
       can_approve_leads: role.can_approve_leads,
       can_access_admin: role.can_access_admin,
+      can_request_sla_explanation: role.can_request_sla_explanation,
     }).eq('id', role.id)
     if (error) toast.error(error.message)
     else toast.success('Role saved')

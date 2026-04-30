@@ -150,6 +150,7 @@ async function allocateLead(supabase: ReturnType<typeof createAdminClient>, orgI
     .in('role', ['tl', 'counsellor', 'telesales'])
     .eq('is_active', true)
     .eq('is_on_leave', false)
+    .eq('auto_allocate', true)
 
   if (!employees || employees.length === 0) return null
 
