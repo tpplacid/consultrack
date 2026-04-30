@@ -128,10 +128,12 @@ export function SlaClient({ employee, breaches: initialBreaches }: Props) {
                     Breached {timeAgo(b.breached_at)}
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setExplanationModal(b)}>
-                  <MessageSquare size={12} />
-                  Request Explanation
-                </Button>
+                {employee.role !== 'ad' && (
+                  <Button size="sm" variant="outline" onClick={() => setExplanationModal(b)}>
+                    <MessageSquare size={12} />
+                    Request Explanation
+                  </Button>
+                )}
               </div>
             ))}
           </div>
