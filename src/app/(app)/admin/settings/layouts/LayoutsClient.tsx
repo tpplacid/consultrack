@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SectionLayout, FieldDef, FieldType, labelToKey } from '@/lib/fieldLayouts'
+import { SectionLayout, FieldDef, FieldType, labelToKey, STANDARD_SECTIONS } from '@/lib/fieldLayouts'
 import toast from 'react-hot-toast'
 import {
   Plus, Trash2, ChevronUp, ChevronDown, GripVertical,
@@ -246,51 +246,17 @@ export function LayoutsClient({ initialSections }: Props) {
 
   async function seedDefaults() {
     setSeeding(true)
-    const DEFAULT_SECTIONS: { name: string; fields: Omit<FieldDef, 'id'>[] }[] = [
-      {
-        name: 'Entrance Exam Details',
-        fields: [
-          { key: 'exam_name',        label: 'Exam',              type: 'select',  required: false, placeholder: '', options: ['JEE Main','JEE Advanced','NEET','CAT','CLAT','CUET','Other'], formula: '', position: 0 },
-          { key: 'exam_score',       label: 'Score / Marks',     type: 'number',  required: false, placeholder: 'e.g. 145', options: [], formula: '', position: 1 },
-          { key: 'exam_rank',        label: 'Rank',              type: 'number',  required: false, placeholder: 'e.g. 4200', options: [], formula: '', position: 2 },
-          { key: 'exam_percentile',  label: 'Percentile',        type: 'number',  required: false, placeholder: 'e.g. 97.4', options: [], formula: '', position: 3 },
-          { key: 'exam_date',        label: 'Exam Date',         type: 'date',    required: false, placeholder: '', options: [], formula: '', position: 4 },
-        ],
-      },
-      {
-        name: 'Scholarship & Fees',
-        fields: [
-          { key: 'scholarship_type',   label: 'Scholarship Type',    type: 'select',  required: false, placeholder: '', options: ['Merit','Sports','Need-based','Management','None'], formula: '', position: 0 },
-          { key: 'scholarship_amount', label: 'Scholarship (₹)',     type: 'number',  required: false, placeholder: '0', options: [], formula: '', position: 1 },
-          { key: 'deposit_paid',       label: 'Deposit Paid (₹)',    type: 'number',  required: false, placeholder: '0', options: [], formula: '', position: 2 },
-          { key: 'total_collected',    label: 'Total Collected (₹)', type: 'formula', required: false, placeholder: '', options: [], formula: '{deposit_paid} + {scholarship_amount}', position: 3 },
-          { key: 'docs_verified',      label: 'Docs Verified',       type: 'boolean', required: false, placeholder: '', options: [], formula: '', position: 4 },
-        ],
-      },
-      {
-        name: 'Follow-up Notes',
-        fields: [
-          { key: 'call_summary',       label: 'Last Call Summary',   type: 'textarea', required: false, placeholder: 'What was discussed…', options: [], formula: '', position: 0 },
-          { key: 'best_call_time',     label: 'Best Time to Call',   type: 'select',   required: false, placeholder: '', options: ['Morning (9–12)','Afternoon (12–4)','Evening (4–7)'], formula: '', position: 1 },
-          { key: 'alt_contact',        label: 'Alt. Contact',        type: 'phone',    required: false, placeholder: '+91 9XXXXXXXXX', options: [], formula: '', position: 2 },
-          { key: 'contact_email',      label: 'Contact Email',       type: 'email',    required: false, placeholder: 'student@example.com', options: [], formula: '', position: 3 },
-          { key: 'brochure_link',      label: 'Brochure / Doc Link', type: 'url',      required: false, placeholder: 'https://…', options: [], formula: '', position: 4 },
-        ],
-      },
-    ]
-
     const created: SectionLayout[] = []
-    for (let i = 0; i < DEFAULT_SECTIONS.length; i++) {
-      const s = DEFAULT_SECTIONS[i]
+    for (let i = 0; i < STANDARD_SECTIONS.length; i++) {
+      const s = STANDARD_SECTIONS[i]
       const fieldsWithIds: FieldDef[] = s.fields.map(f => ({ ...f, id: crypto.randomUUID() }))
       const res = await fetch('/api/org-layouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section_name: s.name, position: i }),
+        body: JSON.stringify({ section_name: s.section_name, position: i }),
       })
-      if (!res.ok) { toast.error(`Failed to create section "${s.name}"`); continue }
+      if (!res.ok) { toast.error(`Failed to create section "${s.section_name}"`); continue }
       const { section } = await res.json()
-      // Save fields
       const patchRes = await fetch(`/api/org-layouts/${section.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -302,7 +268,7 @@ export function LayoutsClient({ initialSections }: Props) {
       }
     }
     setSections(created)
-    toast.success('Default layout seeded — customise it to fit your process')
+    toast.success('Standard lead fields loaded — customise them to fit your process')
     setSeeding(false)
   }
 
@@ -417,7 +383,7 @@ export function LayoutsClient({ initialSections }: Props) {
         <div className="text-center py-16 rounded-xl border-2 border-dashed border-slate-200">
           <Calculator size={28} className="text-slate-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-slate-500 mb-1">No custom sections yet</p>
-          <p className="text-xs text-slate-400 mb-5">Start from a ready-made admissions template, or build your own from scratch</p>
+          <p className="text-xs text-slate-400 mb-5">Start from the standard lead fields template, or build your own from scratch</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button
               onClick={seedDefaults}
@@ -435,7 +401,7 @@ export function LayoutsClient({ initialSections }: Props) {
               <Plus size={14} /> Build from scratch
             </button>
           </div>
-          <p className="text-[10px] text-slate-400 mt-4">Defaults include Entrance Exam, Scholarship & Fees, and Follow-up Notes sections</p>
+          <p className="text-[10px] text-slate-400 mt-4">Standard fields include Lead Information, Parent & Financial, and Payments sections</p>
         </div>
       )}
 

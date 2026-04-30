@@ -1,6 +1,6 @@
 import { requireAuth } from '@/lib/auth'
 import { AppShell } from '@/components/layout/AppShell'
-import { OrgConfigProvider, OrgStage, OrgRole, OrgFeatures, DEFAULT_FEATURES } from '@/context/OrgConfigContext'
+import { OrgConfigProvider, OrgStage, OrgRole, OrgFeatures, DEFAULT_FEATURES, DEFAULT_LEAD_SOURCES } from '@/context/OrgConfigContext'
 import { DEFAULT_STAGES, DEFAULT_ROLES } from '@/context/orgDefaults'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getPalette, buildThemeCSS } from '@/lib/orgTheme'
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         if (!subMap[ss.stage_key]) subMap[ss.stage_key] = []
         subMap[ss.stage_key].push(ss.label)
       }
-      stages = stageRows.map(s => ({ ...s, substages: subMap[s.key] ?? [] }))
+      stages = stageRows.map(s => ({ ...s, substages: subMap[s.key] ?? [], required_fields: (s.required_fields as string[] | null) ?? [] }))
     } else {
       stages = DEFAULT_STAGES.map((s, i) => ({ ...s, id: i.toString() }))
     }
@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Fetch org logo + features
   const { data: orgData } = await supabase
     .from('orgs')
-    .select('logo_url, name, features, brand_palette')
+    .select('logo_url, name, features, brand_palette, lead_sources')
     .eq('id', employee.org_id)
     .single()
 
@@ -59,6 +59,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     bulk_upload: raw.bulk_upload ?? DEFAULT_FEATURES.bulk_upload,
   }
 
+  const rawSources = (orgData?.lead_sources ?? null) as { key: string; label: string; sla_excluded: boolean }[] | null
+  const leadSources = rawSources && rawSources.length > 0 ? rawSources : DEFAULT_LEAD_SOURCES
+
   const palette = getPalette((orgData as unknown as Record<string, string> | null)?.brand_palette)
   const themeCSS = buildThemeCSS(palette)
 
@@ -66,7 +69,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       {/* Inject per-org brand palette as CSS variable overrides */}
       <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
-      <OrgConfigProvider config={{ stages, roles, stageMap, roleMap, features }}>
+      <OrgConfigProvider config={{ stages, roles, stageMap, roleMap, features, leadSources }}>
         <AppShell employee={employee} orgLogoUrl={orgData?.logo_url ?? null} orgName={orgData?.name ?? ''}>
           {children}
         </AppShell>

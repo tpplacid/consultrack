@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES, STAGE_A_TO_B_REQUIRED, SLA_EXCLUDED_SOURCES } from '@/types'
+import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES } from '@/types'
 import { SectionLayout, FieldDef, evaluateFormula, LEAD_COLUMN_KEYS } from '@/lib/fieldLayouts'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, sections }: Props) {
-  const { stages } = useOrgConfig()
+  const { stages, stageMap, leadSources, roleMap } = useOrgConfig()
   const router = useRouter()
   const [lead, setLead] = useState(initialLead)
   const [activities, setActivities] = useState(initialActivities)
@@ -88,10 +88,10 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       const anyFilled = detailFields.some(f => !!fieldValues[f])
       if (!anyFilled) return 'Fill at least one lead detail (location, course, lead type, etc.) before moving out of Lead Gen'
     }
-    if (from === 'A' && to === 'B') {
-      const missing = STAGE_A_TO_B_REQUIRED.filter(f => !fieldValues[f])
-      if (missing.length > 0) return `Fill required fields before moving to Follow Up: ${missing.join(', ')}`
-      if (!fieldValues.interested_colleges) return 'At least one interested college required'
+    const targetConfig = stageMap[to]
+    if (targetConfig?.required_fields && targetConfig.required_fields.length > 0) {
+      const missing = targetConfig.required_fields.filter(f => !fieldValues[f])
+      if (missing.length > 0) return `Fill required fields before moving to ${targetConfig.label}: ${missing.join(', ')}`
     }
     return null
   }
@@ -132,7 +132,8 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
 
       // Reset SLA deadline based on org-configured thresholds (skip for referral/offline leads)
       const slaDays = slaConfig[stageDraft]
-      if (slaDays && !SLA_EXCLUDED_SOURCES.includes(lead.source)) {
+      const sourceConfig = leadSources.find(s => s.key === lead.source)
+      if (slaDays && !sourceConfig?.sla_excluded) {
         const deadline = new Date()
         deadline.setDate(deadline.getDate() + slaDays)
         updates.sla_deadline = deadline.toISOString()
@@ -222,7 +223,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           </div>
         </div>
         <div className="flex gap-2">
-          {(employee.role === 'tl' || employee.role === 'ad') && (
+          {(roleMap[employee.role]?.can_transfer_leads ?? (employee.role === 'tl' || employee.role === 'ad')) && (
             <Button size="sm" variant="outline" onClick={() => setTransferOpen(true)}>
               <ArrowRightLeft size={14} />
               Transfer
@@ -242,7 +243,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
           <Card>
             <CardHeader>
               <CardTitle>Stage & Pipeline</CardTitle>
-              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Move the lead through the admission pipeline — stage changes trigger deadline resets automatically</p>
+              <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Stage changes trigger deadline resets automatically</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

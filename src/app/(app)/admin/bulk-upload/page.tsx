@@ -1,12 +1,14 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getOrgFeatures } from '@/lib/orgFeatures'
 import { FeatureGate } from '@/components/FeatureGate'
 import { BulkUploadClient } from './BulkUploadClient'
+import { DEFAULT_LEAD_SOURCES } from '@/context/OrgConfigContext'
 
 export default async function BulkUploadPage() {
   const employee = await requireRole(['ad'])
-  const features  = await getOrgFeatures(employee.org_id)
+  const features = await getOrgFeatures(employee.org_id)
 
   if (!features.bulk_upload) {
     return (
@@ -19,12 +21,14 @@ export default async function BulkUploadPage() {
   }
 
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
 
-  const { data: employees } = await supabase
-    .from('employees')
-    .select('*')
-    .eq('org_id', employee.org_id)
-    .eq('is_active', true)
+  const [{ data: employees }, { data: orgData }] = await Promise.all([
+    supabase.from('employees').select('*').eq('org_id', employee.org_id).eq('is_active', true),
+    adminSupabase.from('orgs').select('lead_sources').eq('id', employee.org_id).single(),
+  ])
 
-  return <BulkUploadClient admin={employee} employees={employees || []} />
+  const leadSources = (orgData?.lead_sources ?? DEFAULT_LEAD_SOURCES) as typeof DEFAULT_LEAD_SOURCES
+
+  return <BulkUploadClient admin={employee} employees={employees || []} leadSources={leadSources} />
 }

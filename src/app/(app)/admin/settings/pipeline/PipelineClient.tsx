@@ -22,9 +22,10 @@ interface Stage {
   is_won: boolean
   is_lost: boolean
   substages: Substage[]
+  required_fields: string[]
 }
 interface Flow { from_stage: string; to_stage: string }
-interface Props { orgId: string; initialStages: Stage[]; initialFlows: Flow[] }
+interface Props { orgId: string; initialStages: Stage[]; initialFlows: Flow[]; availableFields: string[] }
 
 const COLOR_PRESETS = [
   { bg: 'bg-slate-100',  text: 'text-slate-600',  preview: '#f1f5f9', hex: '#475569', label: 'Slate'  },
@@ -100,7 +101,7 @@ function buildArrows(flows: Flow[], pos: Record<string, { x: number; y: number }
 
 // ────────────────────────────────────────────────────────────────────────────
 
-export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
+export function PipelineClient({ orgId, initialStages, initialFlows, availableFields }: Props) {
   const [tab, setTab] = useState<Tab>('stages')
   const [stages, setStages] = useState<Stage[]>(initialStages)
   const [flows, setFlows] = useState<Flow[]>(initialFlows)
@@ -129,7 +130,7 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
       position: stages.length, sla_days: null, is_won: false, is_lost: false,
     }).select().single()
     if (error) return toast.error(error.message)
-    setStages(prev => [...prev, { ...data, substages: [] }])
+    setStages(prev => [...prev, { ...data, substages: [], required_fields: data.required_fields ?? [] }])
     setExpanded(data.id)
   }
 
@@ -139,6 +140,7 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
     const { error } = await supabase.from('org_stages').update({
       label: stage.label, color_bg: stage.color_bg, color_text: stage.color_text,
       sla_days: stage.sla_days, is_won: stage.is_won, is_lost: stage.is_lost,
+      required_fields: stage.required_fields,
     }).eq('id', stage.id)
     if (error) toast.error(error.message)
     else toast.success('Stage saved')
@@ -414,6 +416,34 @@ export function PipelineClient({ orgId, initialStages, initialFlows }: Props) {
                         ))}
                         {stage.substages.length === 0 && <p className="text-xs text-brand-300 italic">No sub-stages yet</p>}
                       </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-brand-500 font-semibold mb-2">Required to enter this stage</p>
+                      <p className="text-[10px] text-brand-400 mb-2">Fields a lead must have filled before moving into this stage.</p>
+                      {availableFields.length === 0 ? (
+                        <p className="text-xs text-brand-300 italic">No fields configured in Lead Fields</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {availableFields.map(f => {
+                            const active = (stage.required_fields ?? []).includes(f)
+                            return (
+                              <button
+                                key={f}
+                                onClick={() => {
+                                  const curr = stage.required_fields ?? []
+                                  const next = active ? curr.filter(x => x !== f) : [...curr, f]
+                                  updateStage(stage.id!, { required_fields: next })
+                                }}
+                                className={`text-xs px-2 py-1 rounded-full border font-mono transition-colors ${
+                                  active ? 'bg-brand-100 text-brand-700 border-brand-300' : 'bg-white text-brand-400 border-brand-200 hover:border-brand-300'
+                                }`}
+                              >
+                                {f}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

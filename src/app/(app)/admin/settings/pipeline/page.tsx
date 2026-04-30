@@ -67,6 +67,7 @@ export default async function PipelinePage() {
   const stages = (stageRows || []).map(s => ({
     ...s,
     substages: substagesByKey[s.key] || [],
+    required_fields: (s.required_fields as string[]) || [],
   }))
 
   const { data: flows } = await supabase
@@ -74,5 +75,29 @@ export default async function PipelinePage() {
     .select('from_stage, to_stage')
     .eq('org_id', orgId)
 
-  return <PipelineClient orgId={orgId} initialStages={stages} initialFlows={flows || []} />
+  // Fetch available field keys for required_fields config
+  const { data: layoutSections } = await supabase
+    .from('org_field_layouts')
+    .select('fields')
+    .eq('org_id', orgId)
+
+  let availableFields: string[] = []
+  if (layoutSections && layoutSections.length > 0) {
+    for (const section of layoutSections) {
+      const fields = (section.fields as { key: string }[]) || []
+      for (const f of fields) {
+        if (f.key && !availableFields.includes(f.key)) availableFields.push(f.key)
+      }
+    }
+  } else {
+    // fallback: use STANDARD_SECTIONS keys
+    const { STANDARD_SECTIONS } = await import('@/lib/fieldLayouts')
+    for (const section of STANDARD_SECTIONS) {
+      for (const f of section.fields) {
+        if (f.key && f.type !== 'formula' && !availableFields.includes(f.key)) availableFields.push(f.key)
+      }
+    }
+  }
+
+  return <PipelineClient orgId={orgId} initialStages={stages} initialFlows={flows || []} availableFields={availableFields} />
 }

@@ -1,5 +1,5 @@
 export type EmployeeRole = 'telesales' | 'counsellor' | 'tl' | 'ad'
-export type LeadSource = 'meta' | 'offline' | 'referral'
+export type LeadSource = string
 export type LeadStage = '0' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'X' | 'Y'
 export type ActivityType = 'stage_change' | 'comment' | 'field_update' | 'call_log' | 'whatsapp_sent' | 'lead_created'
 export type AttendanceStatus = 'present' | 'absent' | 'half_day' | 'questioned' | 'rejected'

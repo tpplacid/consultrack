@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Employee } from '@/types'
+import { LeadSource } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -11,6 +12,7 @@ import { Upload, Download, CheckCircle, XCircle, AlertCircle } from 'lucide-reac
 interface Props {
   admin: Employee
   employees: Employee[]
+  leadSources: LeadSource[]
 }
 
 interface ParsedRow {
@@ -27,12 +29,6 @@ interface ParsedRow {
   error: string | null
 }
 
-const TEMPLATE_CSV = `name,phone,owner,source,location,lead_type,preferred_course,comments
-John Doe,9876543210,Ranjith Kumar,offline,Bangalore,Engineering,B.Tech CSE,Interested in top colleges
-Jane Smith,9123456789,Priya S,referral,Chennai,Medical,MBBS,
-`
-
-const SOURCES = ['offline', 'referral', 'meta']
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
@@ -59,11 +55,14 @@ function parseCSV(text: string): string[][] {
   return rows
 }
 
-export function BulkUploadClient({ admin, employees }: Props) {
+export function BulkUploadClient({ admin, employees, leadSources }: Props) {
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [uploading, setUploading] = useState(false)
   const [result, setResult] = useState<{ success: number; failed: number } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const sourceKeys = leadSources.map(s => s.key)
+  const templateCSV = `name,phone,owner,source,location,comments\nJohn Doe,9876543210,Jane Smith,${sourceKeys[0] ?? 'offline'},Bangalore,First contact via call\n`
 
   const empByName = new Map(employees.map(e => [e.name.toLowerCase().trim(), e]))
 
@@ -104,7 +103,7 @@ export function BulkUploadClient({ admin, employees }: Props) {
         else if (!phone) error = 'Phone is required'
         else if (!ownerName) error = 'Owner is required'
         else if (!/^\d{7,15}$/.test(phone.replace(/[\s+\-()]/g, ''))) error = 'Invalid phone number'
-        else if (source && !SOURCES.includes(source)) error = `Source must be one of: ${SOURCES.join(', ')}`
+        else if (source && !sourceKeys.includes(source)) error = `Source must be one of: ${sourceKeys.join(', ')}`
 
         const owner = ownerName ? empByName.get(ownerName.toLowerCase().trim()) || null : null
         if (!error && ownerName && !owner) error = `Owner "${ownerName}" not found`
@@ -145,7 +144,7 @@ export function BulkUploadClient({ admin, employees }: Props) {
         org_id: admin.org_id,
         name: r.name,
         phone: r.phone.replace(/[\s+\-()]/g, ''),
-        source: r.source as 'meta' | 'offline' | 'referral',
+        source: r.source,
         main_stage: '0',
         owner_id: r.owner!.id,
         reporting_manager_id: r.owner!.reports_to || null,
@@ -197,7 +196,7 @@ export function BulkUploadClient({ admin, employees }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-bold text-slate-900">Bulk Lead Upload</h1>
         <a
-          href={`data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE_CSV)}`}
+          href={`data:text/csv;charset=utf-8,${encodeURIComponent(templateCSV)}`}
           download="admishine_leads_template.csv"
           className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
         >

@@ -22,6 +22,10 @@ const TABS: Tab[] = [
     label: 'Lead Fields',
   },
   {
+    href: '/admin/settings/sources',
+    label: 'Sources',
+  },
+  {
     href: '/admin/settings/pipeline',
     label: 'Pipeline',
     feature: 'pipeline',

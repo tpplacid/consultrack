@@ -13,6 +13,7 @@ export interface OrgStage {
   is_won: boolean
   is_lost: boolean
   substages: string[]
+  required_fields: string[]
 }
 
 export interface OrgRole {
@@ -28,13 +29,13 @@ export interface OrgRole {
 }
 
 export interface OrgFeatures {
-  lead_crm:    boolean // Dashboard, leads, pipeline management
-  sla:         boolean // Deadline breach tracking
-  pipeline:    boolean // Pipeline stage customisation
-  roles:       boolean // Role management
-  attendance:  boolean // Attendance & leave management
-  meta:        boolean // Meta / Facebook lead integration
-  bulk_upload: boolean // Bulk CSV lead import
+  lead_crm:    boolean
+  sla:         boolean
+  pipeline:    boolean
+  roles:       boolean
+  attendance:  boolean
+  meta:        boolean
+  bulk_upload: boolean
 }
 
 export const DEFAULT_FEATURES: OrgFeatures = {
@@ -47,12 +48,25 @@ export const DEFAULT_FEATURES: OrgFeatures = {
   bulk_upload: true,
 }
 
+export interface LeadSource {
+  key: string
+  label: string
+  sla_excluded: boolean
+}
+
+export const DEFAULT_LEAD_SOURCES: LeadSource[] = [
+  { key: 'meta',     label: 'Meta Ads', sla_excluded: false },
+  { key: 'offline',  label: 'Offline',  sla_excluded: true  },
+  { key: 'referral', label: 'Referral', sla_excluded: true  },
+]
+
 interface OrgConfig {
   stages: OrgStage[]
   roles: OrgRole[]
   stageMap: Record<string, OrgStage>
   roleMap: Record<string, OrgRole>
   features: OrgFeatures
+  leadSources: LeadSource[]
 }
 
 const OrgConfigContext = createContext<OrgConfig>({
@@ -61,6 +75,7 @@ const OrgConfigContext = createContext<OrgConfig>({
   stageMap: {},
   roleMap: {},
   features: DEFAULT_FEATURES,
+  leadSources: DEFAULT_LEAD_SOURCES,
 })
 
 export function OrgConfigProvider({ children, config }: { children: React.ReactNode; config: OrgConfig }) {

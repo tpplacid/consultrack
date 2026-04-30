@@ -1,16 +1,16 @@
 import type { OrgStage, OrgRole } from './OrgConfigContext'
 
 export const DEFAULT_STAGES: Omit<OrgStage, 'id'>[] = [
-  { key: '0', label: 'Lead Gen',             color_bg: 'bg-gray-50',     color_text: 'text-gray-500',   position: 0,  sla_days: null, is_won: false, is_lost: false, substages: [] },
-  { key: 'A', label: 'Cold/Warm Calling',    color_bg: 'bg-blue-50',     color_text: 'text-blue-600',   position: 1,  sla_days: 1,    is_won: false, is_lost: false, substages: ['DNP-needs-followup','Answered-Interested','Answered-Not-Interested','Answered-Negotiation','Not-Interested-DND','Eligible-for-Next-Year','Unqualified-Lead','Details-Sent'] },
-  { key: 'B', label: 'Follow Up',            color_bg: 'bg-yellow-50',   color_text: 'text-yellow-600', position: 2,  sla_days: 5,    is_won: false, is_lost: false, substages: ['DNP-needs-followup','Answered-Interested','Answered-Not-Interested','Answered-Negotiation','Not-Interested-DND','Unqualified-Lead'] },
-  { key: 'C', label: 'Hot Lead',             color_bg: 'bg-orange-50',   color_text: 'text-orange-600', position: 3,  sla_days: 5,    is_won: false, is_lost: false, substages: ['C1-Contacted-by-Telesales','C2-Contacted-by-Counsellor','C3-Contacted-by-TL','C4-Contacted-by-AD','C5-Already-Purchased-Allotted','C6-Not-Interested-DND'] },
-  { key: 'D', label: 'Admission Application',color_bg: 'bg-purple-50',   color_text: 'text-purple-600', position: 4,  sla_days: 20,   is_won: false, is_lost: false, substages: [] },
-  { key: 'E', label: 'Closed Lost',          color_bg: 'bg-red-50',      color_text: 'text-red-600',    position: 5,  sla_days: null, is_won: false, is_lost: true,  substages: [] },
-  { key: 'F', label: 'Closed Won',           color_bg: 'bg-green-50',    color_text: 'text-green-600',  position: 6,  sla_days: null, is_won: true,  is_lost: false, substages: [] },
-  { key: 'G', label: 'Reporting',            color_bg: 'bg-indigo-50',   color_text: 'text-indigo-600', position: 7,  sla_days: null, is_won: false, is_lost: false, substages: [] },
-  { key: 'X', label: 'Unqualified',          color_bg: 'bg-gray-100',    color_text: 'text-gray-500',   position: 8,  sla_days: null, is_won: false, is_lost: true,  substages: [] },
-  { key: 'Y', label: 'Churn',               color_bg: 'bg-pink-50',     color_text: 'text-pink-600',   position: 9,  sla_days: null, is_won: false, is_lost: true,  substages: [] },
+  { key: '0', label: 'Lead Gen',              color_bg: 'bg-gray-50',     color_text: 'text-gray-500',   position: 0,  sla_days: null, is_won: false, is_lost: false, substages: [],  required_fields: [] },
+  { key: 'A', label: 'Cold/Warm Calling',     color_bg: 'bg-blue-50',     color_text: 'text-blue-600',   position: 1,  sla_days: 1,    is_won: false, is_lost: false, substages: ['DNP-needs-followup','Answered-Interested','Answered-Not-Interested','Answered-Negotiation','Not-Interested-DND','Eligible-for-Next-Year','Unqualified-Lead','Details-Sent'], required_fields: [] },
+  { key: 'B', label: 'Follow Up',             color_bg: 'bg-yellow-50',   color_text: 'text-yellow-600', position: 2,  sla_days: 5,    is_won: false, is_lost: false, substages: ['DNP-needs-followup','Answered-Interested','Answered-Not-Interested','Answered-Negotiation','Not-Interested-DND','Unqualified-Lead'], required_fields: ['lead_type', 'location', 'twelfth_score', 'preferred_course', 'interested_colleges'] },
+  { key: 'C', label: 'Hot Lead',              color_bg: 'bg-orange-50',   color_text: 'text-orange-600', position: 3,  sla_days: 5,    is_won: false, is_lost: false, substages: ['C1-Contacted-by-Telesales','C2-Contacted-by-Counsellor','C3-Contacted-by-TL','C4-Contacted-by-AD','C5-Already-Purchased-Allotted','C6-Not-Interested-DND'], required_fields: [] },
+  { key: 'D', label: 'Admission Application', color_bg: 'bg-purple-50',   color_text: 'text-purple-600', position: 4,  sla_days: 20,   is_won: false, is_lost: false, substages: [], required_fields: [] },
+  { key: 'E', label: 'Closed Lost',           color_bg: 'bg-red-50',      color_text: 'text-red-600',    position: 5,  sla_days: null, is_won: false, is_lost: true,  substages: [], required_fields: [] },
+  { key: 'F', label: 'Closed Won',            color_bg: 'bg-green-50',    color_text: 'text-green-600',  position: 6,  sla_days: null, is_won: true,  is_lost: false, substages: [], required_fields: [] },
+  { key: 'G', label: 'Reporting',             color_bg: 'bg-indigo-50',   color_text: 'text-indigo-600', position: 7,  sla_days: null, is_won: false, is_lost: false, substages: [], required_fields: [] },
+  { key: 'X', label: 'Unqualified',           color_bg: 'bg-gray-100',    color_text: 'text-gray-500',   position: 8,  sla_days: null, is_won: false, is_lost: true,  substages: [], required_fields: [] },
+  { key: 'Y', label: 'Churn',                 color_bg: 'bg-pink-50',     color_text: 'text-pink-600',   position: 9,  sla_days: null, is_won: false, is_lost: true,  substages: [], required_fields: [] },
 ]
 
 export const DEFAULT_ROLES: Omit<OrgRole, 'id'>[] = [

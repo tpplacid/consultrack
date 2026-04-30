@@ -137,17 +137,30 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-// ── Weighted allocation: TL → Counsellor → Telesales, score-weighted within each tier ──
+// ── Weighted allocation: dynamic org roles, score-weighted within each tier ──
 async function allocateLead(supabase: ReturnType<typeof createAdminClient>, orgId: string, date: Date) {
   const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][date.getDay()]
   const dateStr = date.toISOString().slice(0, 10)
 
-  // All active employees across all assignable roles
+  // Fetch org roles sorted by level desc (highest priority first) — exclude admin-only roles
+  const { data: orgRoles } = await supabase
+    .from('org_roles')
+    .select('key, level, can_access_admin')
+    .eq('org_id', orgId)
+    .eq('can_access_admin', false)
+    .order('level', { ascending: false })
+
+  // Fallback to default assignable roles if org has no custom roles
+  const roleTiers = orgRoles && orgRoles.length > 0
+    ? orgRoles.map(r => r.key)
+    : ['tl', 'counsellor', 'telesales']
+
+  // All active employees in assignable roles
   const { data: employees } = await supabase
     .from('employees')
     .select('id, role, score, reports_to')
     .eq('org_id', orgId)
-    .in('role', ['tl', 'counsellor', 'telesales'])
+    .in('role', roleTiers)
     .eq('is_active', true)
     .eq('is_on_leave', false)
     .eq('auto_allocate', true)
@@ -162,12 +175,11 @@ async function allocateLead(supabase: ReturnType<typeof createAdminClient>, orgI
     .or(`day_of_week.eq.${dayOfWeek},specific_date.eq.${dateStr}`)
 
   const weekoffIds = new Set((weekoffs || []).map(w => w.employee_id))
-  // Exclude weekoff + score=0 (score 0 means paused from allocation)
   const available = employees.filter(e => !weekoffIds.has(e.id) && (e.score ?? 1) > 0)
   if (available.length === 0) return null
 
   // Try each role tier in priority order
-  for (const role of ['tl', 'counsellor', 'telesales'] as const) {
+  for (const role of roleTiers) {
     const tier = available.filter(e => e.role === role)
     if (tier.length === 0) continue
     const totalWeight = tier.reduce((sum, e) => sum + (e.score ?? 1), 0)
