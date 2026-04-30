@@ -162,17 +162,18 @@ async function allocateLead(supabase: ReturnType<typeof createAdminClient>, orgI
     .or(`day_of_week.eq.${dayOfWeek},specific_date.eq.${dateStr}`)
 
   const weekoffIds = new Set((weekoffs || []).map(w => w.employee_id))
-  const available = employees.filter(e => !weekoffIds.has(e.id))
+  // Exclude weekoff + score=0 (score 0 means paused from allocation)
+  const available = employees.filter(e => !weekoffIds.has(e.id) && (e.score ?? 1) > 0)
   if (available.length === 0) return null
 
   // Try each role tier in priority order
   for (const role of ['tl', 'counsellor', 'telesales'] as const) {
     const tier = available.filter(e => e.role === role)
     if (tier.length === 0) continue
-    const totalWeight = tier.reduce((sum, e) => sum + (e.score || 1), 0)
+    const totalWeight = tier.reduce((sum, e) => sum + (e.score ?? 1), 0)
     let rand = Math.random() * totalWeight
     for (const emp of tier) {
-      rand -= (emp.score || 1)
+      rand -= (emp.score ?? 1)
       if (rand <= 0) return emp
     }
     return tier[0]
