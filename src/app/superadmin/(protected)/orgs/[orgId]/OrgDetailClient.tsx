@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
   Users, Mail, Link2, Loader2, Radio, Pipette,
+  Upload, Trash2, ImageIcon,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 
@@ -70,6 +71,31 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
   const [savingSettings, setSavingSettings] = useState(false)
   const colorInputRef = useRef<HTMLInputElement>(null)
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(org.logo_url)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [removingLogo, setRemovingLogo] = useState(false)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleLogoUpload(file: File) {
+    setUploadingLogo(true)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}/logo`, { method: 'POST', body: form })
+    const data = await res.json()
+    if (!res.ok) toast.error(data.error || 'Upload failed')
+    else { setLogoUrl(data.logo_url); toast.success('Logo updated') }
+    setUploadingLogo(false)
+  }
+
+  async function handleLogoRemove() {
+    if (!confirm('Remove this org\'s logo?')) return
+    setRemovingLogo(true)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}/logo`, { method: 'DELETE' })
+    if (res.ok) { setLogoUrl(null); toast.success('Logo removed') }
+    else toast.error('Failed to remove logo')
+    setRemovingLogo(false)
+  }
 
   const [showAddEmployee, setShowAddEmployee] = useState(false)
   const [empName, setEmpName] = useState('')
@@ -166,8 +192,8 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         {/* Header */}
         <div className="flex items-start justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            {org.logo_url ? (
-              <img src={org.logo_url} alt={orgName}
+            {logoUrl ? (
+              <img src={logoUrl} alt={orgName}
                 className="w-11 h-11 rounded-xl object-contain flex-shrink-0 bg-white/[0.05]" />
             ) : (
               <div className="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-base flex-shrink-0 bg-white/[0.06] text-white">
@@ -438,6 +464,62 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   }`} />
                 </button>
               </div>
+            </div>
+
+            {/* Logo */}
+            <div className="rounded-2xl p-5 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <h2 className="text-sm font-medium text-white mb-4">Logo</h2>
+              <div className="flex items-center gap-4">
+                {/* Preview */}
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/[0.08]"
+                  style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  {logoUrl
+                    ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    : <ImageIcon size={22} className="text-neutral-700" />
+                  }
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className={BTN_GHOST}
+                  >
+                    {uploadingLogo
+                      ? <Loader2 size={13} className="animate-spin" />
+                      : <Upload size={13} />
+                    }
+                    {uploadingLogo ? 'Uploading…' : logoUrl ? 'Replace logo' : 'Upload logo'}
+                  </button>
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleLogoRemove}
+                      disabled={removingLogo}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:text-red-400 bg-red-500/[0.06] hover:bg-red-500/[0.1] border border-red-500/20 transition-all disabled:opacity-40"
+                    >
+                      {removingLogo ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                      Remove
+                    </button>
+                  )}
+                  <p className="text-[11px] text-neutral-700">PNG, JPG, WebP or SVG · max 2 MB</p>
+                </div>
+              </div>
+
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                className="sr-only"
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) handleLogoUpload(file)
+                  e.target.value = ''
+                }}
+              />
             </div>
 
             {/* Org details */}
