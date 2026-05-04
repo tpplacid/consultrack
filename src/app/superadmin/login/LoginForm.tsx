@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Zap } from 'lucide-react'
 
 export default function SuperAdminLoginPage() {
   const [password, setPassword] = useState('')
@@ -36,8 +35,11 @@ export default function SuperAdminLoginPage() {
 
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center mb-4">
-            <Zap size={18} className="text-black" fill="black" />
+          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center mb-4 p-2">
+            <svg viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="black"/>
+              <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="black"/>
+            </svg>
           </div>
           <p className="text-white font-semibold text-lg tracking-tight">Consultrack</p>
           <p className="text-neutral-600 text-xs mt-1">Super Admin</p>
