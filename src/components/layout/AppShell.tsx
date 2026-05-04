@@ -345,7 +345,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
           </div>
         ) : (
           <img
-            src={orgLogoUrl || '/Admishine Logo.png'}
+            src={orgLogoUrl || '/consultrackk-logo.svg'}
             alt={orgName || 'logo'}
             className="object-contain h-12 w-auto brightness-0 invert"
           />
@@ -480,7 +480,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
             <Menu size={22} />
           </button>
           <img
-            src={orgLogoUrl || '/Admishine Logo.png'}
+            src={orgLogoUrl || '/consultrackk-logo.svg'}
             alt={orgName || 'logo'}
             className="object-contain h-8 w-auto brightness-0 invert"
           />
