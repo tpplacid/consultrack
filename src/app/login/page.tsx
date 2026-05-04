@@ -65,7 +65,7 @@ export default function LoginPage() {
         {/* Consultrack brand — hidden on org-login */}
         {mode !== 'org-login' && (
           <div className="text-center mb-8">
-            <svg width="80" height="60" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-1">
+            <svg width="60" height="60" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-1">
               <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="#0f172a"/>
               <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="#0f172a"/>
             </svg>
