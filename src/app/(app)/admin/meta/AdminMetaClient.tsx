@@ -7,39 +7,70 @@ import { StageBadge } from '@/components/leads/StageBadge'
 import { formatDateTime } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { Download, Send, Wifi, ThumbsDown, ThumbsUp } from 'lucide-react'
+import {
+  Download, Send, ThumbsDown, ThumbsUp,
+  Copy, Check, CheckCircle2, Circle,
+  Zap, AlertCircle, ExternalLink,
+} from 'lucide-react'
 
-const STAGES = [
-  { value: '', label: 'All stages' },
-  { value: '0', label: 'New' },
-  { value: '1', label: 'Contacted' },
-  { value: '2', label: 'Interested' },
-  { value: '3', label: 'Follow Up' },
-  { value: '4', label: 'Converted' },
-  { value: '5', label: 'Not Interested' },
-  { value: '6', label: 'Lost' },
+interface Props {
+  admin:       Employee
+  metaLeads:   Lead[]
+  lastSync:    string | null
+  isConnected: boolean
+  setupSent:   string | null
+  verifyToken: string | null
+  webhookUrl:  string
+  pageId:      string | null
+}
+
+const COPY_BTN = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0'
+
+const SETUP_STEPS = [
+  {
+    title: 'Open Meta for Developers',
+    desc:  "Go to developers.facebook.com → My Apps → select your app (or create one if you haven't already).",
+    link:  { label: 'Open Meta for Developers', href: 'https://developers.facebook.com' },
+  },
+  {
+    title: 'Add the Webhooks product',
+    desc:  'In your app dashboard, click Add Product and select Webhooks.',
+  },
+  {
+    title: 'Subscribe to the Page → leadgen field',
+    desc:  'Under Webhooks → Page → find the leadgen field and click Subscribe. Use the Callback URL and Verify Token shown below.',
+  },
+  {
+    title: 'Find your Facebook Page ID',
+    desc:  'Go to Meta Business Suite → Settings → Page Info. Copy your Page ID and share it with your Consultrackk admin to complete routing.',
+    link:  { label: 'Open Business Suite', href: 'https://business.facebook.com' },
+  },
 ]
 
-interface Props { admin: Employee; metaLeads: Lead[]; lastSync: string | null }
-
-export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
-  const [leads] = useState(metaLeads)
-  const [selected, setSelected] = useState<string[]>([])
-  const [pushing, setPushing] = useState(false)
+export function AdminMetaClient({
+  metaLeads, lastSync, isConnected, setupSent,
+  verifyToken, webhookUrl, pageId,
+}: Props) {
+  const [leads]               = useState(metaLeads)
+  const [selected, setSelected]       = useState<string[]>([])
+  const [pushing, setPushing]         = useState(false)
   const [stageFilter, setStageFilter] = useState('')
-  const [signal, setSignal] = useState<'BAD' | 'QUALIFIED'>('BAD')
+  const [signal, setSignal]           = useState<'BAD' | 'QUALIFIED'>('BAD')
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   const filtered = useMemo(() =>
     stageFilter ? leads.filter(l => l.main_stage === stageFilter) : leads,
     [leads, stageFilter]
   )
 
-  function toggleSelect(id: string) {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  function copy(value: string, field: string) {
+    navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
   }
 
-  function selectFiltered() {
-    setSelected(filtered.map(l => l.id))
+  function toggleSelect(id: string) {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
   function downloadCSV() {
@@ -71,23 +102,127 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
     setPushing(false)
   }
 
+  // ── NOT CONNECTED ─────────────────────────────────────────────
+  if (!isConnected) {
+    return (
+      <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-5">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Meta Lead Integration</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Connect your Facebook &amp; Instagram lead ads to auto-import leads</p>
+        </div>
+
+        {setupSent ? (
+          <div className="flex items-start gap-3 bg-brand-50 border border-brand-100 rounded-xl p-4">
+            <Zap size={16} className="text-brand-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-brand-800">Your setup guide is ready</p>
+              <p className="text-xs text-brand-600 mt-0.5">Follow the steps below to connect your Meta Page — leads will start flowing in automatically.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl p-4">
+            <AlertCircle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Waiting for setup</p>
+              <p className="text-xs text-amber-700 mt-0.5">Ask your Consultrackk admin to send you the setup guide to get started.</p>
+            </div>
+          </div>
+        )}
+
+        {setupSent && (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Webhook credentials</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Enter these exactly when Meta asks during webhook setup.</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-1.5">Callback URL</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 font-mono truncate min-w-0">
+                    {webhookUrl}
+                  </code>
+                  <button className={COPY_BTN} onClick={() => copy(webhookUrl, 'webhook')}>
+                    {copiedField === 'webhook' ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                    {copiedField === 'webhook' ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+              {verifyToken && (
+                <div>
+                  <p className="text-xs font-medium text-slate-500 mb-1.5">Verify Token</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 font-mono truncate min-w-0">
+                      {verifyToken}
+                    </code>
+                    <button className={COPY_BTN} onClick={() => copy(verifyToken, 'token')}>
+                      {copiedField === 'token' ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                      {copiedField === 'token' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-slate-900">Setup steps</h2>
+              <ol className="space-y-4">
+                {SETUP_STEPS.map((s, i) => (
+                  <li key={i} className="flex gap-3">
+                    <div className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800">{s.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
+                      {s.link && (
+                        <a href={s.link.href} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-800 font-medium mt-1.5">
+                          {s.link.label} <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                {pageId ? <CheckCircle2 size={14} className="text-green-500" /> : <Circle size={14} className="text-slate-400" />}
+                <p className="text-sm font-medium text-slate-800">
+                  {pageId ? `Page connected (ID: ${pageId})` : 'Page ID not yet configured'}
+                </p>
+              </div>
+              <p className="text-xs text-slate-500">
+                {pageId
+                  ? 'Your Facebook Page is linked. Leads will route to this account automatically.'
+                  : 'Share your Facebook Page ID with your Consultrackk admin to complete setup.'}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // ── CONNECTED VIEW ────────────────────────────────────────────
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Meta Leads Integration</h1>
+          <h1 className="text-xl font-bold text-slate-900">Meta Lead Integration</h1>
           {lastSync && <p className="text-xs text-slate-500 mt-0.5">Last lead received: {formatDateTime(lastSync)}</p>}
         </div>
       </div>
 
-      {/* Webhook Status */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Wifi size={20} className="text-blue-600" />
+          <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
+            <Zap size={18} className="text-brand-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900">Webhook Status</p>
+            <p className="text-sm font-semibold text-slate-900">Connected</p>
             <p className="text-xs text-slate-500">Receiving leads automatically from Meta Lead Ads</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -97,39 +232,33 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
         </div>
       </div>
 
-      {/* Filter + Push */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-900">Push Signal to Meta</h3>
-        <p className="text-xs text-slate-500">Select leads by stage, choose the signal quality, and push. Meta uses these signals to improve future ad targeting.</p>
+        <h3 className="text-sm font-semibold text-slate-900">Push Conversion Signal to Meta</h3>
+        <p className="text-xs text-slate-500">Send lead quality signals back to Meta to optimise your ad targeting and reduce cost-per-lead.</p>
 
         <div className="flex flex-wrap gap-3">
-          {/* Stage filter */}
-          <select
-            value={stageFilter}
-            onChange={e => { setStageFilter(e.target.value); setSelected([]) }}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          <select value={stageFilter} onChange={e => { setStageFilter(e.target.value); setSelected([]) }}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            <option value="">All stages</option>
+            <option value="C">Hot Leads</option>
+            <option value="F">Closed Won</option>
+            <option value="E">Closed Lost</option>
+            <option value="X">Unqualified</option>
           </select>
 
-          {/* Signal type */}
           <div className="flex rounded-lg border border-slate-300 overflow-hidden text-sm">
-            <button
-              onClick={() => setSignal('BAD')}
-              className={`flex items-center gap-1.5 px-3 py-2 ${signal === 'BAD' ? 'bg-red-50 text-red-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
-            >
+            <button onClick={() => setSignal('BAD')}
+              className={`flex items-center gap-1.5 px-3 py-2 ${signal === 'BAD' ? 'bg-red-50 text-red-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>
               <ThumbsDown size={13} /> Unqualified
             </button>
-            <button
-              onClick={() => setSignal('QUALIFIED')}
-              className={`flex items-center gap-1.5 px-3 py-2 border-l border-slate-300 ${signal === 'QUALIFIED' ? 'bg-green-50 text-green-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
-            >
+            <button onClick={() => setSignal('QUALIFIED')}
+              className={`flex items-center gap-1.5 px-3 py-2 border-l border-slate-300 ${signal === 'QUALIFIED' ? 'bg-green-50 text-green-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>
               <ThumbsUp size={13} /> Qualified
             </button>
           </div>
 
           <div className="flex gap-2 ml-auto">
-            <Button size="sm" variant="outline" onClick={selectFiltered}>
+            <Button size="sm" variant="outline" onClick={() => setSelected(filtered.map(l => l.id))}>
               Select {stageFilter ? 'Stage' : 'All'} ({filtered.length})
             </Button>
             <Button size="sm" variant="outline" onClick={downloadCSV}>
@@ -143,11 +272,12 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
         </div>
 
         {selected.length > 0 && (
-          <p className="text-xs text-indigo-600">{selected.length} leads selected · <button onClick={() => setSelected([])} className="underline">Clear</button></p>
+          <p className="text-xs text-brand-600">
+            {selected.length} leads selected · <button onClick={() => setSelected([])} className="underline">Clear</button>
+          </p>
         )}
       </div>
 
-      {/* Leads table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
         <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-slate-50 border-b border-slate-200">
@@ -167,10 +297,10 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map(l => (
-              <tr key={l.id} className={`hover:bg-slate-50 ${selected.includes(l.id) ? 'bg-indigo-50' : ''}`}>
+              <tr key={l.id} className={`hover:bg-slate-50 ${selected.includes(l.id) ? 'bg-brand-50' : ''}`}>
                 <td className="px-4 py-3"><input type="checkbox" checked={selected.includes(l.id)} onChange={() => toggleSelect(l.id)} /></td>
                 <td className="px-4 py-3 font-medium">
-                  <Link href={`/leads/${l.id}`} className="text-slate-900 hover:text-indigo-600">{l.name}</Link>
+                  <Link href={`/leads/${l.id}`} className="text-slate-900 hover:text-brand-600">{l.name}</Link>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{l.phone}</td>
                 <td className="px-4 py-3"><StageBadge stage={l.main_stage} /></td>
@@ -181,8 +311,10 @@ export function AdminMetaClient({ admin, metaLeads, lastSync }: Props) {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <p className="py-8 text-center text-slate-400">
-            {leads.length === 0 ? 'No Meta leads yet. Webhook is waiting for events.' : 'No leads match the selected stage.'}
+          <p className="py-10 text-center text-slate-400">
+            {leads.length === 0
+              ? 'No Meta leads yet — webhook is connected and waiting for your first lead form submission.'
+              : 'No leads match the selected stage.'}
           </p>
         )}
       </div>

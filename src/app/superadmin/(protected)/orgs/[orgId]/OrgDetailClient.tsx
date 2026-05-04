@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
   Users, Mail, Link2, Loader2, Radio, Pipette,
-  Upload, Trash2, ImageIcon,
+  Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 
@@ -19,7 +19,7 @@ type Features = {
 }
 type MetaConfig = { page_id?: string; access_token?: string }
 type OrgRole = { key: string; label: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; is_live?: boolean; created_at: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-teal-300 border-teal-500/20',
@@ -76,6 +76,30 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [removingLogo, setRemovingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // Meta integration
+  const [sendingGuide, setSendingGuide] = useState(false)
+  const [guideSent, setGuideSent] = useState(!!org.meta_setup_sent_at)
+  const [showAccessToken, setShowAccessToken] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  const WEBHOOK_URL = 'https://consultrackk.vercel.app/api/meta/webhook'
+
+  function copyMeta(value: string, field: string) {
+    navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  async function sendSetupGuide() {
+    setSendingGuide(true)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}/send-guide`, { method: 'POST' })
+    if (res.ok) { setGuideSent(true); toast.success('Setup guide sent to client') }
+    else toast.error('Failed to send guide')
+    setSendingGuide(false)
+  }
+
+  const metaConnected = !!(metaPageId && metaPageId.trim())
 
   async function handleLogoUpload(file: File) {
     setUploadingLogo(true)
@@ -520,6 +544,104 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   e.target.value = ''
                 }}
               />
+            </div>
+
+            {/* ── Meta Integration ── */}
+            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: metaConnected ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)' }}>
+                    <Zap size={13} className={metaConnected ? 'text-indigo-400' : 'text-neutral-600'} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-medium text-white">Meta Integration</h2>
+                    <p className="text-[10px] text-neutral-600 mt-0.5">
+                      {metaConnected ? 'Connected — receiving leads from Meta Ads' : 'Not configured'}
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  metaConnected
+                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                    : 'bg-white/[0.04] text-neutral-600 border-white/[0.06]'
+                }`}>
+                  {metaConnected ? 'ACTIVE' : 'PENDING'}
+                </span>
+              </div>
+
+              {/* Webhook URL */}
+              <div>
+                <label className="block text-[11px] text-neutral-500 mb-1.5">Webhook URL</label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg text-xs text-neutral-400 font-mono truncate">
+                    {WEBHOOK_URL}
+                  </div>
+                  <button type="button" onClick={() => copyMeta(WEBHOOK_URL, 'webhook')}
+                    className={BTN_GHOST + ' !px-2.5'}>
+                    {copiedField === 'webhook' ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Page ID */}
+              <div>
+                <label className="block text-[11px] text-neutral-500 mb-1.5">Facebook Page ID</label>
+                <input
+                  type="text"
+                  value={metaPageId}
+                  onChange={e => setMetaPageId(e.target.value)}
+                  placeholder="e.g. 123456789012345"
+                  className={INPUT}
+                />
+                <p className="text-[10px] text-neutral-700 mt-1">Leads are routed to this org when Meta sends events from this Page ID</p>
+              </div>
+
+              {/* Access Token */}
+              <div>
+                <label className="block text-[11px] text-neutral-500 mb-1.5">Page Access Token</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type={showAccessToken ? 'text' : 'password'}
+                    value={metaAccessToken}
+                    onChange={e => setMetaAccessToken(e.target.value)}
+                    placeholder="EAAx…"
+                    className={INPUT + ' font-mono flex-1'}
+                  />
+                  <button type="button" onClick={() => setShowAccessToken(v => !v)}
+                    className={BTN_GHOST + ' !px-2.5'}>
+                    {showAccessToken ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-neutral-700 mt-1">Used to fetch lead field data from Meta Graph API</p>
+              </div>
+
+              {/* Send setup guide */}
+              <div className="pt-1 border-t border-white/[0.06] flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-neutral-400">Send setup guide to client admin</p>
+                  <p className="text-[10px] text-neutral-700 mt-0.5">
+                    {guideSent
+                      ? 'Guide sent — visible on the client\'s Meta settings page'
+                      : 'Client will see step-by-step instructions on their Meta Leads page'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={sendingGuide}
+                  onClick={sendSetupGuide}
+                  className={BTN_GHOST + ' flex-shrink-0'}
+                >
+                  {sendingGuide
+                    ? <Loader2 size={13} className="animate-spin" />
+                    : guideSent
+                      ? <Check size={13} className="text-green-400" />
+                      : <Send size={13} />
+                  }
+                  {guideSent ? 'Sent' : 'Send Guide'}
+                </button>
+              </div>
             </div>
 
             {/* Org details */}
