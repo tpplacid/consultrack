@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Building2, LifeBuoy, LogOut, Zap, Menu, X } from 'lucide-react'
+import { Building2, LifeBuoy, LogOut, Menu, X } from 'lucide-react'
 
 const navItems = [
   { href: '/superadmin/orgs',    label: 'Organisations', icon: Building2 },
@@ -22,8 +22,11 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
       {/* Logo */}
       <div className="px-5 pt-6 pb-5 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
-            <Zap size={14} className="text-black" fill="black" />
+          <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center flex-shrink-0 p-1">
+            <svg viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="black"/>
+              <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="black"/>
+            </svg>
           </div>
           <div>
             <p className="text-white font-semibold text-sm leading-tight tracking-tight">Consultrack</p>
@@ -82,8 +85,11 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
       {/* Mobile topbar */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-black border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center">
-            <Zap size={12} className="text-black" fill="black" />
+          <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center p-0.5">
+            <svg viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="black"/>
+              <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="black"/>
+            </svg>
           </div>
           <span className="text-white font-semibold text-sm">Consultrack</span>
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-white/20 text-neutral-400">SA</span>
