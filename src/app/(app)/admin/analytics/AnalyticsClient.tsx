@@ -170,6 +170,54 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
     })
   }, [filteredLeads, stages])
 
+  // ── 8b. Pipeline value by stage (revenue forecasting) ──────────────────────
+  // Sum of all fees for leads currently in each non-lost stage
+  const pipelineValueData = useMemo(() => {
+    return activeStages.map(s => {
+      const sl = filteredLeads.filter(l => l.main_stage === s.key)
+      const value = sl.reduce((sum, l) =>
+        sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+      return { stage: s.label, value, count: sl.length }
+    }).filter(d => d.count > 0)
+  }, [filteredLeads, activeStages])
+
+  // ── 8c. Time-to-Win: avg days from lead creation → Closed Won, monthly ─────
+  const timeToWinData = useMemo(() => {
+    const wonLeads = filteredLeads.filter(l => l.main_stage === 'F' && l.stage_entered_at)
+    const months: Record<string, number[]> = {}
+    for (const l of wonLeads) {
+      const monthKey = format(parseISO(l.stage_entered_at), 'MMM yy')
+      const days = (new Date(l.stage_entered_at).getTime() - new Date(l.created_at).getTime()) / (1000 * 60 * 60 * 24)
+      if (!months[monthKey]) months[monthKey] = []
+      months[monthKey].push(Math.max(0, days))
+    }
+    return Object.entries(months).map(([month, arr]) => ({
+      month,
+      avgDays: Math.round(arr.reduce((a, b) => a + b, 0) / arr.length),
+      wins: arr.length,
+    }))
+  }, [filteredLeads])
+
+  // ── 8d. Source ROI: leads-in vs revenue-out by source ──────────────────────
+  const sourceRoiData = useMemo(() => {
+    const map: Record<string, { count: number; revenue: number; won: number }> = {}
+    for (const l of filteredLeads) {
+      const s = l.source || 'unknown'
+      if (!map[s]) map[s] = { count: 0, revenue: 0, won: 0 }
+      map[s].count++
+      if (l.main_stage === 'F') map[s].won++
+      map[s].revenue += (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0)
+    }
+    return Object.entries(map).map(([source, v]) => ({
+      source,
+      count: v.count,
+      revenue: v.revenue,
+      won: v.won,
+      conversionRate: v.count > 0 ? Math.round((v.won / v.count) * 100) : 0,
+      revPerLead: v.count > 0 ? Math.round(v.revenue / v.count) : 0,
+    })).sort((a, b) => b.revenue - a.revenue)
+  }, [filteredLeads])
+
   // ── 9. SLA compliance ──────────────────────────────────────────────────────
   const slaData = useMemo(() => {
     return employees.map(e => {
@@ -413,6 +461,97 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
             </select>
           )}
         </div>
+      </div>
+
+      {/* ── INSIGHTS: Revenue, Velocity, Source ROI ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Pipeline value by stage — forecasting */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Pipeline Value</CardTitle>
+            <p className="text-[8px] text-brand-400 font-semibold mt-0.5">Total fees committed at each stage — what&apos;s in the pipeline right now</p>
+          </CardHeader>
+          <CardContent>
+            {pipelineValueData.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-8">No payment data yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={pipelineValueData} layout="vertical" margin={{ left: 10, right: 16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e6f4f4" />
+                  <XAxis type="number" tickFormatter={v => v >= 100000 ? `${Math.round(v/1000)}k` : String(v)} fontSize={10} stroke="#88b8b8" />
+                  <YAxis type="category" dataKey="stage" fontSize={10} stroke="#1a4a50" width={100} />
+                  <Tooltip formatter={(v) => fmt(Number(v))} />
+                  <Bar dataKey="value" fill="#3d9191" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Time-to-Win trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Time to Win</CardTitle>
+            <p className="text-[8px] text-brand-400 font-semibold mt-0.5">Average days from lead creation to Closed Won, by month</p>
+          </CardHeader>
+          <CardContent>
+            {timeToWinData.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-8">No wins recorded yet in this range</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart data={timeToWinData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e6f4f4" />
+                  <XAxis dataKey="month" fontSize={10} stroke="#1a4a50" />
+                  <YAxis yAxisId="left" fontSize={10} stroke="#3d9191" label={{ value: 'days', angle: -90, position: 'insideLeft', fontSize: 9, fill: '#88b8b8' }} />
+                  <YAxis yAxisId="right" orientation="right" fontSize={10} stroke="#22c55e" label={{ value: 'wins', angle: 90, position: 'insideRight', fontSize: 9, fill: '#88b8b8' }} />
+                  <Tooltip />
+                  <Bar yAxisId="right" dataKey="wins" fill="#22c55e22" stroke="#22c55e" />
+                  <Line yAxisId="left" dataKey="avgDays" stroke="#3d9191" strokeWidth={2} dot={{ fill: '#3d9191' }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Source ROI table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Source ROI</CardTitle>
+            <p className="text-[8px] text-brand-400 font-semibold mt-0.5">Which sources actually convert and bring revenue</p>
+          </CardHeader>
+          <CardContent>
+            {sourceRoiData.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-8">No source data yet</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-brand-400 font-semibold border-b border-brand-100">
+                    <th className="py-1.5">Source</th>
+                    <th className="py-1.5 text-right">Leads</th>
+                    <th className="py-1.5 text-right">Conv %</th>
+                    <th className="py-1.5 text-right">Revenue</th>
+                    <th className="py-1.5 text-right">Per Lead</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourceRoiData.map(r => (
+                    <tr key={r.source} className="border-b border-brand-50 last:border-0">
+                      <td className="py-1.5 text-brand-700 font-medium capitalize">{r.source}</td>
+                      <td className="py-1.5 text-right tabular-nums">{r.count}</td>
+                      <td className="py-1.5 text-right tabular-nums">
+                        <span className={r.conversionRate >= 20 ? 'text-green-600 font-semibold' : 'text-slate-600'}>
+                          {r.conversionRate}%
+                        </span>
+                      </td>
+                      <td className="py-1.5 text-right tabular-nums text-brand-700 font-semibold">{fmt(r.revenue)}</td>
+                      <td className="py-1.5 text-right tabular-nums text-slate-500">{fmt(r.revPerLead)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* (Pipeline Summary removed — replaced by KPI row above) */}
