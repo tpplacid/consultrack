@@ -7,14 +7,17 @@ import { LeadCard } from '@/components/leads/LeadCard'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { StageBadge } from '@/components/leads/StageBadge'
-import { formatDateTime, lf } from '@/lib/utils'
+import { formatDateTime, lf, lfn, leadRevenue } from '@/lib/utils'
+import { SectionLayout, getRevenueFieldDefs, getRevenueFieldKeys } from '@/lib/fieldLayouts'
 import toast from 'react-hot-toast'
 import { Search, ArrowRightLeft, Download, Layers, Tag, Trash2, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
-interface Props { admin: Employee; leads: Lead[]; employees: Employee[] }
+interface Props { admin: Employee; leads: Lead[]; employees: Employee[]; sections: SectionLayout[] }
 
-export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Props) {
+export function AdminLeadsClient({ admin, leads: initialLeads, employees, sections }: Props) {
+  const revenueKeys = useMemo(() => getRevenueFieldKeys(sections), [sections])
+  const revenueDefs = useMemo(() => getRevenueFieldDefs(sections), [sections])
   const { stages } = useOrgConfig()
   const [leads, setLeads] = useState(initialLeads)
   const [search, setSearch] = useState('')
@@ -161,35 +164,28 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
         </div>
       </div>
 
-      {/* Payment summary */}
+      {/* Revenue summary — driven by org's currency-typed fields */}
       {(() => {
-        const totalPayments = filtered.reduce((sum, l) => sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
-        const appFees = filtered.reduce((sum, l) => sum + (l.application_fees || 0), 0)
-        const bookFees = filtered.reduce((sum, l) => sum + (l.booking_fees || 0), 0)
-        const tuitionFees = filtered.reduce((sum, l) => sum + (l.tuition_fees || 0), 0)
+        if (revenueDefs.length === 0) return null
+        const totalPayments = filtered.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0)
         if (totalPayments === 0) return null
+        const cols = Math.min(revenueDefs.length + 1, 4)
         return (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className={`grid gap-3 grid-cols-2 sm:grid-cols-${cols}`}>
             <div className="bg-brand-800 rounded-xl border border-brand-700 p-4">
-              <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
+              <p className="text-xs text-brand-200 font-semibold">Total Revenue</p>
               <p className="text-xl font-bold text-white mt-0.5">₹{totalPayments.toLocaleString('en-IN')}</p>
-              <p className="text-[8px] text-brand-300 mt-1">Sum of all payment types</p>
+              <p className="text-[8px] text-brand-300 mt-1">All revenue fields combined</p>
             </div>
-            <div className="bg-white rounded-xl border border-brand-100 p-4">
-              <p className="text-xs text-brand-600 font-semibold">Application Fees</p>
-              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{appFees.toLocaleString('en-IN')}</p>
-              <p className="text-[8px] text-brand-400 mt-1">Paid at application stage</p>
-            </div>
-            <div className="bg-white rounded-xl border border-brand-100 p-4">
-              <p className="text-xs text-brand-600 font-semibold">Booking Fees</p>
-              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{bookFees.toLocaleString('en-IN')}</p>
-              <p className="text-[8px] text-brand-400 mt-1">Seat confirmation payment</p>
-            </div>
-            <div className="bg-white rounded-xl border border-brand-100 p-4">
-              <p className="text-xs text-brand-600 font-semibold">Tuition Fees</p>
-              <p className="text-xl font-bold text-brand-800 mt-0.5">₹{tuitionFees.toLocaleString('en-IN')}</p>
-              <p className="text-[8px] text-brand-400 mt-1">Full course tuition collected</p>
-            </div>
+            {revenueDefs.map(def => {
+              const v = filtered.reduce((sum, l) => sum + lfn(l, def.key), 0)
+              return (
+                <div key={def.key} className="bg-white rounded-xl border border-brand-100 p-4">
+                  <p className="text-xs text-brand-600 font-semibold truncate">{def.label}</p>
+                  <p className="text-xl font-bold text-brand-800 mt-0.5">₹{v.toLocaleString('en-IN')}</p>
+                </div>
+              )
+            })}
           </div>
         )
       })()}

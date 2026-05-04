@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -105,14 +105,12 @@ const STATIC_FILTER_FIELDS = [
   { value: 'sub_stage',        label: 'Sub-stage',       type: 'text'     as const },
 ]
 
-// Static numeric value fields for leads metric
+// Static numeric value fields for leads metric.
+// Currency fields and number fields are appended dynamically from the org's
+// field schema (sections) so each org sees only its own revenue fields.
 const STATIC_VALUE_FIELDS: ValueFieldOption[] = [
   { value: 'count',            label: 'Count (# of leads)',     isCurrency: false },
-  { value: 'application_fees', label: 'Application Fees (₹)',   isCurrency: true  },
-  { value: 'booking_fees',     label: 'Booking Fees (₹)',       isCurrency: true  },
-  { value: 'tuition_fees',     label: 'Tuition Fees (₹)',       isCurrency: true  },
-  { value: 'total_collected',  label: 'Total Collected (₹)',    isCurrency: true  },
-  { value: 'twelfth_score',    label: '12th Score (avg)',        isCurrency: false },
+  { value: 'total_revenue',    label: 'Total Revenue (₹, all currency fields)', isCurrency: true },
 ]
 
 function formatValue(value: number, isCurrency: boolean): string {
@@ -156,19 +154,25 @@ function aggregateByKeyValue<T extends Record<string, unknown>>(
   }))
 }
 
-function getLeadNumericValue(lead: LeadRow, valueField: string): number {
-  if (valueField === 'total_collected') {
-    return (
-      (Number(lead.application_fees) || 0) +
-      (Number(lead.booking_fees)     || 0) +
-      (Number(lead.tuition_fees)     || 0)
-    )
+function getLeadNumericValue(lead: LeadRow, valueField: string, revenueKeys: string[]): number {
+  // Aggregate of every currency-typed field on the org
+  if (valueField === 'total_revenue' || valueField === 'total_collected') {
+    let sum = 0
+    const cd = (lead.custom_data ?? {}) as Record<string, unknown>
+    for (const k of revenueKeys) {
+      const v = cd[k] !== undefined && cd[k] !== null && cd[k] !== '' ? cd[k] : (lead as Record<string, unknown>)[k]
+      const n = Number(v)
+      if (isFinite(n)) sum += n
+    }
+    return sum
   }
+  // Specific custom_data field by key
   if (valueField.startsWith('custom:')) {
     const key = valueField.slice(7)
     const cd  = lead.custom_data as Record<string, unknown> | null
     return Number(cd?.[key]) || 0
   }
+  // Direct numeric column on lead row (legacy fallback)
   return Number(lead[valueField]) || 0
 }
 
@@ -479,13 +483,23 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
       .map(f => ({ value: `custom:${f.key}`, label: `${f.label} (${s.section_name})` }))
   )
 
-  // Build dynamic value field options: static numeric + numeric custom fields
+  // Build dynamic value field options: static + every number/currency custom field
   const customNumericValueFields: ValueFieldOption[] = sections.flatMap(s =>
     s.fields
-      .filter(f => f.type === 'number')
-      .map(f => ({ value: `custom:${f.key}`, label: `${f.label} (${s.section_name})`, isCurrency: false }))
+      .filter(f => f.type === 'number' || f.type === 'currency')
+      .map(f => ({
+        value: `custom:${f.key}`,
+        label: `${f.label}${f.type === 'currency' ? ' (₹)' : ''} (${s.section_name})`,
+        isCurrency: f.type === 'currency',
+      }))
   )
   const allValueFields: ValueFieldOption[] = [...STATIC_VALUE_FIELDS, ...customNumericValueFields]
+
+  // Org's revenue keys — used to compute total_revenue across all currency fields
+  const revenueKeys = useMemo(
+    () => sections.flatMap(s => s.fields.filter(f => f.type === 'currency').map(f => f.key)),
+    [sections]
+  )
 
   // Derived helpers for current value field
   const currentValueField = allValueFields.find(v => v.value === valueField) ?? STATIC_VALUE_FIELDS[0]
@@ -565,10 +579,8 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
         const { data: rows, error } = await supabase
           .from('leads')
           .select([
-            'main_stage', 'sub_stage', 'source', 'owner_id', 'lead_type',
-            'location', 'preferred_course', 'decision_maker', 'loan_status',
-            'income_status', 'twelfth_score', 'application_fees', 'booking_fees',
-            'tuition_fees', 'custom_data', 'created_at',
+            'main_stage', 'sub_stage', 'source', 'owner_id',
+            'custom_data', 'created_at',
             'owner:employees!leads_owner_id_fkey(name)',
           ].join(', '))
           .eq('org_id', orgId)
@@ -610,7 +622,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
         if (isCountMode) {
           data = aggregateByKey(leads, keyFn)
         } else {
-          data = aggregateByKeyValue(leads, keyFn, l => getLeadNumericValue(l, valueField), activeAggregation as 'sum' | 'avg')
+          data = aggregateByKeyValue(leads, keyFn, l => getLeadNumericValue(l, valueField, revenueKeys), activeAggregation as 'sum' | 'avg')
         }
 
         setPreviewData(data)
@@ -701,7 +713,7 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
     } finally {
       setLoadingPreview(false)
     }
-  }, [metric, groupBy, valueField, aggregation, isCountMode, activeAggregation, dateRange, filters, orgId, stageMap, employees])
+  }, [metric, groupBy, valueField, aggregation, isCountMode, activeAggregation, dateRange, filters, orgId, stageMap, employees, revenueKeys])
 
   // ── Save ────────────────────────────────────────────────────────────────────
   async function handleSave() {

@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { AnalyticsClient } from '../../analytics/AnalyticsClient'
 import { Lead, Employee } from '@/types'
+import { SectionLayout } from '@/lib/fieldLayouts'
 import { subDays, format } from 'date-fns'
 
 export default async function PremadeReportsPage() {
@@ -17,6 +18,7 @@ export default async function PremadeReportsPage() {
     { data: employeesRaw },
     { data: activities },
     { data: slaBreaches },
+    { data: sectionsRaw },
   ] = await Promise.all([
     supabase
       .from('leads')
@@ -38,6 +40,11 @@ export default async function PremadeReportsPage() {
       .from('sla_breaches')
       .select('owner_id, resolution, created_at')
       .eq('org_id', orgId),
+    supabase
+      .from('org_field_layouts')
+      .select('*')
+      .eq('org_id', orgId)
+      .order('position', { ascending: true }),
   ])
 
   return (
@@ -46,6 +53,7 @@ export default async function PremadeReportsPage() {
       employees={(employeesRaw || []) as unknown as Employee[]}
       activities={activities || []}
       slaBreaches={slaBreaches || []}
+      sections={(sectionsRaw || []) as SectionLayout[]}
     />
   )
 }

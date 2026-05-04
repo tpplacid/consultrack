@@ -5,21 +5,22 @@ import { SectionLayout, FieldDef, FieldType, labelToKey, STANDARD_SECTIONS } fro
 import toast from 'react-hot-toast'
 import {
   Plus, Trash2, ChevronUp, ChevronDown, GripVertical,
-  Type, Hash, Calendar, List, CheckSquare, Phone, Mail,
+  Type, Hash, IndianRupee, Calendar, List, CheckSquare, Phone, Mail,
   Link, AlignLeft, Calculator, Edit3, Check, X,
 } from 'lucide-react'
 
 const FIELD_TYPES: { value: FieldType; label: string; icon: React.ReactNode; hint: string }[] = [
-  { value: 'text',     label: 'Text',      icon: <Type size={13} />,        hint: 'Single-line text' },
-  { value: 'textarea', label: 'Long text', icon: <AlignLeft size={13} />,   hint: 'Multi-line text' },
-  { value: 'number',   label: 'Number',    icon: <Hash size={13} />,         hint: 'Numeric value' },
-  { value: 'date',     label: 'Date',      icon: <Calendar size={13} />,     hint: 'Date picker' },
-  { value: 'select',   label: 'Dropdown',  icon: <List size={13} />,         hint: 'Pick from options' },
-  { value: 'boolean',  label: 'Yes / No',  icon: <CheckSquare size={13} />,  hint: 'Toggle' },
-  { value: 'phone',    label: 'Phone',     icon: <Phone size={13} />,        hint: 'Phone number' },
-  { value: 'email',    label: 'Email',     icon: <Mail size={13} />,         hint: 'Email address' },
-  { value: 'url',      label: 'URL',       icon: <Link size={13} />,         hint: 'Web link' },
-  { value: 'formula',  label: 'Formula',   icon: <Calculator size={13} />,   hint: 'Computed from other fields' },
+  { value: 'text',     label: 'Text',        icon: <Type size={13} />,         hint: 'Single-line text' },
+  { value: 'textarea', label: 'Long text',   icon: <AlignLeft size={13} />,    hint: 'Multi-line text' },
+  { value: 'number',   label: 'Number',      icon: <Hash size={13} />,         hint: 'Numeric value' },
+  { value: 'currency', label: 'Revenue (₹)', icon: <IndianRupee size={13} />,  hint: 'Currency field — counts toward total revenue in analytics' },
+  { value: 'date',     label: 'Date',        icon: <Calendar size={13} />,     hint: 'Date picker' },
+  { value: 'select',   label: 'Dropdown',    icon: <List size={13} />,         hint: 'Pick from options' },
+  { value: 'boolean',  label: 'Yes / No',    icon: <CheckSquare size={13} />,  hint: 'Toggle' },
+  { value: 'phone',    label: 'Phone',       icon: <Phone size={13} />,        hint: 'Phone number' },
+  { value: 'email',    label: 'Email',       icon: <Mail size={13} />,         hint: 'Email address' },
+  { value: 'url',      label: 'URL',         icon: <Link size={13} />,         hint: 'Web link' },
+  { value: 'formula',  label: 'Formula',     icon: <Calculator size={13} />,   hint: 'Computed from other fields' },
 ]
 
 function typeIcon(t: FieldType) {

@@ -10,20 +10,26 @@ import { Lead, Employee, LeadStage } from '@/types'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfMonth, startOfWeek, parseISO } from 'date-fns'
-import { lf } from '@/lib/utils'
+import { lf, lfn, leadRevenue } from '@/lib/utils'
+import { SectionLayout, getRevenueFieldDefs, getRevenueFieldKeys } from '@/lib/fieldLayouts'
 
 interface Props {
   leads: Lead[]
   employees: Employee[]
   activities: Array<{ employee_id: string; activity_type: string; created_at: string }>
   slaBreaches: Array<{ owner_id: string; resolution: string; created_at: string }>
+  sections: SectionLayout[]
 }
 
 const TEAL = ['#3d9191', '#2a7070', '#1a4a50', '#88b8b8', '#5c9c9c', '#1f5560', '#b2d8d8', '#e6f4f4']
 
 type GroupBy = 'daily' | 'weekly' | 'monthly'
 
-export function AnalyticsClient({ leads, employees, activities, slaBreaches }: Props) {
+export function AnalyticsClient({ leads, employees, activities, slaBreaches, sections }: Props) {
+  // Org's currency-typed fields drive all revenue computations.
+  // Empty for new orgs that haven't defined any revenue fields yet (0s everywhere).
+  const revenueKeys = useMemo(() => getRevenueFieldKeys(sections), [sections])
+  const revenueDefs = useMemo(() => getRevenueFieldDefs(sections), [sections])
   const { stages, stageMap } = useOrgConfig()
   const activeStages = stages.filter(s => !s.is_lost)
   const stageOrder = stages.map(s => s.key)
@@ -145,8 +151,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       const assigned  = empLeads.length
       const contacted = empLeads.filter(l => ['B','C','D','F'].includes(l.main_stage)).length
       const converted = empLeads.filter(l => l.main_stage === 'F').length
-      const payments  = empLeads.reduce((sum, l) =>
-        sum + ((l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0)), 0)
+      const payments  = empLeads.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0)
       return { name: e.name.split(' ')[0], role: e.role, assigned, contacted, converted, payments }
     }).filter(e => e.assigned > 0)
   }, [filteredLeads, employees])
@@ -175,11 +180,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const pipelineValueData = useMemo(() => {
     return activeStages.map(s => {
       const sl = filteredLeads.filter(l => l.main_stage === s.key)
-      const value = sl.reduce((sum, l) =>
-        sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+      const value = sl.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0)
       return { stage: s.label, value, count: sl.length }
     }).filter(d => d.count > 0)
-  }, [filteredLeads, activeStages])
+  }, [filteredLeads, activeStages, revenueKeys])
 
   // ── 8c. Time-to-Win: avg days from lead creation → Closed Won, monthly ─────
   const timeToWinData = useMemo(() => {
@@ -206,7 +210,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       if (!map[s]) map[s] = { count: 0, revenue: 0, won: 0 }
       map[s].count++
       if (l.main_stage === 'F') map[s].won++
-      map[s].revenue += (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0)
+      map[s].revenue += leadRevenue(l, revenueKeys)
     }
     return Object.entries(map).map(([source, v]) => ({
       source,
@@ -228,23 +232,33 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
     }).filter(e => e.total > 0)
   }, [employees, slaBreaches])
 
-  // ── 10. Payment breakdown by employee ──────────────────────────────────────
+  // ── 10. Revenue breakdown by employee — one column per currency field ──────
   const paymentData = useMemo(() => {
     return employees.map(e => {
-      const el = filteredLeads.filter(l => l.owner_id === e.id)
-      const app = el.reduce((s, l) => s + (l.application_fees || 0), 0)
-      const bk  = el.reduce((s, l) => s + (l.booking_fees || 0), 0)
-      const tu  = el.reduce((s, l) => s + (l.tuition_fees || 0), 0)
-      return { name: e.name.split(' ')[0], application: app, booking: bk, tuition: tu, total: app + bk + tu }
-    }).filter(e => e.total > 0).sort((a, b) => b.total - a.total)
-  }, [filteredLeads, employees])
+      const el  = filteredLeads.filter(l => l.owner_id === e.id)
+      const row: Record<string, string | number> = { name: e.name.split(' ')[0] }
+      let total = 0
+      for (const def of revenueDefs) {
+        const v = el.reduce((s, l) => s + lfn(l, def.key), 0)
+        row[def.key] = v
+        total += v
+      }
+      row.total = total
+      return row
+    }).filter(r => (r.total as number) > 0).sort((a, b) => (b.total as number) - (a.total as number))
+  }, [filteredLeads, employees, revenueDefs])
 
+  // Totals across ALL currency fields — keys come from the org's schema
   const paymentTotals = useMemo(() => {
-    const app  = filteredLeads.reduce((s, l) => s + (l.application_fees || 0), 0)
-    const bk   = filteredLeads.reduce((s, l) => s + (l.booking_fees || 0), 0)
-    const tu   = filteredLeads.reduce((s, l) => s + (l.tuition_fees || 0), 0)
-    return { app, booking: bk, tuition: tu, total: app + bk + tu }
-  }, [filteredLeads])
+    const byKey: Record<string, number> = {}
+    let total = 0
+    for (const def of revenueDefs) {
+      const v = filteredLeads.reduce((s, l) => s + lfn(l, def.key), 0)
+      byKey[def.key] = v
+      total += v
+    }
+    return { byKey, total }
+  }, [filteredLeads, revenueDefs])
 
   // ── 11. College interest ────────────────────────────────────────────────────
   const collegeData = useMemo(() => {
@@ -349,11 +363,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const revenuePipeline = useMemo(() => {
     return activeStages.filter(s => !s.is_won).map(s => {
       const stageLeads = filteredLeads.filter(l => l.main_stage === s.key)
-      const value = stageLeads.reduce((sum, l) =>
-        sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+      const value = stageLeads.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0)
       return { stage: s.label, stageKey: s.key, leads: stageLeads.length, value }
     }).filter(r => r.leads > 0)
-  }, [filteredLeads, activeStages])
+  }, [filteredLeads, activeStages, revenueKeys])
 
   // ── Top-level KPIs ────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -361,25 +374,26 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
     const won     = filteredLeads.filter(l => l.main_stage === 'F').length
     const lost    = filteredLeads.filter(l => l.main_stage === 'E' || l.main_stage === 'X').length
     const winRate = total > 0 ? Math.round((won / total) * 100) : 0
-    const totalRev= filteredLeads.reduce((s, l) =>
-      s + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+    const totalRev= filteredLeads.reduce((s, l) => s + leadRevenue(l, revenueKeys), 0)
     const pipelineVal = revenuePipeline.reduce((s, r) => s + r.value, 0)
     const active  = filteredLeads.filter(l => !['E','F','X','Y'].includes(l.main_stage)).length
     return { total, won, lost, winRate, totalRev, pipelineVal, active }
-  }, [filteredLeads, revenuePipeline])
+  }, [filteredLeads, revenuePipeline, revenueKeys])
 
   // ── CSV export ────────────────────────────────────────────────────────────
   function exportCSV() {
-    const rows = filteredLeads.map(l => ({
-      Name:    l.name,
-      Stage:   stageMap[l.main_stage]?.label ?? l.main_stage,
-      Source:  l.source,
-      Owner:   employees.find(e => e.id === l.owner_id)?.name ?? '',
-      AppFees: l.application_fees ?? 0,
-      Booking: l.booking_fees ?? 0,
-      Tuition: l.tuition_fees ?? 0,
-      Created: l.created_at?.slice(0, 10) ?? '',
-    }))
+    const rows = filteredLeads.map(l => {
+      const base: Record<string, string | number> = {
+        Name:    l.name,
+        Stage:   stageMap[l.main_stage]?.label ?? l.main_stage,
+        Source:  l.source,
+        Owner:   employees.find(e => e.id === l.owner_id)?.name ?? '',
+      }
+      // One CSV column per org-defined revenue field (instead of fixed App/Booking/Tuition)
+      for (const def of revenueDefs) base[def.label] = lfn(l, def.key)
+      base.Created = l.created_at?.slice(0, 10) ?? ''
+      return base
+    })
     const header = Object.keys(rows[0] ?? {}).join(',')
     const body   = rows.map(r => Object.values(r).join(',')).join('\n')
     const blob   = new Blob([`${header}\n${body}`], { type: 'text/csv' })
@@ -573,27 +587,33 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
       </div>
 
       {/* ── Revenue Summary ── */}
-      <div>
-        <p className="text-[8px] text-brand-400 font-semibold mb-2">Revenue Summary — total fees collected across all leads in the selected period</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-brand-800 border border-brand-700 rounded-xl p-4">
-            <p className="text-xs text-brand-200 font-semibold">Total Collected</p>
-            <p className="text-2xl font-bold text-white mt-1 truncate">{fmt(paymentTotals.total)}</p>
-            <p className="text-[8px] text-brand-300 mt-1">All payment types combined</p>
-          </div>
-          {[
-            { label: 'Application Fees', value: paymentTotals.app,     desc: 'Paid at application stage' },
-            { label: 'Booking Fees',     value: paymentTotals.booking,  desc: 'Seat confirmation payment' },
-            { label: 'Tuition Fees',     value: paymentTotals.tuition,  desc: 'Full course tuition' },
-          ].map(s => (
-            <div key={s.label} className="bg-white border border-brand-100 rounded-xl p-4">
-              <p className="text-xs text-brand-600 font-semibold">{s.label}</p>
-              <p className="text-2xl font-bold text-brand-800 mt-1 truncate">{fmt(s.value)}</p>
-              <p className="text-[8px] text-brand-400 mt-1">{s.desc}</p>
-            </div>
-          ))}
+      {/* Revenue Summary — driven by org's currency-typed fields */}
+      {revenueDefs.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-brand-200 bg-brand-50/30 p-5 text-center">
+          <p className="text-sm font-semibold text-brand-700">No revenue fields defined yet</p>
+          <p className="text-xs text-brand-500 mt-1">
+            Add a <span className="font-mono px-1 bg-white border border-brand-100 rounded">Revenue (₹)</span> field
+            in <a href="/admin/settings/layouts" className="underline hover:text-brand-700">Settings → Lead Fields</a> to start tracking revenue.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div>
+          <p className="text-[8px] text-brand-400 font-semibold mb-2">Revenue Summary — totals per configured currency field, across all leads in the selected period</p>
+          <div className={`grid gap-3 ${revenueDefs.length <= 2 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            <div className="bg-brand-800 border border-brand-700 rounded-xl p-4">
+              <p className="text-xs text-brand-200 font-semibold">Total Revenue</p>
+              <p className="text-2xl font-bold text-white mt-1 truncate">{fmt(paymentTotals.total)}</p>
+              <p className="text-[8px] text-brand-300 mt-1">All revenue fields combined</p>
+            </div>
+            {revenueDefs.map(def => (
+              <div key={def.key} className="bg-white border border-brand-100 rounded-xl p-4">
+                <p className="text-xs text-brand-600 font-semibold truncate">{def.label}</p>
+                <p className="text-2xl font-bold text-brand-800 mt-1 truncate">{fmt(paymentTotals.byKey[def.key] ?? 0)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Lead Inflow + Funnel (side by side) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -844,12 +864,14 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </Card>
       </div>
 
-      {/* ── Payment Collections ── */}
-      {paymentData.length > 0 && (
+      {/* ── Revenue Collections by Employee — one stacked bar per currency field ── */}
+      {paymentData.length > 0 && revenueDefs.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Payment Collections by Employee</CardTitle>
-            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Application, booking, and tuition fees collected per counsellor — stacked to show contribution mix</p>
+            <CardTitle>Revenue by Employee</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">
+              Stacked totals per rep across {revenueDefs.length} revenue field{revenueDefs.length === 1 ? '' : 's'}: {revenueDefs.map(d => d.label).join(' · ')}
+            </p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -859,9 +881,16 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
                 <YAxis tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(v) => typeof v === 'number' ? fmt(v) : v} />
                 <Legend />
-                <Bar dataKey="application" stackId="a" fill="#88b8b8" name="Application" />
-                <Bar dataKey="booking"     stackId="a" fill="#3d9191" name="Booking" />
-                <Bar dataKey="tuition"     stackId="a" fill="#1a4a50" name="Tuition" radius={[4, 4, 0, 0]} />
+                {revenueDefs.map((def, i) => (
+                  <Bar
+                    key={def.key}
+                    dataKey={def.key}
+                    stackId="a"
+                    fill={TEAL[i % TEAL.length]}
+                    name={def.label}
+                    radius={i === revenueDefs.length - 1 ? [4, 4, 0, 0] : 0}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

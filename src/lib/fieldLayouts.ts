@@ -7,6 +7,7 @@ export type FieldType =
   | 'text'
   | 'textarea'
   | 'number'
+  | 'currency'   // numeric, contributes to revenue aggregations
   | 'date'
   | 'select'
   | 'boolean'
@@ -63,35 +64,44 @@ export function evaluateFormula(
 }
 
 // ── Built-in column keys ──────────────────────────────────────────────────────
-// These keys map to real Postgres columns on the leads table.
-// When saving, values for these keys go into column updates; all other keys
-// go into leads.custom_data (JSONB).
-//
-// Education-specific fields (lead_type, location, twelfth_score, etc.) were
-// removed in migration 008 — they now live in custom_data so that each org
-// can define its own field schema. Only numeric payment fields remain here
-// because they are used in payment aggregations that query columns directly.
-export const LEAD_COLUMN_KEYS = new Set([
-  'application_fees', 'booking_fees', 'tuition_fees',
-])
+// All lead fields now live in custom_data — no special column treatment.
+// Education fields (lead_type, location, etc.) were moved in migration 008.
+// Payment fields (application_fees, booking_fees, tuition_fees) were moved in
+// migration 011 — orgs now define their own currency fields per their domain.
+export const LEAD_COLUMN_KEYS = new Set<string>()
 
-// ── Standard sections — minimal generic default for new orgs ─────────────────
-// Only the Payments section ships as a built-in default. Org admins add their
-// own sections and fields via Settings → Field Layouts. Previous
-// education-specific sections (Lead Information, Parent & Financial) were
-// Admishine-specific and removed in migration 008.
-export const STANDARD_SECTIONS: Omit<SectionLayout, 'id' | 'org_id' | 'created_at' | 'updated_at'>[] = [
-  {
-    section_name: 'Payments',
-    position: 0,
-    fields: [
-      { id: '', key: 'application_fees', label: 'Application Fees (₹)', type: 'number',  required: false, placeholder: '0', options: [], formula: '', position: 0 },
-      { id: '', key: 'booking_fees',     label: 'Booking Fees (₹)',     type: 'number',  required: false, placeholder: '0', options: [], formula: '', position: 1 },
-      { id: '', key: 'tuition_fees',     label: 'Tuition Fees (₹)',     type: 'number',  required: false, placeholder: '0', options: [], formula: '', position: 2 },
-      { id: '', key: 'total_collected',  label: 'Total Collected (₹)',  type: 'formula', required: false, placeholder: '', options: [], formula: '{application_fees} + {booking_fees} + {tuition_fees}', position: 3 },
-    ],
-  },
-]
+// ── Standard sections — empty by default ──────────────────────────────────────
+// New orgs start with a blank slate. Admins build their own field schema in
+// Settings → Lead Fields. The previous Payments section was Admishine-specific
+// (application/booking/tuition) and is no longer a default — those orgs that
+// need payment tracking add a Payments section with currency-typed fields.
+export const STANDARD_SECTIONS: Omit<SectionLayout, 'id' | 'org_id' | 'created_at' | 'updated_at'>[] = []
+
+// ── Revenue field detection ───────────────────────────────────────────────────
+// Returns the keys of all currency-typed fields across the given sections.
+// Used by analytics, dashboard, CSV exports to compute total revenue per lead
+// without hardcoding any specific field names.
+export function getRevenueFieldKeys(sections: SectionLayout[]): string[] {
+  const keys: string[] = []
+  for (const s of sections) {
+    for (const f of s.fields) {
+      if (f.type === 'currency') keys.push(f.key)
+    }
+  }
+  return keys
+}
+
+// Returns label info per revenue key, in section order. Useful for breakdown
+// charts where each currency field gets its own bar/column.
+export function getRevenueFieldDefs(sections: SectionLayout[]): { key: string; label: string }[] {
+  const defs: { key: string; label: string }[] = []
+  for (const s of sections) {
+    for (const f of s.fields) {
+      if (f.type === 'currency') defs.push({ key: f.key, label: f.label })
+    }
+  }
+  return defs
+}
 
 // ── Key generation ────────────────────────────────────────────────────────────
 export function labelToKey(label: string): string {

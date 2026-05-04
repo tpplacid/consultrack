@@ -73,3 +73,28 @@ export function lf(lead: unknown, key: string): string {
   if (Array.isArray(colVal)) return colVal.join(', ')
   return String(colVal)
 }
+
+/**
+ * Numeric variant of lf() — for currency/number fields.
+ * Returns 0 (not NaN) when the value is missing or non-numeric so it's safe
+ * to use directly inside reduce/sum/Math operations.
+ */
+export function lfn(lead: unknown, key: string): number {
+  const l = lead as Record<string, unknown>
+  const cd = (l.custom_data ?? {}) as Record<string, unknown>
+  const raw = cd[key] !== undefined && cd[key] !== null && cd[key] !== '' ? cd[key] : l[key]
+  if (raw === null || raw === undefined || raw === '') return 0
+  const n = Number(raw)
+  return isFinite(n) ? n : 0
+}
+
+/**
+ * Sum the values of every revenue (currency-typed) field on a lead.
+ * `revenueKeys` comes from getRevenueFieldKeys(sections) — pass [] when sections
+ * are unknown to get 0 (safe default, never throws).
+ */
+export function leadRevenue(lead: unknown, revenueKeys: string[]): number {
+  let total = 0
+  for (const k of revenueKeys) total += lfn(lead, k)
+  return total
+}

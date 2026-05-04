@@ -1,6 +1,8 @@
 import { requireAuth } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from './DashboardClient'
+import { leadRevenue } from '@/lib/utils'
+import { getRevenueFieldKeys, SectionLayout } from '@/lib/fieldLayouts'
 
 export default async function DashboardPage() {
   const employee = await requireAuth()
@@ -20,7 +22,7 @@ export default async function DashboardPage() {
     query = query.eq('owner_id', employee.id)
   }
 
-  const [{ data: leads }, { data: approvals }, { data: orgRow }] = await Promise.all([
+  const [{ data: leads }, { data: approvals }, { data: orgRow }, { data: sections }] = await Promise.all([
     query.limit(200),
     supabase
       .from('offline_lead_approvals')
@@ -31,9 +33,15 @@ export default async function DashboardPage() {
       .select('dashboard_stage_keys')
       .eq('id', employee.org_id)
       .single(),
+    supabase
+      .from('org_field_layouts')
+      .select('*')
+      .eq('org_id', employee.org_id)
+      .order('position', { ascending: true }),
   ])
 
   const dashboardStageKeys = (orgRow?.dashboard_stage_keys as string[] | null) ?? ['C', 'B', 'F']
+  const revenueKeys = getRevenueFieldKeys((sections || []) as SectionLayout[])
 
   // Map lead_id → approval status for offline/referral leads
   const approvalMap: Record<string, string> = {}
@@ -53,8 +61,7 @@ export default async function DashboardPage() {
   const stats = {
     total: visibleLeads.length,
     stageCounts,
-    totalPayments: visibleLeads.reduce((sum, l) =>
-      sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0),
+    totalPayments: visibleLeads.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0),
   }
 
   return (

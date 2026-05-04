@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES } from '@/types'
-import { SectionLayout, FieldDef, evaluateFormula, LEAD_COLUMN_KEYS } from '@/lib/fieldLayouts'
+import { SectionLayout, FieldDef, evaluateFormula } from '@/lib/fieldLayouts'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
@@ -41,16 +41,19 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
 
-  // Unified field values — payment columns + all custom_data keys merged into one string map.
-  // Education/org-specific fields live in custom_data since migration 008.
+  // Unified field values — all org-specific fields (including currency/revenue
+  // fields) live in custom_data since migration 011. No special column handling.
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
     const cd = (initialLead.custom_data as Record<string, unknown>) || {}
+    // Pre-migration safety: pick up legacy fee columns if still present on the lead row
+    const legacy = initialLead as unknown as Record<string, unknown>
+    const legacyFees: Record<string, string> = {}
+    for (const k of ['application_fees', 'booking_fees', 'tuition_fees']) {
+      const v = legacy[k]
+      if (v !== null && v !== undefined && v !== '') legacyFees[k] = String(v)
+    }
     return {
-      // payment columns (still real DB columns, used for aggregation)
-      application_fees: initialLead.application_fees?.toString() || '',
-      booking_fees:     initialLead.booking_fees?.toString() || '',
-      tuition_fees:     initialLead.tuition_fees?.toString() || '',
-      // all custom_data values (org-specific fields live here)
+      ...legacyFees,
       ...Object.fromEntries(Object.entries(cd).map(([k, v]) => [k, v !== null && v !== undefined ? String(v) : ''])),
     }
   })
@@ -91,26 +94,26 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   async function handleSave() {
     setSaving(true)
 
-    // Split fieldValues into column updates vs custom_data
+    // All org-defined fields live in custom_data. Currency/number values are
+    // stored as numbers so analytics can sum them without type coercion.
     const customData: Record<string, unknown> = {}
     const updates: Record<string, unknown> = {
       next_followup_at: followupDraft || null,
       sub_stage: subStageDraft || null,
     }
+    // Build a lookup of field type by key from the sections schema
+    const typeByKey: Record<string, string> = {}
+    for (const sec of sections) for (const f of sec.fields) typeByKey[f.key] = f.type
     for (const [key, strVal] of Object.entries(fieldValues)) {
-      if (!LEAD_COLUMN_KEYS.has(key)) {
-        customData[key] = strVal || null
-        continue
-      }
-      // Parse column values with type-appropriate conversions
-      if (key === 'twelfth_score') {
-        updates[key] = strVal ? parseInt(strVal) : null
-      } else if (key === 'application_fees' || key === 'booking_fees' || key === 'tuition_fees') {
-        updates[key] = strVal ? parseFloat(strVal) : null
-      } else if (key === 'interested_colleges' || key === 'alternate_courses') {
-        updates[key] = strVal ? strVal.split(',').map(s => s.trim()).filter(Boolean) : []
+      if (!strVal) { customData[key] = null; continue }
+      const t = typeByKey[key]
+      if (t === 'currency' || t === 'number') {
+        const n = parseFloat(strVal)
+        customData[key] = isFinite(n) ? n : null
+      } else if (t === 'boolean') {
+        customData[key] = strVal === 'true'
       } else {
-        updates[key] = strVal || null
+        customData[key] = strVal
       }
     }
     updates.custom_data = customData
@@ -536,11 +539,34 @@ function LayoutFieldInput({
   }
 
   const inputType =
-    field.type === 'number' ? 'number' :
-    field.type === 'date'   ? 'date'   :
-    field.type === 'email'  ? 'email'  :
-    field.type === 'phone'  ? 'tel'    :
-    field.type === 'url'    ? 'url'    : 'text'
+    field.type === 'number'   ? 'number' :
+    field.type === 'currency' ? 'number' :
+    field.type === 'date'     ? 'date'   :
+    field.type === 'email'    ? 'email'  :
+    field.type === 'phone'    ? 'tel'    :
+    field.type === 'url'      ? 'url'    : 'text'
+
+  // Currency fields get a ₹ prefix and right-aligned numeric input
+  if (field.type === 'currency') {
+    return (
+      <div className="space-y-1">
+        {labelEl}
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium pointer-events-none">₹</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step="0.01"
+            value={strVal}
+            onChange={e => onChange(field.key, e.target.value)}
+            placeholder={field.placeholder || '0'}
+            className={`${inputClass} pl-7 tabular-nums`}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-1">
