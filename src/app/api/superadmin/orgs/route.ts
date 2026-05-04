@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { name, slug, adminOption, adminName, adminEmail, adminPassword, inviteEmail, inviteName } = body
+  const { name, slug, adminOption, adminName, adminEmail, adminPassword, inviteEmail, inviteName, is_sandbox } = body
 
   if (!name || !slug) {
     return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 })
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   // 1. Create org
   const { data: org, error: orgError } = await supabase
     .from('orgs')
-    .insert({ name, slug })
+    .insert({ name, slug, is_sandbox: !!is_sandbox })
     .select()
     .single()
 

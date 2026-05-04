@@ -297,6 +297,50 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
     })
   }, [employees, activities])
 
+  // ── Revenue pipeline by stage (value of leads currently in each stage) ──────
+  const revenuePipeline = useMemo(() => {
+    return activeStages.filter(s => !s.is_won).map(s => {
+      const stageLeads = filteredLeads.filter(l => l.main_stage === s.key)
+      const value = stageLeads.reduce((sum, l) =>
+        sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+      return { stage: s.label, stageKey: s.key, leads: stageLeads.length, value }
+    }).filter(r => r.leads > 0)
+  }, [filteredLeads, activeStages])
+
+  // ── Top-level KPIs ────────────────────────────────────────────────────────
+  const kpis = useMemo(() => {
+    const total   = filteredLeads.length
+    const won     = filteredLeads.filter(l => l.main_stage === 'F').length
+    const lost    = filteredLeads.filter(l => l.main_stage === 'E' || l.main_stage === 'X').length
+    const winRate = total > 0 ? Math.round((won / total) * 100) : 0
+    const totalRev= filteredLeads.reduce((s, l) =>
+      s + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0)
+    const pipelineVal = revenuePipeline.reduce((s, r) => s + r.value, 0)
+    const active  = filteredLeads.filter(l => !['E','F','X','Y'].includes(l.main_stage)).length
+    return { total, won, lost, winRate, totalRev, pipelineVal, active }
+  }, [filteredLeads, revenuePipeline])
+
+  // ── CSV export ────────────────────────────────────────────────────────────
+  function exportCSV() {
+    const rows = filteredLeads.map(l => ({
+      Name:    l.name,
+      Stage:   stageMap[l.main_stage]?.label ?? l.main_stage,
+      Source:  l.source,
+      Owner:   employees.find(e => e.id === l.owner_id)?.name ?? '',
+      AppFees: l.application_fees ?? 0,
+      Booking: l.booking_fees ?? 0,
+      Tuition: l.tuition_fees ?? 0,
+      Created: l.created_at?.slice(0, 10) ?? '',
+    }))
+    const header = Object.keys(rows[0] ?? {}).join(',')
+    const body   = rows.map(r => Object.values(r).join(',')).join('\n')
+    const blob   = new Blob([`${header}\n${body}`], { type: 'text/csv' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `analytics_export_${format(new Date(), 'yyyy-MM-dd')}.csv`
+    a.click()
+  }
+
   // ── Payment totals for summary
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
@@ -305,10 +349,36 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
 
       {/* ── Header + Filters ── */}
       <div className="space-y-3">
-        <div>
-          <h1 className="text-xl font-bold text-brand-800">Analytics Dashboard</h1>
-          <p className="text-[8px] text-brand-400 font-semibold mt-0.5">All charts reflect the active filters — use Group By to change time-series granularity</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-brand-800">Analytics Dashboard</h1>
+            <p className="text-[8px] text-brand-400 font-semibold mt-0.5">All charts reflect the active filters — use Group By to change time-series granularity</p>
+          </div>
+          <button onClick={exportCSV}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-brand-200 text-brand-600 hover:bg-brand-50 transition-colors">
+            ↓ Export CSV
+          </button>
         </div>
+
+        {/* KPI summary row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {[
+            { label: 'Total leads',       value: kpis.total,                    accent: '#3d9191' },
+            { label: 'Active',            value: kpis.active,                   accent: '#6366f1' },
+            { label: 'Won',               value: kpis.won,                      accent: '#22c55e' },
+            { label: 'Lost',              value: kpis.lost,                     accent: '#ef4444' },
+            { label: 'Win rate',          value: `${kpis.winRate}%`,            accent: '#f59e0b' },
+            { label: 'Revenue collected', value: fmt(kpis.totalRev),            accent: '#1a4a50' },
+            { label: 'Pipeline value',    value: fmt(kpis.pipelineVal),         accent: '#8b5cf6' },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-xl border border-brand-100 px-3 py-2.5">
+              <p className="text-base font-bold tabular-nums" style={{ color: k.accent }}>{k.value}</p>
+              <p className="text-[10px] text-brand-400 font-medium mt-0.5 leading-tight">{k.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
         <div className="flex flex-wrap gap-2">
           <select value={dateRange} onChange={e => setDateRange(Number(e.target.value))} className="px-3 py-1.5 border border-brand-200 rounded-lg text-sm bg-white text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400">
             <option value={7}>Last 7 days</option>
@@ -345,9 +415,8 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </div>
       </div>
 
-      {/* ── Pipeline Summary ── */}
-      <div>
-        <p className="text-[8px] text-brand-400 font-semibold mb-2">Pipeline Summary — high-level counts for the selected period and filters</p>
+      {/* (Pipeline Summary removed — replaced by KPI row above) */}
+      <div style={{ display: 'none' }}>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Total Leads',  value: String(filteredLeads.length),                                        desc: 'All leads in range' },
@@ -461,6 +530,36 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </CardContent>
       </Card>
 
+      {/* ── Revenue Pipeline ── */}
+      {revenuePipeline.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Pipeline</CardTitle>
+            <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Total fee value of leads currently at each active stage — shows where money is sitting in the pipeline</p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={revenuePipeline}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6f4f4" />
+                <XAxis dataKey="stage" tick={{ fontSize: 10 }} />
+                <YAxis yAxisId="val" tickFormatter={v => v >= 1000 ? `₹${Math.round(v/1000)}k` : `₹${v}`} tick={{ fontSize: 10 }} />
+                <YAxis yAxisId="cnt" orientation="right" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <Tooltip
+                  formatter={(value, name) =>
+                    name === 'value' ? [`₹${Number(value).toLocaleString('en-IN')}`, 'Pipeline value'] : [value, 'Leads']
+                  }
+                />
+                <Legend />
+                <Bar yAxisId="val" dataKey="value" name="Pipeline value" radius={[4, 4, 0, 0]}>
+                  {revenuePipeline.map((_, i) => <Cell key={i} fill={TEAL[i % TEAL.length]} />)}
+                </Bar>
+                <Bar yAxisId="cnt" dataKey="leads" name="Leads" fill="#e6f4f4" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Source Breakdown + Win Rate by Source ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -503,10 +602,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
         </Card>
       </div>
 
-      {/* ── Counsellor Performance ── */}
+      {/* ── Team Performance ── */}
       <Card>
         <CardHeader>
-          <CardTitle>Counsellor Performance</CardTitle>
+          <CardTitle>Team Performance</CardTitle>
           <p className="text-[8px] text-brand-400 mt-0.5 font-semibold">Leads assigned, contacted, converted, and revenue collected per team member for the selected period</p>
         </CardHeader>
         <CardContent className="overflow-x-auto">

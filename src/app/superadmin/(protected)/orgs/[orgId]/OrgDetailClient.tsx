@@ -19,7 +19,7 @@ type Features = {
 }
 type MetaConfig = { page_id?: string; access_token?: string }
 type OrgRole = { key: string; label: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; created_at: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-teal-300 border-teal-500/20',
@@ -70,6 +70,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
   const [savingSettings, setSavingSettings] = useState(false)
+  const [deletingOrg, setDeletingOrg] = useState(false)
+  const [resettingSandbox, setResettingSandbox] = useState(false)
+  const [resetCodeMap, setResetCodeMap] = useState<Record<string, string>>({}) // employeeId → code
+  const [generatingCode, setGeneratingCode] = useState<string | null>(null) // employeeId
   const colorInputRef = useRef<HTMLInputElement>(null)
 
   const [logoUrl, setLogoUrl] = useState<string | null>(org.logo_url)
@@ -192,6 +196,48 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
       setInvEmail(''); setInvName(''); setInvRole(defaultRole)
     }
     setAddingInv(false)
+  }
+
+  async function handleDeleteOrg() {
+    const confirmed = window.confirm(
+      `DELETE "${org.name}"?\n\nThis will permanently remove the org, all employees, leads, and data. This cannot be undone.\n\nType the org name to confirm or press OK to proceed.`
+    )
+    if (!confirmed) return
+    setDeletingOrg(true)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      toast.success('Organisation deleted')
+      window.location.href = '/superadmin/orgs'
+    } else {
+      const d = await res.json()
+      toast.error(d.error || 'Failed to delete org')
+      setDeletingOrg(false)
+    }
+  }
+
+  async function handleResetSandbox() {
+    if (!window.confirm('Reset sandbox to defaults? All leads and pipeline changes will be wiped. Employees are kept.')) return
+    setResettingSandbox(true)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}/reset`, { method: 'POST' })
+    if (res.ok) toast.success('Sandbox reset to defaults')
+    else { const d = await res.json(); toast.error(d.error || 'Failed to reset') }
+    setResettingSandbox(false)
+  }
+
+  async function handleGenerateResetCode(employeeId: string) {
+    setGeneratingCode(employeeId)
+    const res = await fetch('/api/superadmin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employeeId }),
+    })
+    const data = await res.json()
+    if (!res.ok) { toast.error(data.error || 'Failed to generate code') }
+    else {
+      setResetCodeMap(prev => ({ ...prev, [employeeId]: data.code }))
+      toast.success(`Code generated for ${data.email}`)
+    }
+    setGeneratingCode(null)
   }
 
   function copyLink(token: string, link: string) {
@@ -326,7 +372,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
               <div className="space-y-2">
                 {employees.map(emp => (
                   <div key={emp.id}
-                    className="flex items-center justify-between rounded-xl px-4 py-3 border border-white/[0.06]"
+                    className="group flex items-center justify-between rounded-xl px-4 py-3 border border-white/[0.06]"
                     style={{ background: 'rgba(255,255,255,0.02)' }}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -346,6 +392,34 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                         {roleLabelMap[emp.role] ?? emp.role}
                       </span>
                       {!emp.is_active && <span className="text-xs text-red-400 font-medium">Inactive</span>}
+                      {/* Password reset — shows generated code inline */}
+                      {resetCodeMap[emp.id] ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg tracking-widest">
+                            {resetCodeMap[emp.id]}
+                          </span>
+                          <button onClick={() => { navigator.clipboard.writeText(resetCodeMap[emp.id]); toast.success('Code copied') }}
+                            className="text-neutral-700 hover:text-white p-1 transition-colors" title="Copy code">
+                            <Copy size={11} />
+                          </button>
+                          <button onClick={() => setResetCodeMap(prev => { const n = {...prev}; delete n[emp.id]; return n })}
+                            className="text-neutral-700 hover:text-white p-1 transition-colors" title="Dismiss">
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleGenerateResetCode(emp.id)}
+                          disabled={generatingCode === emp.id}
+                          title="Generate password reset code for this employee"
+                          className="opacity-0 group-hover:opacity-100 text-neutral-700 hover:text-amber-400 transition-all p-1 flex-shrink-0"
+                        >
+                          {generatingCode === emp.id
+                            ? <Loader2 size={11} className="animate-spin" />
+                            : <Zap size={11} />
+                          }
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -453,6 +527,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
         {/* ── SETTINGS ── */}
         {tab === 'settings' && (
+          <>
           <form onSubmit={handleSaveSettings} className="space-y-5">
 
             {/* Live status */}
@@ -815,6 +890,36 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
               {savingSettings ? 'Saving…' : 'Save Changes'}
             </button>
           </form>
+
+          {/* Danger zone */}
+          <div className="mt-8 rounded-2xl p-5 border border-red-900/30"
+            style={{ background: 'rgba(239,68,68,0.04)' }}>
+            <h2 className="text-sm font-semibold text-red-400 mb-1">Danger zone</h2>
+            <p className="text-xs text-neutral-600 mb-4">These actions are destructive and irreversible.</p>
+            <div className="flex flex-wrap gap-3">
+              {org.is_sandbox && (
+                <button
+                  type="button"
+                  onClick={handleResetSandbox}
+                  disabled={resettingSandbox}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-all disabled:opacity-40"
+                >
+                  {resettingSandbox ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+                  {resettingSandbox ? 'Resetting…' : 'Reset Sandbox to Defaults'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleDeleteOrg}
+                disabled={deletingOrg}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
+              >
+                {deletingOrg ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                {deletingOrg ? 'Deleting…' : 'Delete Organisation'}
+              </button>
+            </div>
+          </div>
+          </>
         )}
       </div>
     </div>
