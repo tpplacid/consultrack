@@ -10,6 +10,7 @@ import {
   Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
+import { DeleteOrgModal } from '@/components/DeleteOrgModal'
 
 type Employee = { id: string; name: string; email: string; role: string; is_active: boolean; created_at: string }
 type Invite = { id: string; token: string; email: string | null; name: string | null; role: string; used_at: string | null; expires_at: string; created_at: string; link: string }
@@ -70,7 +71,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
   const [savingSettings, setSavingSettings] = useState(false)
-  const [deletingOrg, setDeletingOrg] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [resettingSandbox, setResettingSandbox] = useState(false)
   const [resetCodeMap, setResetCodeMap] = useState<Record<string, string>>({}) // employeeId → code
   const [generatingCode, setGeneratingCode] = useState<string | null>(null) // employeeId
@@ -199,11 +200,6 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   }
 
   async function handleDeleteOrg() {
-    const confirmed = window.confirm(
-      `DELETE "${org.name}"?\n\nThis will permanently remove the org, all employees, leads, and data. This cannot be undone.\n\nType the org name to confirm or press OK to proceed.`
-    )
-    if (!confirmed) return
-    setDeletingOrg(true)
     const res = await fetch(`/api/superadmin/orgs/${org.id}`, { method: 'DELETE' })
     if (res.ok) {
       toast.success('Organisation deleted')
@@ -211,7 +207,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
     } else {
       const d = await res.json()
       toast.error(d.error || 'Failed to delete org')
-      setDeletingOrg(false)
+      throw new Error(d.error || 'Failed')
     }
   }
 
@@ -249,7 +245,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const enabledCount = Object.values(features).filter(Boolean).length
 
   return (
-    <div className="min-h-screen p-6 md:p-10" style={{ background: '#000' }}>
+    <div className="min-h-screen p-4 md:p-10" style={{ background: '#000' }}>
       <div className="max-w-3xl mx-auto">
 
         {/* Back */}
@@ -329,7 +325,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
                 style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <h3 className="text-sm font-semibold text-slate-300 mb-1">New employee</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Full name</label>
                     <input type="text" required value={empName} onChange={e => setEmpName(e.target.value)} className={INPUT} />
@@ -444,7 +440,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
                 style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <h3 className="text-sm font-semibold text-slate-300 mb-1">Generate invite link</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Name (optional)</label>
                     <input type="text" value={invName} onChange={e => setInvName(e.target.value)}
@@ -910,18 +906,25 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
               )}
               <button
                 type="button"
-                onClick={handleDeleteOrg}
-                disabled={deletingOrg}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
+                onClick={() => setShowDeleteModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all"
               >
-                {deletingOrg ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                {deletingOrg ? 'Deleting…' : 'Delete Organisation'}
+                <Trash2 size={13} />
+                Delete Organisation
               </button>
             </div>
           </div>
           </>
         )}
       </div>
+
+      {showDeleteModal && (
+        <DeleteOrgModal
+          orgName={org.name}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteOrg}
+        />
+      )}
     </div>
   )
 }

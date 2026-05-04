@@ -10,28 +10,26 @@ import { createClient } from '@/lib/supabase/client'
 import { NotificationBanner } from '@/components/NotificationBanner'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 
-type QuickFilter =
-  | 'all' | 'hot' | 'followup' | 'closed'
-  | 'breached' | 'followup_today' | 'new_leads'
+// QuickFilter is a string. For org-configured stage cards, the value is
+// `stage:<stageKey>` (e.g. 'stage:C'). Other filters are fixed strings.
+type QuickFilter = string
 
 interface Props {
   employee: Employee
   leads: Lead[]
   approvalMap: Record<string, string>
-  stats: { total: number; hot: number; followup: number; closed: number; totalPayments: number }
+  stats: { total: number; stageCounts: Record<string, number>; totalPayments: number }
+  dashboardStageKeys: string[]
 }
 
-const QUICK_FILTER_LABELS: Record<QuickFilter, string> = {
-  all:           'All Leads',
-  hot:           'Hot Leads',
-  followup:      'Follow Up',
-  closed:        'Closed Won',
-  breached:      'Deadline Breached',
-  followup_today:'Follow Up Today',
-  new_leads:     'New Leads',
+const STATIC_FILTER_LABELS: Record<string, string> = {
+  all:            'All Leads',
+  breached:       'Deadline Breached',
+  followup_today: 'Follow Up Today',
+  new_leads:      'New Leads',
 }
 
-export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats }: Props) {
+export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats, dashboardStageKeys }: Props) {
   const { stages } = useOrgConfig()
   const [leads, setLeads] = useState(initialLeads)
   const [approvalMap, setApprovalMap] = useState<Record<string, string>>(initialApprovalMap)
@@ -103,12 +101,13 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
   function applyQuickFilter(leads: Lead[], qf: QuickFilter | null): Lead[] {
     if (!qf || qf === 'all') return leads
-    if (qf === 'hot')           return leads.filter(l => l.main_stage === 'C')
-    if (qf === 'followup')      return leads.filter(l => l.main_stage === 'B')
-    if (qf === 'closed')        return leads.filter(l => l.main_stage === 'F')
     if (qf === 'breached')      return leads.filter(l => l.sla_deadline && l.sla_deadline < now && !TERMINAL.has(l.main_stage))
     if (qf === 'followup_today')return leads.filter(l => l.next_followup_at?.slice(0, 10) === today)
     if (qf === 'new_leads')     return leads.filter(l => l.main_stage === '0')
+    if (qf.startsWith('stage:')) {
+      const key = qf.slice('stage:'.length)
+      return leads.filter(l => l.main_stage === key)
+    }
     return leads
   }
 
@@ -140,14 +139,18 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
   const canCreateLead = ['ad', 'tl', 'counsellor', 'telesales'].includes(employee.role)
 
-  // Stat card config — labels pulled from org stage config so they reflect custom stage names
+  // Stat card config — admin picks which stages to show via Settings → Dashboard.
+  // Falls back to ['C','B','F'] if not configured.
   const stageMap = Object.fromEntries(stages.map(s => [s.key, s]))
   const statCards: { label: string; value: string; desc: string; filter: QuickFilter | null }[] = [
-    { label: 'Total Leads',                                           value: stats.total.toString(),                            desc: 'All active leads',   filter: 'all'     },
-    { label: stageMap['C']?.label ?? 'Hot Leads',                    value: stats.hot.toString(),                              desc: 'High intent',        filter: 'hot'     },
-    { label: stageMap['B']?.label ?? 'Follow Up',                    value: stats.followup.toString(),                         desc: 'Needs callback',     filter: 'followup'},
-    { label: stageMap['F']?.label ?? 'Closed Won',                   value: stats.closed.toString(),                           desc: 'Confirmed deals',    filter: 'closed'  },
-    { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Collected across all leads',   filter: null  },
+    { label: 'Total Leads', value: stats.total.toString(), desc: 'All active leads', filter: 'all' },
+    ...dashboardStageKeys.map(k => ({
+      label:  stageMap[k]?.label ?? k,
+      value:  (stats.stageCounts[k] ?? 0).toString(),
+      desc:   stageMap[k]?.is_won ? 'Confirmed deals' : `Stage ${k}`,
+      filter: `stage:${k}` as QuickFilter,
+    })),
+    { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Collected across all leads', filter: null },
   ]
 
   // Alert chip config
@@ -300,7 +303,7 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
           <div className="flex items-center gap-2">
             <span className="text-xs text-brand-500">Showing:</span>
             <span className="inline-flex items-center gap-1.5 bg-brand-800 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              {QUICK_FILTER_LABELS[quickFilter]}
+              {STATIC_FILTER_LABELS[quickFilter] ?? (quickFilter.startsWith('stage:') ? (stageMap[quickFilter.slice(6)]?.label ?? quickFilter) : quickFilter)}
               <span className="text-white/60 text-[10px] tabular-nums">({filtered.length})</span>
               <button onClick={() => setQuickFilter(null)} className="ml-0.5 text-white/70 hover:text-white transition-colors" title="Clear filter">
                 <X size={11} />

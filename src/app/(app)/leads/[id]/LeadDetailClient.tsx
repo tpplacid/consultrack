@@ -73,16 +73,17 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
     return () => { supabase.removeChannel(channel) }
   }, [lead.id])
 
-  function validateStageTransition(from: LeadStage, to: LeadStage): string | null {
-    if (from === '0') {
-      const detailFields = ['lead_type', 'location', 'twelfth_score', 'preferred_course', 'decision_maker', 'income_status']
-      const anyFilled = detailFields.some(f => !!fieldValues[f])
-      if (!anyFilled) return 'Fill at least one lead detail (location, course, lead type, etc.) before moving out of Lead Gen'
-    }
+  function validateStageTransition(_from: LeadStage, to: LeadStage): string | null {
+    // Per-stage required fields are configured by the org admin in
+    // Settings → Stages → click stage → "Required fields" toggles.
+    // This is the only validation — no hardcoded org-specific checks.
     const targetConfig = stageMap[to]
     if (targetConfig?.required_fields && targetConfig.required_fields.length > 0) {
       const missing = targetConfig.required_fields.filter(f => !fieldValues[f])
-      if (missing.length > 0) return `Fill required fields before moving to ${targetConfig.label}: ${missing.join(', ')}`
+      if (missing.length > 0) {
+        const labels = missing.map(k => stageMap[to] && (sections.flatMap(s => s.fields).find(f => f.key === k)?.label ?? k))
+        return `Fill required fields before moving to ${targetConfig.label}: ${labels.join(', ')}`
+      }
     }
     return null
   }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
+import { PasswordResetModal } from '@/components/PasswordResetModal'
 
 async function lookupOrg(slug: string) {
   const supabase = createClient()
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
 
   async function handleWorkspace(e: React.FormEvent) {
     e.preventDefault()
@@ -147,10 +149,14 @@ export default function LoginPage() {
                   {loading ? 'Signing in…' : 'Sign In'}
                 </button>
               </form>
-              <div className="mt-4 text-center">
+              <div className="mt-4 flex items-center justify-between">
                 <button onClick={() => { setMode('workspace'); setOrg(null) }}
                   className="text-xs text-slate-400 hover:text-slate-600 transition">
                   ← Switch workspace
+                </button>
+                <button onClick={() => setShowResetModal(true)}
+                  className="text-xs text-amber-600 hover:text-amber-700 font-medium transition">
+                  Have a reset code?
                 </button>
               </div>
             </>
@@ -179,10 +185,14 @@ export default function LoginPage() {
                   {loading ? 'Signing in…' : 'Sign In'}
                 </button>
               </form>
-              <div className="mt-4 text-center">
+              <div className="mt-4 flex items-center justify-between">
                 <button onClick={() => setMode('workspace')}
                   className="text-xs text-slate-400 hover:text-slate-600 transition">
                   ← Back to workspace
+                </button>
+                <button onClick={() => setShowResetModal(true)}
+                  className="text-xs text-amber-600 hover:text-amber-700 font-medium transition">
+                  Have a reset code?
                 </button>
               </div>
             </>
@@ -193,6 +203,13 @@ export default function LoginPage() {
           Forgot your workspace URL? Contact your admin.
         </p>
       </div>
+
+      {showResetModal && (
+        <PasswordResetModal
+          defaultEmail={email}
+          onClose={() => setShowResetModal(false)}
+        />
+      )}
     </div>
   )
 }

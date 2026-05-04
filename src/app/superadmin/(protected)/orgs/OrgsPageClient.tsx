@@ -22,14 +22,14 @@ type Org = {
   is_sandbox: boolean | null; created_at: string
 }
 
-function OrgRow({ org, empCount, isFirst }: { org: Org; empCount: number; isFirst: boolean }) {
+function OrgRow({ org, empCount, isFirst, accent }: { org: Org; empCount: number; isFirst: boolean; accent: string }) {
   const features = (org.features ?? {}) as Record<string, boolean>
   const initial  = org.name?.charAt(0)?.toUpperCase() ?? '?'
   const timeAgo  = org.created_at ? formatDistanceToNow(new Date(org.created_at), { addSuffix: true }) : ''
   const isLive   = org.is_live !== false
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.04] transition-colors group ${
+    <div className={`flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.05] transition-colors group ${
       !isFirst ? 'border-t border-white/[0.06]' : ''
     }`}>
       <Link href={`/superadmin/orgs/${org.id}`} className="flex items-center gap-3.5 flex-1 min-w-0">
@@ -37,25 +37,32 @@ function OrgRow({ org, empCount, isFirst }: { org: Org; empCount: number; isFirs
           <img src={org.logo_url} alt={org.name}
             className="w-9 h-9 rounded-lg object-contain flex-shrink-0 bg-white/[0.04]" />
         ) : (
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 bg-white/[0.06] text-white">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0"
+            style={{
+              background: '#fff',
+              color: '#000',
+              boxShadow: `2px 2px 0 0 ${accent}`,
+              transform: 'translate(-1px,-1px)',
+            }}>
             {initial}
           </div>
         )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-white text-sm font-medium truncate">{org.name}</p>
+            <p className="text-white text-sm font-bold truncate tracking-tight">{org.name}</p>
             {isLive ? (
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex-shrink-0">
-                <Radio size={6} className="fill-emerald-400" />LIVE
+              <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-widest"
+                style={{ background: '#22c55e', color: '#000' }}>
+                <Radio size={6} className="fill-black" />LIVE
               </span>
             ) : (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/[0.04] text-neutral-600 border border-white/[0.06] flex-shrink-0">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-white/[0.06] text-neutral-500 flex-shrink-0 tracking-widest">
                 OFFLINE
               </span>
             )}
           </div>
-          <p className="text-neutral-600 text-xs truncate mt-0.5">/{org.slug}</p>
+          <p className="text-neutral-500 text-xs truncate mt-0.5 font-mono">/{org.slug}</p>
         </div>
 
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
@@ -113,19 +120,19 @@ export function OrgsPageClient({ orgs, counts }: Props) {
   const liveCount   = regularOrgs.filter(o => o.is_live !== false).length
 
   return (
-    <div className="relative min-h-screen p-6 md:p-10 overflow-hidden" style={{ background: '#000' }}>
+    <div className="relative min-h-screen p-4 md:p-10 overflow-hidden" style={{ background: '#000' }}>
       <FloatingMessages enabled={widgetEnabled} />
 
       <div className="relative max-w-4xl mx-auto" style={{ zIndex: 1 }}>
 
         {/* Header */}
-        <div className="flex items-end justify-between mb-10 gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end sm:justify-between mb-8 md:mb-10 gap-4">
           <div>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase mb-2"
               style={{ color: 'rgba(99,102,241,0.8)' }}>
               Workspace management
             </p>
-            <h1 className="text-3xl font-black tracking-tight"
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight"
               style={{
                 background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.45) 100%)',
                 WebkitBackgroundClip: 'text',
@@ -134,7 +141,7 @@ export function OrgsPageClient({ orgs, counts }: Props) {
               Organisations
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={toggleWidget}
               title={widgetEnabled ? 'Turn off vibes' : 'Turn on vibes ✨'}
@@ -194,7 +201,7 @@ export function OrgsPageClient({ orgs, counts }: Props) {
             <div className="rounded-xl overflow-hidden border"
               style={{ borderColor: 'rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.03)' }}>
               {sandboxOrgs.map((org, i) => (
-                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} />
+                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} accent="#f59e0b" />
               ))}
             </div>
           </div>
@@ -211,7 +218,7 @@ export function OrgsPageClient({ orgs, counts }: Props) {
           <div className="rounded-xl border border-white/[0.07] overflow-hidden"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             {regularOrgs.map((org, i) => (
-              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} />
+              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} accent="#06b6d4" />
             ))}
           </div>
         )}

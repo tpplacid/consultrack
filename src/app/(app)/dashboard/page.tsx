@@ -20,13 +20,20 @@ export default async function DashboardPage() {
     query = query.eq('owner_id', employee.id)
   }
 
-  const [{ data: leads }, { data: approvals }] = await Promise.all([
+  const [{ data: leads }, { data: approvals }, { data: orgRow }] = await Promise.all([
     query.limit(200),
     supabase
       .from('offline_lead_approvals')
       .select('lead_id, status')
       .eq('submitted_by', employee.id),
+    supabase
+      .from('orgs')
+      .select('dashboard_stage_keys')
+      .eq('id', employee.org_id)
+      .single(),
   ])
+
+  const dashboardStageKeys = (orgRow?.dashboard_stage_keys as string[] | null) ?? ['C', 'B', 'F']
 
   // Map lead_id → approval status for offline/referral leads
   const approvalMap: Record<string, string> = {}
@@ -37,14 +44,26 @@ export default async function DashboardPage() {
     l.source === 'meta' || l.approved || approvalMap[l.id] !== 'rejected'
   )
 
+  // Compute counts for the org-configured stage keys
+  const stageCounts: Record<string, number> = {}
+  for (const k of dashboardStageKeys) {
+    stageCounts[k] = visibleLeads.filter(l => l.main_stage === k).length
+  }
+
   const stats = {
     total: visibleLeads.length,
-    hot: visibleLeads.filter(l => l.main_stage === 'C').length,
-    followup: visibleLeads.filter(l => l.main_stage === 'B').length,
-    closed: visibleLeads.filter(l => l.main_stage === 'F').length,
+    stageCounts,
     totalPayments: visibleLeads.reduce((sum, l) =>
       sum + (l.application_fees || 0) + (l.booking_fees || 0) + (l.tuition_fees || 0), 0),
   }
 
-  return <DashboardClient employee={employee} leads={leads || []} approvalMap={approvalMap} stats={stats} />
+  return (
+    <DashboardClient
+      employee={employee}
+      leads={leads || []}
+      approvalMap={approvalMap}
+      stats={stats}
+      dashboardStageKeys={dashboardStageKeys}
+    />
+  )
 }

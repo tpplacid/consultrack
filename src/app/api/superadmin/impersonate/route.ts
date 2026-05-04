@@ -27,8 +27,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No active admin found for this org' }, { status: 404 })
   }
 
-  // Generate a magic link for that admin — when opened, logs them in and redirects to dashboard
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'
+  // Generate a magic link for that admin — when opened, logs them in and redirects to dashboard.
+  // Use the request origin so SA on prod links to prod, SA on localhost links to localhost.
+  // Falls back to env var, then to prod URL.
+  const baseUrl =
+    req.nextUrl.origin ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    'https://consultrackk.vercel.app'
   const { data, error } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: admin.email,

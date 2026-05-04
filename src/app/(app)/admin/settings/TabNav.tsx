@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Layers, ListFilter, GitBranch, Clock,
+  Layers, ListFilter, GitBranch, Clock, LayoutDashboard,
   Radio, Upload, Shield, MessageSquare, Lock,
 } from 'lucide-react'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
@@ -30,6 +30,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Pipeline',
     items: [
       { href: '/admin/settings/layouts',        label: 'Lead Fields', icon: Layers },
+      { href: '/admin/settings/dashboard',      label: 'Dashboard',   icon: LayoutDashboard },
       { href: '/admin/settings/sources',        label: 'Sources',     icon: ListFilter },
       {
         href: '/admin/settings/pipeline',       label: 'Stages',      icon: GitBranch,
@@ -88,7 +89,44 @@ export function SettingsTabNav() {
 
   return (
     <>
-      <nav className="w-48 flex-shrink-0 border-r border-slate-200 bg-white overflow-y-auto py-4">
+      {/* ── Mobile: section dropdown (collapsed groups) ── */}
+      <div className="md:hidden border-b border-slate-200 bg-white px-3 py-2">
+        <select
+          value={pathname}
+          onChange={e => {
+            const href = e.target.value
+            // Find the item to check if locked
+            for (const g of NAV_GROUPS) {
+              const it = g.items.find(i => i.href === href)
+              if (it) {
+                if (it.feature && !features[it.feature]) {
+                  setUpgradeItem(it)
+                  return
+                }
+                window.location.href = href
+                return
+              }
+            }
+          }}
+          className="w-full px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
+        >
+          {NAV_GROUPS.map(g => (
+            <optgroup key={g.title} label={g.title}>
+              {g.items.map(it => {
+                const isLocked = !!(it.feature && !features[it.feature])
+                return (
+                  <option key={it.href} value={it.href}>
+                    {it.label}{isLocked ? ' 🔒' : ''}
+                  </option>
+                )
+              })}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      {/* ── Desktop: sidebar ── */}
+      <nav className="hidden md:block w-48 flex-shrink-0 border-r border-slate-200 bg-white overflow-y-auto py-4">
         {NAV_GROUPS.map((group, gi) => {
           const enabled  = group.items.filter(it => !it.feature || features[it.feature])
           const locked   = group.items.filter(it =>  it.feature && !features[it.feature])

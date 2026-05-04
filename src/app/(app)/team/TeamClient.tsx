@@ -8,17 +8,32 @@ import { LeadCard } from '@/components/leads/LeadCard'
 import { Card, CardContent } from '@/components/ui/Card'
 import { getInitials } from '@/lib/utils'
 
-interface Props { manager: Employee; reports: Employee[]; leads: Lead[] }
+interface Props {
+  manager: Employee
+  reports: Employee[]
+  leads: Lead[]
+  descendantsMap: Record<string, string[]> // empId → [self + all descendants]
+}
 
-export function TeamClient({ manager, reports, leads }: Props) {
+export function TeamClient({ manager, reports, leads, descendantsMap }: Props) {
   const { stages } = useOrgConfig()
   const activeStages = stages.filter(s => !s.is_lost)
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all')
 
+  // When clicking a manager, include leads owned by their entire hierarchy
+  // (self + direct reports + indirect reports). This is critical because TLs
+  // typically don't personally own leads — their team members do.
   const filtered = useMemo(() => {
     if (selectedEmployee === 'all') return leads
-    return leads.filter(l => l.owner_id === selectedEmployee)
-  }, [leads, selectedEmployee])
+    const ownerIds = new Set(descendantsMap[selectedEmployee] ?? [selectedEmployee])
+    return leads.filter(l => l.owner_id && ownerIds.has(l.owner_id))
+  }, [leads, selectedEmployee, descendantsMap])
+
+  // Per-employee count uses the same hierarchy logic
+  const countFor = (empId: string) => {
+    const ownerIds = new Set(descendantsMap[empId] ?? [empId])
+    return leads.filter(l => !!l.owner_id && ownerIds.has(l.owner_id)).length
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
@@ -33,7 +48,7 @@ export function TeamClient({ manager, reports, leads }: Props) {
           All ({leads.length})
         </button>
         {reports.map(r => {
-          const count = leads.filter(l => l.owner_id === r.id).length
+          const count = countFor(r.id)
           return (
             <button
               key={r.id}
