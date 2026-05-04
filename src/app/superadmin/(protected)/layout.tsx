@@ -20,8 +20,9 @@ export default async function SuperAdminProtectedLayout({ children }: { children
   return (
     <>
       <SuperAdminNav openTickets={openTickets} />
-      {/* pt-14 = mobile topbar height; md:pl-56 = desktop sidebar width */}
-      <div className="pt-14 md:pt-0 md:pl-56">
+      {/* pt-14 = mobile topbar height; md:pl-56 = desktop sidebar width
+          relative + z-10 so children sit above the gradient backdrop */}
+      <div className="pt-14 md:pt-0 md:pl-56 relative" style={{ zIndex: 10 }}>
         {children}
       </div>
     </>

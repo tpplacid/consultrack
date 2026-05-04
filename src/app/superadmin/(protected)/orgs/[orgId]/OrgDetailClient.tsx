@@ -245,7 +245,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const enabledCount = Object.values(features).filter(Boolean).length
 
   return (
-    <div className="min-h-screen p-4 md:p-10" style={{ background: '#000' }}>
+    <div className="min-h-screen p-4 md:p-10">
       <div className="max-w-3xl mx-auto">
 
         {/* Back */}

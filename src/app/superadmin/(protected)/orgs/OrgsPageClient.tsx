@@ -1,11 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio, FlaskConical, Sparkles } from 'lucide-react'
+import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio, FlaskConical } from 'lucide-react'
 import { EnterOrgButton } from './EnterOrgButton'
-import { FloatingMessages } from '../FloatingMessages'
 
 const FEATURE_DOTS: { key: string; label: string; color: string }[] = [
   { key: 'lead_crm',   label: 'CRM',        color: '#14b8a6' },
@@ -101,29 +99,14 @@ interface Props {
 }
 
 export function OrgsPageClient({ orgs, counts }: Props) {
-  const [widgetEnabled, setWidgetEnabled] = useState(false)
-
-  useEffect(() => {
-    setWidgetEnabled(localStorage.getItem('sa_widget') === 'true')
-  }, [])
-
-  function toggleWidget() {
-    setWidgetEnabled(v => {
-      localStorage.setItem('sa_widget', String(!v))
-      return !v
-    })
-  }
-
   const sandboxOrgs = orgs.filter(o => o.is_sandbox)
   const regularOrgs = orgs.filter(o => !o.is_sandbox)
   const totalEmps   = Object.values(counts).reduce((a, b) => a + b, 0)
   const liveCount   = regularOrgs.filter(o => o.is_live !== false).length
 
   return (
-    <div className="relative min-h-screen p-4 md:p-10 overflow-hidden" style={{ background: '#000' }}>
-      <FloatingMessages enabled={widgetEnabled} />
-
-      <div className="relative max-w-4xl mx-auto" style={{ zIndex: 1 }}>
+    <div className="relative min-h-screen p-4 md:p-10">
+      <div className="relative max-w-4xl mx-auto">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end sm:justify-between mb-8 md:mb-10 gap-4">
@@ -142,18 +125,6 @@ export function OrgsPageClient({ orgs, counts }: Props) {
             </h1>
           </div>
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            <button
-              onClick={toggleWidget}
-              title={widgetEnabled ? 'Turn off vibes' : 'Turn on vibes ✨'}
-              className="p-2 rounded-lg border transition-all"
-              style={{
-                borderColor: widgetEnabled ? 'rgba(168,85,247,0.5)' : 'rgba(255,255,255,0.07)',
-                background:  widgetEnabled ? 'rgba(168,85,247,0.12)' : 'transparent',
-                color:       widgetEnabled ? '#c084fc' : '#404040',
-              }}
-            >
-              <Sparkles size={14} />
-            </button>
             <Link
               href="/superadmin/orgs/new"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all"

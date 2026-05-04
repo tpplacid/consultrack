@@ -11,7 +11,7 @@ const DOCS = [
 
 export default function DocsIndexPage() {
   return (
-    <div className="min-h-screen p-6 md:p-10" style={{ background: '#000' }}>
+    <div className="min-h-screen p-6 md:p-10">
       <div className="max-w-2xl mx-auto">
         <Link href="/superadmin/orgs"
           className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-white text-sm mb-8 transition-colors">
