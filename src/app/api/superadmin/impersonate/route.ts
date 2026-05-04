@@ -27,17 +27,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No active admin found for this org' }, { status: 404 })
   }
 
-  // Generate a magic link for that admin — when opened, logs them in and redirects to dashboard.
-  // Use the request origin so SA on prod links to prod, SA on localhost links to localhost.
-  // Falls back to env var, then to prod URL.
-  const baseUrl =
-    req.nextUrl.origin ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://consultrackk.vercel.app'
+  // Always use the configured app URL for impersonation — SA wants prod even when
+  // hitting the route from localhost. NEXT_PUBLIC_APP_URL must be set in Vercel.
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
+  const redirectTo = `${baseUrl}/dashboard`
+
   const { data, error } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: admin.email,
-    options: { redirectTo: `${baseUrl}/dashboard` },
+    options: { redirectTo },
   })
 
   if (error || !data?.properties?.action_link) {
@@ -45,5 +43,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message ?? 'Failed to generate link' }, { status: 500 })
   }
 
-  return NextResponse.json({ url: data.properties.action_link, email: admin.email })
+  // Defensive: Supabase bakes the project Site URL into the action_link. If it's
+  // misconfigured to localhost, force-rewrite the redirect_to query param so at
+  // least the post-verify hop lands on prod. (Final fix is in Supabase Dashboard
+  // → Authentication → URL Configuration → Site URL + Redirect URLs allowlist.)
+  let finalUrl = data.properties.action_link
+  try {
+    const u = new URL(finalUrl)
+    u.searchParams.set('redirect_to', redirectTo)
+    finalUrl = u.toString()
+  } catch {}
+
+  return NextResponse.json({ url: finalUrl, email: admin.email })
 }

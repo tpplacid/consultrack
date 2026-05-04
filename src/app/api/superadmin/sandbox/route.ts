@@ -83,20 +83,30 @@ export async function GET() {
 
   // Generate magic link for instant login
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
+  const redirectTo = `${baseUrl}/dashboard`
   const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: adminEmail!,
-    options: { redirectTo: `${baseUrl}/dashboard` },
+    options: { redirectTo },
   })
 
   if (linkErr || !linkData?.properties?.action_link) {
     return NextResponse.json({ error: linkErr?.message || 'Magic link failed' }, { status: 500 })
   }
 
+  // Defensive: force-rewrite redirect_to in the action_link so even if Supabase
+  // Site URL is misconfigured to localhost, the post-verify hop lands on prod.
+  let finalUrl = linkData.properties.action_link
+  try {
+    const u = new URL(finalUrl)
+    u.searchParams.set('redirect_to', redirectTo)
+    finalUrl = u.toString()
+  } catch {}
+
   return NextResponse.json({
     orgId: sandbox.id,
     orgName: sandbox.name,
     orgSlug: sandbox.slug,
-    url: linkData.properties.action_link,
+    url: finalUrl,
   })
 }
