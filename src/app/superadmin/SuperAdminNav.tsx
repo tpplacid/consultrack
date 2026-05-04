@@ -4,11 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Building2, LifeBuoy, LogOut, Menu, X } from 'lucide-react'
+import { Building2, LifeBuoy, LogOut, Menu, X, BookOpen } from 'lucide-react'
 
 const navItems = [
   { href: '/superadmin/orgs',    label: 'Organisations', icon: Building2 },
   { href: '/superadmin/support', label: 'Support',       icon: LifeBuoy  },
+  { href: '/superadmin/docs',    label: 'Docs',          icon: BookOpen  },
 ]
 
 interface Props { openTickets?: number }
