@@ -17,18 +17,18 @@ export const metadata: Metadata = {
   description: 'Built for speed. Built for your process.',
   icons: {
     icon: [
-      { url: '/Consultrack Logo.png', type: 'image/png' },
+      { url: '/consultrackk-logo.svg', type: 'image/svg+xml' },
     ],
-    shortcut: '/Consultrack Logo.png',
+    shortcut: '/consultrackk-logo.svg',
     apple: [
-      { url: '/Consultrack Logo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/consultrackk-logo.svg', sizes: '180x180' },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Consultrack',
-    startupImage: '/Consultrack Logo.png',
+    startupImage: '/consultrackk-logo.svg',
   },
   manifest: '/manifest.json',
 }

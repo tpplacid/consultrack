@@ -36,7 +36,7 @@ export default async function SettingsMetaPage() {
       isConnected={isConnected}
       setupSent={orgData?.meta_setup_sent_at ?? null}
       verifyToken={process.env.META_VERIFY_TOKEN ?? null}
-      webhookUrl="https://consultrackk.vercel.app/api/meta/webhook"
+      webhookUrl={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`}
       pageId={metaConfig.page_id ?? null}
     />
   )

@@ -49,8 +49,6 @@ export async function POST(req: NextRequest) {
       const value = change.value as Record<string, unknown>
 
       // ── Resolve org by Meta Page ID ──────────────────────
-      // 1. Match on meta_config->>'page_id'
-      // 2. Fall back to env-configured slug (handles original admishine setup during transition)
       let org: { id: string; meta_config: Record<string, string> | null } | null = null
 
       if (metaPageId) {
@@ -60,19 +58,6 @@ export async function POST(req: NextRequest) {
           .eq('meta_config->>page_id' as 'id', metaPageId)
           .maybeSingle()
         org = byPage ?? null
-      }
-
-      // Env-var fallback for the original org before full migration
-      if (!org && process.env.META_FALLBACK_ORG_SLUG) {
-        const { data: fallback } = await supabase
-          .from('orgs')
-          .select('id, meta_config')
-          .eq('slug', process.env.META_FALLBACK_ORG_SLUG)
-          .maybeSingle()
-        org = fallback ?? null
-        if (org) {
-          console.info('[Meta Webhook] used META_FALLBACK_ORG_SLUG — set meta_config.page_id to stop this')
-        }
       }
 
       if (!org) {
@@ -133,6 +118,13 @@ export async function POST(req: NextRequest) {
         // Allocate to best available employee
         const owner = await allocateLead(supabase, org.id, new Date())
 
+        // Build custom_data from Meta field_data (org-specific fields)
+        const metaCustomData: Record<string, string> = {}
+        const metaCourse   = fields['course']   || fields['program']  || ''
+        const metaLocation = fields['city']     || fields['location'] || ''
+        if (metaCourse)   metaCustomData.preferred_course = metaCourse
+        if (metaLocation) metaCustomData.location         = metaLocation
+
         // Insert lead
         const { data: lead, error: leadErr } = await supabase
           .from('leads')
@@ -146,8 +138,7 @@ export async function POST(req: NextRequest) {
             meta_lead_id:         metaLeadId,
             owner_id:             owner?.id    ?? null,
             reporting_manager_id: owner?.reports_to ?? null,
-            preferred_course:     fields['course'] || fields['program'] || null,
-            location:             fields['city']   || fields['location'] || null,
+            custom_data:          metaCustomData,
             approved:             true,
             sla_deadline:         new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           })

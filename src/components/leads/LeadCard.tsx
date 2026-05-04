@@ -4,7 +4,7 @@ import { memo, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Lead } from '@/types'
 import { StageBadge } from './StageBadge'
-import { formatDateTime, isOverdue } from '@/lib/utils'
+import { formatDateTime, isOverdue, lf } from '@/lib/utils'
 import { Phone, Clock, AlertTriangle, Sparkles, HourglassIcon } from 'lucide-react'
 
 const ONE_MINUTE = 60 * 1000
@@ -85,8 +85,8 @@ export const LeadCard = memo(function LeadCard({
 
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full capitalize border border-brand-100">{lead.source}</span>
-        {lead.preferred_course && (
-          <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full truncate max-w-[120px] border border-brand-100">{lead.preferred_course}</span>
+        {lf(lead, 'preferred_course') && (
+          <span className="bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full truncate max-w-[120px] border border-brand-100">{lf(lead, 'preferred_course')}</span>
         )}
         {pendingApproval && (
           <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Awaiting approval</span>

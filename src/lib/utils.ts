@@ -57,3 +57,19 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2)
 }
+
+/**
+ * Read a lead field value — checks custom_data first (new leads), then falls
+ * back to the direct column (old leads pre-migration). Always returns a string.
+ * Arrays (e.g. interested_colleges column) are joined with ", ".
+ */
+export function lf(lead: unknown, key: string): string {
+  const l = lead as Record<string, unknown>
+  const cd = (l.custom_data ?? {}) as Record<string, unknown>
+  const cdVal = cd[key]
+  if (cdVal !== undefined && cdVal !== null && cdVal !== '') return String(cdVal)
+  const colVal = l[key]
+  if (colVal === null || colVal === undefined) return ''
+  if (Array.isArray(colVal)) return colVal.join(', ')
+  return String(colVal)
+}

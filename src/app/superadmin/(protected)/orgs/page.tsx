@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio } from 'lucide-react'
+import { EnterOrgButton } from './EnterOrgButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -150,6 +151,9 @@ export default async function SuperAdminOrgsPage() {
                       {timeAgo}
                     </p>
                   </Link>
+
+                  {/* Enter org as admin */}
+                  <EnterOrgButton orgId={org.id} orgName={org.name} />
 
                   {/* External link */}
                   <a href={`/${org.slug}`} target="_blank" rel="noopener noreferrer"

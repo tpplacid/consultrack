@@ -83,7 +83,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  const WEBHOOK_URL = 'https://consultrackk.vercel.app/api/meta/webhook'
+  const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`
 
   function copyMeta(value: string, field: string) {
     navigator.clipboard.writeText(value)
@@ -655,7 +655,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
               <div>
                 <label className="block text-xs text-slate-500 mb-1.5">URL slug</label>
                 <div className="flex items-center rounded-xl overflow-hidden border border-white/[0.1] bg-white/[0.05] focus-within:ring-1 focus-within:ring-white/20 focus-within:border-white/20 transition">
-                  <span className="px-3 py-2.5 text-sm text-slate-600 border-r border-white/[0.08] shrink-0">consultrackk.vercel.app/</span>
+                  <span className="px-3 py-2.5 text-sm text-slate-600 border-r border-white/[0.08] shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
                   <input type="text" required value={orgSlug}
                     onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                     className="flex-1 px-3 py-2.5 bg-transparent text-sm text-white focus:outline-none" />
@@ -806,37 +806,6 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   </button>
                 </div>
               ))}
-            </div>
-
-            {/* Meta integration config */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <div>
-                <h2 className="text-sm font-medium text-white">Meta integration</h2>
-                <p className="text-xs text-neutral-600 mt-0.5">Connects this org to a specific Facebook/Instagram page for auto-importing leads</p>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Facebook Page ID</label>
-                <input
-                  type="text"
-                  value={metaPageId}
-                  onChange={e => setMetaPageId(e.target.value.trim())}
-                  placeholder="e.g. 123456789012345"
-                  className={INPUT}
-                />
-                <p className="text-[11px] text-slate-600 mt-1.5">Found in your Facebook Page settings → About → Page ID</p>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Page Access Token <span className="text-slate-600 font-normal">(overrides global env)</span></label>
-                <input
-                  type="password"
-                  value={metaAccessToken}
-                  onChange={e => setMetaAccessToken(e.target.value.trim())}
-                  placeholder="Leave blank to use global META_PAGE_ACCESS_TOKEN"
-                  className={INPUT}
-                />
-                <p className="text-[11px] text-slate-600 mt-1.5">Generate a long-lived token in Meta Business Suite → System Users</p>
-              </div>
             </div>
 
             <button type="submit" disabled={savingSettings}

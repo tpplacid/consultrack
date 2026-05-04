@@ -6,15 +6,16 @@ export default async function TeamPage() {
   const employee = await requireRole(['tl', 'ad'])
   const supabase = await createClient()
 
-  // Get direct reports
+  // For AD: show all org employees. For TL: show only direct reports.
   const { data: reports } = await supabase
     .from('employees')
     .select('*')
-    .eq('reports_to', employee.id)
+    .eq(employee.role === 'ad' ? 'org_id' : 'reports_to', employee.role === 'ad' ? employee.org_id : employee.id)
     .eq('is_active', true)
+    .neq('id', employee.id)  // exclude self
 
-  // Get leads owned by reports
   const reportIds = (reports || []).map(r => r.id)
+
   const { data: leads } = await supabase
     .from('leads')
     .select('*, owner:employees!leads_owner_id_fkey(id,name,role)')

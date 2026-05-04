@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Lead, Employee } from '@/types'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, lf } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Download, Flame, TrendingUp, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
@@ -24,9 +24,9 @@ function toCSV(rows: Lead[], type: string): string {
     r.phone,
     r.main_stage,
     (r.owner as Employee)?.name || '',
-    r.location || '',
-    r.lead_type || '',
-    r.preferred_course || '',
+    lf(r, 'location'),
+    lf(r, 'lead_type'),
+    lf(r, 'preferred_course'),
     daysStuck(r.stage_entered_at).toString(),
     r.stage_entered_at,
   ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))

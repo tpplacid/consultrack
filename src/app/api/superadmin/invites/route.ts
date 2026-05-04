@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrack.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
   const invite = { ...inv, link: `${baseUrl}/invite/${inv.token}` }
 
   return NextResponse.json({ invite })

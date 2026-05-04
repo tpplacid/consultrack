@@ -149,7 +149,7 @@ export default function NewOrgClient() {
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">URL slug</label>
               <div className="flex items-center gap-0 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
-                <span className="px-3 py-2.5 text-sm text-slate-500 border-r border-slate-700 shrink-0">consultrack.vercel.app/</span>
+                <span className="px-3 py-2.5 text-sm text-slate-500 border-r border-slate-700 shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
                 <input
                   type="text"
                   required

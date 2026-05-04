@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Org created but invite failed: ${inviteError.message}` }, { status: 207 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrack.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
     const inviteLink = `${baseUrl}/invite/${invite.token}`
     return NextResponse.json({ orgId, inviteLink })
   }

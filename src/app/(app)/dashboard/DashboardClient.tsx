@@ -140,13 +140,14 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
   const canCreateLead = ['ad', 'tl', 'counsellor', 'telesales'].includes(employee.role)
 
-  // Stat card config — clickable ones have a quickFilter key
+  // Stat card config — labels pulled from org stage config so they reflect custom stage names
+  const stageMap = Object.fromEntries(stages.map(s => [s.key, s]))
   const statCards: { label: string; value: string; desc: string; filter: QuickFilter | null }[] = [
-    { label: 'Total Leads',    value: stats.total.toString(),                            desc: 'All active leads',            filter: 'all'     },
-    { label: 'Hot Leads',      value: stats.hot.toString(),                              desc: 'High intent',                 filter: 'hot'     },
-    { label: 'Follow Up',      value: stats.followup.toString(),                         desc: 'Scheduled callbacks',         filter: 'followup'},
-    { label: 'Closed Won',     value: stats.closed.toString(),                           desc: 'Confirmed deals',             filter: 'closed'  },
-    { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Application + Booking + Tuition', filter: null  },
+    { label: 'Total Leads',                                           value: stats.total.toString(),                            desc: 'All active leads',   filter: 'all'     },
+    { label: stageMap['C']?.label ?? 'Hot Leads',                    value: stats.hot.toString(),                              desc: 'High intent',        filter: 'hot'     },
+    { label: stageMap['B']?.label ?? 'Follow Up',                    value: stats.followup.toString(),                         desc: 'Needs callback',     filter: 'followup'},
+    { label: stageMap['F']?.label ?? 'Closed Won',                   value: stats.closed.toString(),                           desc: 'Confirmed deals',    filter: 'closed'  },
+    { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Collected across all leads',   filter: null  },
   ]
 
   // Alert chip config

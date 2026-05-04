@@ -7,7 +7,7 @@ import { LeadCard } from '@/components/leads/LeadCard'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { StageBadge } from '@/components/leads/StageBadge'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, lf } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { Search, ArrowRightLeft, Download, Layers, Tag, Trash2, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
@@ -122,7 +122,7 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees }: Prop
     const rows = filtered.map(l => [
       l.name, l.phone, l.main_stage,
       (l.owner as Employee)?.name || '',
-      l.source, l.location || '', l.lead_type || '', l.preferred_course || '', l.updated_at,
+      l.source, lf(l, 'location'), lf(l, 'lead_type'), lf(l, 'preferred_course'), l.updated_at,
     ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
     const csv = [header.join(','), ...rows].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })

@@ -10,6 +10,7 @@ import { Lead, Employee, LeadStage } from '@/types'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { format, subDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfMonth, startOfWeek, parseISO } from 'date-fns'
+import { lf } from '@/lib/utils'
 
 interface Props {
   leads: Lead[]
@@ -201,7 +202,10 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const collegeData = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const l of filteredLeads) {
-      for (const c of (l.interested_colleges || [])) {
+      // colleges may be a comma-separated string (custom_data) or array (legacy column)
+      const raw = lf(l, 'interested_colleges')
+      if (!raw) continue
+      for (const c of raw.split(',')) {
         const col = c.trim(); if (col) counts[col] = (counts[col] || 0) + 1
       }
     }
@@ -213,10 +217,11 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const courseData = useMemo(() => {
     const counts: Record<string, { total: number; won: number }> = {}
     for (const l of filteredLeads) {
-      if (!l.preferred_course) continue
-      if (!counts[l.preferred_course]) counts[l.preferred_course] = { total: 0, won: 0 }
-      counts[l.preferred_course].total++
-      if (l.main_stage === 'F') counts[l.preferred_course].won++
+      const course = lf(l, 'preferred_course')
+      if (!course) continue
+      if (!counts[course]) counts[course] = { total: 0, won: 0 }
+      counts[course].total++
+      if (l.main_stage === 'F') counts[course].won++
     }
     return Object.entries(counts).sort((a, b) => b[1].total - a[1].total).slice(0, 10)
       .map(([name, v]) => ({ name, total: v.total, won: v.won, rate: Math.round((v.won / v.total) * 100) }))
@@ -226,7 +231,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const decisionData = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const l of filteredLeads) {
-      const dm = (l as unknown as { decision_maker?: string }).decision_maker
+      const dm = lf(l, 'decision_maker')
       if (dm) counts[dm] = (counts[dm] || 0) + 1
     }
     return Object.entries(counts).map(([name, value]) => ({ name, value }))
@@ -236,7 +241,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const loanData = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const l of filteredLeads) {
-      const ls = (l as unknown as { loan_status?: string }).loan_status || 'unknown'
+      const ls = lf(l, 'loan_status') || 'unknown'
       counts[ls] = (counts[ls] || 0) + 1
     }
     return Object.entries(counts).map(([name, value]) => ({ name, value }))
@@ -246,7 +251,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const incomeData = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const l of filteredLeads) {
-      const is = (l as unknown as { income_status?: string }).income_status
+      const is = lf(l, 'income_status')
       if (is) counts[is] = (counts[is] || 0) + 1
     }
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10)
@@ -257,7 +262,7 @@ export function AnalyticsClient({ leads, employees, activities, slaBreaches }: P
   const locationData = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const l of filteredLeads) {
-      const loc = (l as unknown as { location?: string }).location
+      const loc = lf(l, 'location')
       if (loc) counts[loc] = (counts[loc] || 0) + 1
     }
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 15)

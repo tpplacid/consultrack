@@ -40,7 +40,7 @@ export default async function OrgDetailPage({ params }: Props) {
       .order('position'),
   ])
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrack.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
 
   return (
     <OrgDetailClient

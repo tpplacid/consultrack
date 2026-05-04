@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Employee, Lead } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { StageBadge } from '@/components/leads/StageBadge'
-import { formatDateTime } from '@/lib/utils'
+import { formatDateTime, lf } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import {
@@ -76,7 +76,7 @@ export function AdminMetaClient({
   function downloadCSV() {
     const target = selected.length > 0 ? leads.filter(l => selected.includes(l.id)) : filtered
     const headers = ['name', 'phone', 'source', 'stage', 'location', 'preferred_course', 'created_at']
-    const rows = target.map(l => [l.name, l.phone, l.source, l.main_stage, l.location || '', l.preferred_course || '', l.created_at])
+    const rows = target.map(l => [l.name, l.phone, l.source, l.main_stage, lf(l, 'location'), lf(l, 'preferred_course'), l.created_at])
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -304,7 +304,7 @@ export function AdminMetaClient({
                 </td>
                 <td className="px-4 py-3 text-slate-600">{l.phone}</td>
                 <td className="px-4 py-3"><StageBadge stage={l.main_stage} /></td>
-                <td className="px-4 py-3 text-slate-500">{l.preferred_course || '—'}</td>
+                <td className="px-4 py-3 text-slate-500">{lf(l, 'preferred_course') || '—'}</td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{formatDateTime(l.created_at)}</td>
               </tr>
             ))}

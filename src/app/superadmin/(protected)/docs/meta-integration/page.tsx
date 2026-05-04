@@ -176,7 +176,7 @@ export default function MetaIntegrationDoc() {
         </Step>
 
         <Note>
-          The <Code>META_FALLBACK_ORG_SLUG</Code> env var can be set to <Code>admishine</Code> as a temporary fallback while migrating existing orgs. Remove it once all orgs have a <Code>page_id</Code> configured in superadmin.
+          Leads are routed to the correct org by matching the incoming Facebook Page ID against <Code>meta_config.page_id</Code> stored per org in superadmin. Make sure every org's Page ID is configured before going live.
         </Note>
 
         {/* Part 2 */}

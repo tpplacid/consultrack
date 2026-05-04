@@ -20,7 +20,7 @@ export default async function PremadeReportsPage() {
   ] = await Promise.all([
     supabase
       .from('leads')
-      .select('id, created_at, owner_id, main_stage, source, stage_entered_at, interested_colleges, preferred_course')
+      .select('id, created_at, owner_id, main_stage, source, stage_entered_at, custom_data')
       .eq('org_id', orgId)
       .gte('created_at', `${ninetyDaysAgo}T00:00:00`)
       .limit(2000),

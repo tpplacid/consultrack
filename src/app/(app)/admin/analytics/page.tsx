@@ -19,7 +19,7 @@ const getAnalyticsData = unstable_cache(
       { data: slaBreaches },
     ] = await Promise.all([
       supabase.from('leads')
-        .select('id, name, created_at, owner_id, main_stage, source, stage_entered_at, interested_colleges, preferred_course, location, decision_maker, loan_status, income_status, application_fees, booking_fees, tuition_fees')
+        .select('id, name, created_at, owner_id, main_stage, source, stage_entered_at, application_fees, booking_fees, tuition_fees, custom_data')
         .eq('org_id', orgId)
         .gte('created_at', `${twelveMonthsAgo}T00:00:00`)
         .limit(5000),

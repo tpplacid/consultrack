@@ -47,17 +47,6 @@ export interface Lead {
   stage_entered_at: string
   sla_deadline: string | null
   next_followup_at: string | null
-  lead_type: string | null
-  location: string | null
-  twelfth_score: number | null
-  preferred_course: string | null
-  interested_colleges: string[]
-  alternate_courses: string[]
-  father_phone: string | null
-  decision_maker: DecisionMaker | null
-  income_status: string | null
-  loan_status: 'yes' | 'no' | null
-  comments: string | null
   approved: boolean
   approved_by: string | null
   meta_lead_id: string | null

@@ -41,25 +41,16 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const [comment, setComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
 
-  // Unified field values — column-based and custom_data merged into one string map
+  // Unified field values — payment columns + all custom_data keys merged into one string map.
+  // Education/org-specific fields live in custom_data since migration 008.
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
     const cd = (initialLead.custom_data as Record<string, unknown>) || {}
     return {
-      // existing columns (stringified for uniform handling)
-      lead_type:           initialLead.lead_type || '',
-      location:            initialLead.location || '',
-      twelfth_score:       initialLead.twelfth_score?.toString() || '',
-      preferred_course:    initialLead.preferred_course || '',
-      interested_colleges: initialLead.interested_colleges?.join(', ') || '',
-      alternate_courses:   initialLead.alternate_courses?.join(', ') || '',
-      father_phone:        initialLead.father_phone || '',
-      decision_maker:      initialLead.decision_maker || '',
-      income_status:       initialLead.income_status || '',
-      loan_status:         initialLead.loan_status || '',
-      application_fees:    initialLead.application_fees?.toString() || '',
-      booking_fees:        initialLead.booking_fees?.toString() || '',
-      tuition_fees:        initialLead.tuition_fees?.toString() || '',
-      // custom_data values
+      // payment columns (still real DB columns, used for aggregation)
+      application_fees: initialLead.application_fees?.toString() || '',
+      booking_fees:     initialLead.booking_fees?.toString() || '',
+      tuition_fees:     initialLead.tuition_fees?.toString() || '',
+      // all custom_data values (org-specific fields live here)
       ...Object.fromEntries(Object.entries(cd).map(([k, v]) => [k, v !== null && v !== undefined ? String(v) : ''])),
     }
   })

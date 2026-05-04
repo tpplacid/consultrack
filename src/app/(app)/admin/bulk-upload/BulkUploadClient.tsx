@@ -140,20 +140,24 @@ export function BulkUploadClient({ admin, employees, leadSources }: Props) {
     const BATCH = 50
     for (let i = 0; i < valid.length; i += BATCH) {
       const batch = valid.slice(i, i + BATCH)
-      const leadsToInsert = batch.map(r => ({
-        org_id: admin.org_id,
-        name: r.name,
-        phone: r.phone.replace(/[\s+\-()]/g, ''),
-        source: r.source,
-        main_stage: '0',
-        owner_id: r.owner!.id,
-        reporting_manager_id: r.owner!.reports_to || null,
-        location: r.location || null,
-        lead_type: r.lead_type || null,
-        preferred_course: r.preferred_course || null,
-        comments: r.comments || null,
-        approved: r.source === 'meta',
-      }))
+      const leadsToInsert = batch.map(r => {
+        const custom_data: Record<string, string> = {}
+        if (r.location)         custom_data.location         = r.location
+        if (r.lead_type)        custom_data.lead_type         = r.lead_type
+        if (r.preferred_course) custom_data.preferred_course  = r.preferred_course
+        if (r.comments)         custom_data.comments          = r.comments
+        return {
+          org_id: admin.org_id,
+          name: r.name,
+          phone: r.phone.replace(/[\s+\-()]/g, ''),
+          source: r.source,
+          main_stage: '0',
+          owner_id: r.owner!.id,
+          reporting_manager_id: r.owner!.reports_to || null,
+          custom_data,
+          approved: r.source === 'meta',
+        }
+      })
 
       const { data: inserted, error } = await supabase
         .from('leads')
@@ -197,7 +201,7 @@ export function BulkUploadClient({ admin, employees, leadSources }: Props) {
         <h1 className="text-xl font-bold text-slate-900">Bulk Lead Upload</h1>
         <a
           href={`data:text/csv;charset=utf-8,${encodeURIComponent(templateCSV)}`}
-          download="admishine_leads_template.csv"
+          download="consultrack_leads_template.csv"
           className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
         >
           <Download size={15} />

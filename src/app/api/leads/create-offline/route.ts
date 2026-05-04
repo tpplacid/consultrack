@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
 
   if (!emp) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
 
+  // Build custom_data from dynamic fields (org-specific — not stored in columns)
+  const custom_data: Record<string, string> = {}
+  if (location)          custom_data.location          = location
+  if (lead_type)         custom_data.lead_type          = lead_type
+  if (preferred_course)  custom_data.preferred_course   = preferred_course
+  if (comments)          custom_data.comments           = comments
+
   // Insert lead
   const { data: lead, error: leadError } = await supabase.from('leads').insert({
     org_id: emp.org_id,
@@ -28,10 +35,7 @@ export async function POST(req: NextRequest) {
     main_stage: '0',
     owner_id: employee.id,
     reporting_manager_id: emp.reports_to,
-    location: location || null,
-    lead_type: lead_type || null,
-    preferred_course: preferred_course || null,
-    comments: comments || null,
+    custom_data,
     approved: false,
   }).select().single()
 

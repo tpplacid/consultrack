@@ -12,6 +12,7 @@ import { useOrgConfig } from '@/context/OrgConfigContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { subDays, format } from 'date-fns'
+import { lf } from '@/lib/utils'
 import { Plus, X } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -186,12 +187,12 @@ function applyFilters(leads: LeadRow[], filters: FilterRule[]): LeadRow[] {
         case 'owner_id':       return lead.owner_id === f.value
         case 'main_stage':     return lead.main_stage === f.value
         case 'source':         return lead.source === f.value
-        case 'loan_status':    return lead.loan_status === f.value
-        case 'decision_maker': return lead.decision_maker === f.value
-        case 'lead_type':      return String(lead.lead_type ?? '').toLowerCase().includes(f.value.toLowerCase())
-        case 'location':       return String(lead.location ?? '').toLowerCase().includes(f.value.toLowerCase())
-        case 'preferred_course': return String(lead.preferred_course ?? '').toLowerCase().includes(f.value.toLowerCase())
-        case 'income_status':  return String(lead.income_status ?? '').toLowerCase().includes(f.value.toLowerCase())
+        case 'loan_status':    return lf(lead, 'loan_status') === f.value
+        case 'decision_maker': return lf(lead, 'decision_maker') === f.value
+        case 'lead_type':      return lf(lead, 'lead_type').toLowerCase().includes(f.value.toLowerCase())
+        case 'location':       return lf(lead, 'location').toLowerCase().includes(f.value.toLowerCase())
+        case 'preferred_course': return lf(lead, 'preferred_course').toLowerCase().includes(f.value.toLowerCase())
+        case 'income_status':  return lf(lead, 'income_status').toLowerCase().includes(f.value.toLowerCase())
         case 'sub_stage':      return String(lead.sub_stage ?? '').toLowerCase().includes(f.value.toLowerCase())
         default:               return true
       }
@@ -588,12 +589,12 @@ export function ReportBuilderClient({ orgId, employeeId, employees, sections }: 
             const o = l.owner as { name?: string } | null
             return o?.name || employees.find(e => e.id === l.owner_id)?.name || 'Unassigned'
           }
-          if (groupBy === 'lead_type')        return (l.lead_type as string)        || 'Not set'
-          if (groupBy === 'location')         return (l.location as string)         || 'Not set'
-          if (groupBy === 'preferred_course') return (l.preferred_course as string) || 'Not set'
-          if (groupBy === 'decision_maker')   return (l.decision_maker as string)   || 'Not set'
-          if (groupBy === 'loan_status')      return (l.loan_status as string)      || 'Unknown'
-          if (groupBy === 'income_status')    return (l.income_status as string)    || 'Not set'
+          if (groupBy === 'lead_type')        return lf(l, 'lead_type')        || 'Not set'
+          if (groupBy === 'location')         return lf(l, 'location')         || 'Not set'
+          if (groupBy === 'preferred_course') return lf(l, 'preferred_course') || 'Not set'
+          if (groupBy === 'decision_maker')   return lf(l, 'decision_maker')   || 'Not set'
+          if (groupBy === 'loan_status')      return lf(l, 'loan_status')      || 'Unknown'
+          if (groupBy === 'income_status')    return lf(l, 'income_status')    || 'Not set'
           if (groupBy === 'date')             return l.created_at ? format(new Date(l.created_at as string), 'dd MMM') : ''
           if (groupBy.startsWith('custom:')) {
             const k  = groupBy.slice(7)

@@ -154,7 +154,7 @@ export function AttendanceClient({ employee, records: initialRecords, requireKey
               <input
                 value={wifiCode}
                 onChange={e => setWifiCode(e.target.value)}
-                placeholder="e.g. ADMISHINE_OFFICE"
+                placeholder="e.g. YOUR_ORG_OFFICE"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
