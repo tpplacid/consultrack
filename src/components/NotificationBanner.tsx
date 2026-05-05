@@ -71,7 +71,9 @@ export function NotificationBanner({ employeeId, orgId }: Props) {
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-[60] px-4 pt-3 pb-2 ${exiting ? 'notif-exit' : 'notif-enter'}`}
-      style={{ background: 'linear-gradient(135deg, #0d2d1e 0%, #0f3d28 100%)' }}
+      // Indigo gradient — matches Consultrack brand (#4f46e5) with a slightly
+      // darker stop for depth. Aligns with SA accent + new brand mark.
+      style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)' }}
     >
       <div className="max-w-xl mx-auto flex items-start gap-3">
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center mt-0.5">

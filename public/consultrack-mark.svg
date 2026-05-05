@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Indigo rounded square — matches --sa-accent (#4f46e5) used in the SA panel.
+       512×512 with rx=110 puts the Consultrack glyphs in roughly the central
+       50% of the canvas, leaving the maskable PWA safe zone clean. -->
+  <rect width="512" height="512" fill="#4f46e5" rx="110"/>
+  <g transform="translate(126 126) scale(2)" fill="#ffffff">
+    <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z"/>
+    <path d="M110 10V60H100V90H110V140H140V10H110Z"/>
+  </g>
+</svg>
