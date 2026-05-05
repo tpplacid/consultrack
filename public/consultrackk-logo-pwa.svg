@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background fill so the maskable icon has solid edges to crop -->
+  <rect width="512" height="512" fill="#ffffff"/>
+  <!--
+    Original mark spans 0-150 in x/y. We translate + scale so the mark sits
+    centred in the safe zone (Android maskable spec: content within central
+    ~80% of the viewport, i.e. 51px margin on each side of a 512 viewport).
+    Mark is 150 wide, scaled by ~2.4 → 360px. Centred: (512-360)/2 = 76 offset.
+  -->
+  <g transform="translate(76 76) scale(2.4)" fill="#000000">
+    <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z"/>
+    <path d="M110 10V60H100V90H110V140H140V10H110Z"/>
+  </g>
+</svg>

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isSuperAdmin } from '@/lib/superadmin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_STAGES, DEFAULT_ROLES, DEFAULT_FLOWS } from '@/context/orgDefaults'
+import { STANDARD_SECTIONS } from '@/lib/fieldLayouts'
+import { randomUUID } from 'crypto'
 
 export async function POST(req: NextRequest) {
   if (!(await isSuperAdmin())) {
@@ -71,6 +73,17 @@ export async function POST(req: NextRequest) {
       can_transfer_leads: r.can_transfer_leads,
       can_approve_leads: r.can_approve_leads,
       can_access_admin: r.can_access_admin,
+    })
+  }
+
+  // 3b. Seed default Lead Fields (generic CRM starter sections)
+  for (const sec of STANDARD_SECTIONS) {
+    const fields = sec.fields.map(f => ({ ...f, id: randomUUID() }))
+    await supabase.from('org_field_layouts').insert({
+      org_id: orgId,
+      section_name: sec.section_name,
+      position: sec.position,
+      fields,
     })
   }
 

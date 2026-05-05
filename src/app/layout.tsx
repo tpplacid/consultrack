@@ -16,19 +16,21 @@ export const metadata: Metadata = {
   title: 'Consultrack',
   description: 'Built for speed. Built for your process.',
   icons: {
+    // Browser favicon: tight crop so it stays legible at 16×16
     icon: [
       { url: '/consultrackk-logo.svg', type: 'image/svg+xml' },
     ],
     shortcut: '/consultrackk-logo.svg',
+    // iOS home screen: padded version so the icon doesn't look zoomed-in
     apple: [
-      { url: '/consultrackk-logo.svg', sizes: '180x180' },
+      { url: '/consultrackk-logo-pwa.svg', sizes: '180x180' },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Consultrack',
-    startupImage: '/consultrackk-logo.svg',
+    startupImage: '/consultrackk-logo-pwa.svg',
   },
   manifest: '/manifest.json',
 }

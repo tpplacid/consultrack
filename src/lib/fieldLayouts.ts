@@ -70,12 +70,43 @@ export function evaluateFormula(
 // migration 011 — orgs now define their own currency fields per their domain.
 export const LEAD_COLUMN_KEYS = new Set<string>()
 
-// ── Standard sections — empty by default ──────────────────────────────────────
-// New orgs start with a blank slate. Admins build their own field schema in
-// Settings → Lead Fields. The previous Payments section was Admishine-specific
-// (application/booking/tuition) and is no longer a default — those orgs that
-// need payment tracking add a Payments section with currency-typed fields.
-export const STANDARD_SECTIONS: Omit<SectionLayout, 'id' | 'org_id' | 'created_at' | 'updated_at'>[] = []
+// ── Standard sections — generic CRM starter set ──────────────────────────────
+// Auto-seeded the first time an admin visits Settings → Lead Fields if no
+// sections exist yet. Modelled on the lowest-common-denominator field set
+// across Pipedrive / HubSpot / Zoho / Salesforce so it works for SaaS,
+// real-estate, B2B services, education, agencies — anyone running a sales
+// pipeline. Admins rename, remove, or add fields freely.
+export const STANDARD_SECTIONS: Omit<SectionLayout, 'id' | 'org_id' | 'created_at' | 'updated_at'>[] = [
+  {
+    section_name: 'Contact',
+    position: 0,
+    fields: [
+      { id: '', key: 'company',   label: 'Company',   type: 'text', required: false, placeholder: 'Acme Inc.',     options: [], formula: '', position: 0 },
+      { id: '', key: 'job_title', label: 'Job Title', type: 'text', required: false, placeholder: 'Head of Sales', options: [], formula: '', position: 1 },
+      { id: '', key: 'city',      label: 'City',      type: 'text', required: false, placeholder: 'Bengaluru',     options: [], formula: '', position: 2 },
+    ],
+  },
+  {
+    section_name: 'Qualification',
+    position: 1,
+    fields: [
+      { id: '', key: 'industry',         label: 'Industry',        type: 'select', required: false, placeholder: '', formula: '', position: 0,
+        options: ['SaaS / Software', 'Real Estate', 'Education', 'Healthcare', 'Finance', 'Retail / E-commerce', 'Manufacturing', 'Professional Services', 'Other'] },
+      { id: '', key: 'decision_maker',   label: 'Decision Maker',  type: 'select', required: false, placeholder: '', formula: '', position: 1,
+        options: ['Decision maker', 'Influencer', 'End user', 'Researcher'] },
+      { id: '', key: 'timeline',         label: 'Timeline',        type: 'select', required: false, placeholder: '', formula: '', position: 2,
+        options: ['Immediate', 'Within 1 month', '1–3 months', '3–6 months', '6+ months', 'No timeline'] },
+    ],
+  },
+  {
+    section_name: 'Deal',
+    position: 2,
+    fields: [
+      { id: '', key: 'deal_value', label: 'Deal Value', type: 'currency', required: false, placeholder: '0', options: [], formula: '', position: 0 },
+      { id: '', key: 'notes',      label: 'Notes',      type: 'textarea', required: false, placeholder: 'Requirements, pain points, next steps…', options: [], formula: '', position: 1 },
+    ],
+  },
+]
 
 // ── Revenue field detection ───────────────────────────────────────────────────
 // Returns the keys of all currency-typed fields across the given sections.

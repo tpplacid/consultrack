@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { isSuperAdmin } from '@/lib/superadmin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_STAGES, DEFAULT_ROLES, DEFAULT_FLOWS } from '@/context/orgDefaults'
+import { STANDARD_SECTIONS } from '@/lib/fieldLayouts'
+import { randomUUID } from 'crypto'
 
 const SANDBOX_SLUG = 'sandbox'
 const SANDBOX_NAME = 'Sandbox'
@@ -52,6 +54,13 @@ export async function GET() {
     await supabase.from('org_stage_flows').insert(DEFAULT_FLOWS.map(f => ({ org_id: sandbox!.id, ...f })))
     for (const r of DEFAULT_ROLES) {
       await supabase.from('org_roles').insert({ org_id: sandbox!.id, ...r })
+    }
+    // Seed default Lead Fields
+    for (const sec of STANDARD_SECTIONS) {
+      const fields = sec.fields.map(f => ({ ...f, id: randomUUID() }))
+      await supabase.from('org_field_layouts').insert({
+        org_id: sandbox!.id, section_name: sec.section_name, position: sec.position, fields,
+      })
     }
   }
 

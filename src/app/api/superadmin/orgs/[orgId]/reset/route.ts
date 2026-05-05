@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isSuperAdmin } from '@/lib/superadmin'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DEFAULT_STAGES, DEFAULT_ROLES, DEFAULT_FLOWS } from '@/context/orgDefaults'
+import { STANDARD_SECTIONS } from '@/lib/fieldLayouts'
+import { randomUUID } from 'crypto'
 
 // POST /api/superadmin/orgs/[orgId]/reset
 // Wipes all pipeline, roles, leads, and activities for a SANDBOX org, then
@@ -32,6 +34,7 @@ export async function POST(
     supabase.from('org_stage_substages').delete().eq('org_id', orgId),
     supabase.from('org_stage_flows').delete().eq('org_id', orgId),
     supabase.from('org_roles').delete().eq('org_id', orgId),
+    supabase.from('org_field_layouts').delete().eq('org_id', orgId),
     supabase.from('leads').delete().eq('org_id', orgId),
     supabase.from('activities').delete().eq('org_id', orgId),
     supabase.from('sla_breaches').delete().eq('org_id', orgId),
@@ -56,6 +59,14 @@ export async function POST(
   // Re-seed roles
   for (const r of DEFAULT_ROLES) {
     await supabase.from('org_roles').insert({ org_id: orgId, key: r.key, label: r.label, level: r.level, position: r.position, can_view_team: r.can_view_team, can_transfer_leads: r.can_transfer_leads, can_approve_leads: r.can_approve_leads, can_access_admin: r.can_access_admin })
+  }
+
+  // Re-seed Lead Fields
+  for (const sec of STANDARD_SECTIONS) {
+    const fields = sec.fields.map(f => ({ ...f, id: randomUUID() }))
+    await supabase.from('org_field_layouts').insert({
+      org_id: orgId, section_name: sec.section_name, position: sec.position, fields,
+    })
   }
 
   return NextResponse.json({ success: true })

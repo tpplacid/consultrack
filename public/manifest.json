@@ -8,10 +8,10 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/consultrackk-logo.svg",
+      "src": "/consultrackk-logo-pwa.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
