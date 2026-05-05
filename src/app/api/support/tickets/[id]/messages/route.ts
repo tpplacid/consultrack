@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getEmployee } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id, name, org_id')
-    .eq('id', user.id)
-    .single()
-  if (!employee) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Same fix as POST /api/support/tickets — auth.getUser().id !== employee.id.
+  // getEmployee() looks up by email which is the actual link.
+  const employee = await getEmployee()
+  if (!employee) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
   const { body } = await req.json()

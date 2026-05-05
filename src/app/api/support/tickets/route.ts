@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getEmployee } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id, name, email, org_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
+  // Use the canonical helper (joins by email, the actual identity link
+  // between Supabase auth users and our employees table). The previous
+  // .eq('id', user.id) lookup was wrong — auth user IDs and employee row
+  // IDs are different UUIDs, so this 404'd for every legitimate user.
+  const employee = await getEmployee()
+  if (!employee) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { subject, message, type, feature_key } = await req.json()
   if (!subject?.trim() || !message?.trim()) {
@@ -42,18 +37,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ticket })
 }
 
-export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: employee } = await supabase
-    .from('employees')
-    .select('id, org_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!employee) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+export async function GET() {
+  const employee = await getEmployee()
+  if (!employee) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (employee.role !== 'ad') return NextResponse.json({ error: 'Admin only' }, { status: 403 })
 
   const admin = createAdminClient()
