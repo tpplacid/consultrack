@@ -6,8 +6,8 @@ import { Sun, Moon } from 'lucide-react'
 const STORAGE_KEY = 'sa-theme'
 type Theme = 'light' | 'dark'
 
-// Pulled out as a script-tag-ready function for inline injection in <head>.
-// Runs BEFORE React hydrates so the page never flashes the wrong theme.
+// Inline script: applies the theme attribute BEFORE React hydrates,
+// so the page never flashes the wrong palette.
 export function ThemeBootstrapScript() {
   const code = `(function(){try{var t=localStorage.getItem('${STORAGE_KEY}')||'light';document.documentElement.setAttribute('data-sa-theme',t);}catch(e){}})();`
   return <script dangerouslySetInnerHTML={{ __html: code }} />
@@ -33,14 +33,14 @@ export function SaThemeToggle() {
     <button
       onClick={flip}
       title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+      className="inline-flex items-center justify-center w-9 h-9 rounded-md transition-colors"
       style={{
-        background: 'var(--sa-surface-strong)',
-        border: '2px solid var(--sa-shadow-color)',
-        color: 'var(--sa-text)',
-        boxShadow: '2px 2px 0 0 var(--sa-shadow-color)',
-        transform: 'translate(-1px,-1px)',
+        background: 'var(--sa-surface)',
+        border: '1px solid var(--sa-border)',
+        color: 'var(--sa-text-secondary)',
       }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--sa-surface-hover)'; (e.currentTarget as HTMLElement).style.color = 'var(--sa-text)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--sa-surface)'; (e.currentTarget as HTMLElement).style.color = 'var(--sa-text-secondary)' }}
     >
       {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
     </button>

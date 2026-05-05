@@ -5,10 +5,11 @@ export const dynamic = 'force-dynamic'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
-// SA shell: animated cream→pink→peach gradient (light) or deep navy→violet
-// (dark) — both with a live noise overlay. Theme is set BEFORE hydration via
-// the bootstrap script so there's no flash. All children read CSS variables
-// (--sa-text, --sa-surface, --sa-accent…) so theme switch is one DOM attribute.
+// SA shell: live moving noise gradient (ivory→beige→cool grey on light,
+// deep slate-navy→indigo on dark). Theme is set BEFORE hydration via the
+// bootstrap script so there's no flash of the wrong palette. All children
+// read CSS variables (--sa-text, --sa-surface, --sa-accent…) so flipping
+// data-sa-theme on <html> swaps the entire panel atomically.
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
