@@ -64,17 +64,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-sm">
 
-        {/* Consultrack brand — hidden on org-login. Uses the canonical
-            indigo brand mark (same SVG as favicon + PWA icon + SA login). */}
+        {/* Consultrack brand — hidden on org-login. Inline SVG so there's
+            zero file-load dependency (matches the indigo mark used as the
+            favicon + PWA icon + SA login). */}
         {mode !== 'org-login' && (
           <div className="text-center mb-8">
-            <img
-              src="/consultrack-mark.svg"
-              alt="Consultrack"
-              className="w-14 h-14 mx-auto mb-3 rounded-2xl"
-              width={56}
-              height={56}
-            />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 mx-auto"
+              style={{
+                background: '#4f46e5',
+                boxShadow: '0 10px 24px -8px rgba(79,70,229,0.4)',
+              }}>
+              <svg viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8">
+                <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="white"/>
+                <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="white"/>
+              </svg>
+            </div>
             <p className="text-2xl font-bold text-slate-900">Consultrack</p>
             <p className="text-slate-500 text-sm mt-0.5">Move fast. Close faster.</p>
           </div>

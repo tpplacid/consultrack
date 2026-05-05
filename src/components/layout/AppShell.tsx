@@ -337,18 +337,25 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
 
   const SidebarContent = ({ slim = false }: { slim?: boolean }) => (
     <div className="flex flex-col h-full bg-brand-800">
-      {/* Logo */}
+      {/* Logo: org's uploaded logo if present (kept brightness-0 invert so
+          coloured logos read on the dark sidebar), otherwise an inline
+          Consultrack mark — no file dependency, never breaks. */}
       <div className={cn('border-b border-brand-700 flex items-center justify-center', slim ? 'px-2 py-4' : 'px-5 py-4')}>
         {slim ? (
           <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-xs">
             {(orgName || 'A').charAt(0).toUpperCase()}
           </div>
-        ) : (
+        ) : orgLogoUrl ? (
           <img
-            src={orgLogoUrl || '/consultrack-mark.svg'}
+            src={orgLogoUrl}
             alt={orgName || 'logo'}
             className="object-contain h-12 w-auto brightness-0 invert"
           />
+        ) : (
+          <svg viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-10 w-10">
+            <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="white"/>
+            <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="white"/>
+          </svg>
         )}
       </div>
 
@@ -479,11 +486,18 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
           <button onClick={() => setSidebarOpen(true)} className="text-white p-1">
             <Menu size={22} />
           </button>
-          <img
-            src={orgLogoUrl || '/consultrack-mark.svg'}
-            alt={orgName || 'logo'}
-            className="object-contain h-8 w-auto brightness-0 invert"
-          />
+          {orgLogoUrl ? (
+            <img
+              src={orgLogoUrl}
+              alt={orgName || 'logo'}
+              className="object-contain h-8 w-auto brightness-0 invert"
+            />
+          ) : (
+            <svg viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-7 w-7">
+              <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="white"/>
+              <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="white"/>
+            </svg>
+          )}
           <div className="flex items-center gap-3">
             {notifCount > 0 && (
               <div className="relative">
