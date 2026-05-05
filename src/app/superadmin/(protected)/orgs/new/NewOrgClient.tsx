@@ -69,18 +69,18 @@ export default function NewOrgClient() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-1">Organisation Created</h2>
-            <p className="text-slate-400 text-sm mb-6">
+            <h2 className="text-xl font-bold text-[var(--sa-text)] mb-1">Organisation Created</h2>
+            <p className="text-[var(--sa-text-secondary)] text-sm mb-6">
               {orgName} is ready. {result.adminEmail ? `Admin account created for ${result.adminEmail}.` : ''}
             </p>
 
             {result.inviteLink && (
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-left">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Invite Link</p>
-                <p className="text-teal-300 text-xs break-all font-mono">{result.inviteLink}</p>
+                <p className="text-xs font-semibold text-[var(--sa-text-secondary)] uppercase tracking-wide mb-2">Invite Link</p>
+                <p className="text-[var(--sa-accent-3)] text-xs break-all font-mono">{result.inviteLink}</p>
                 <button
                   onClick={() => navigator.clipboard.writeText(result.inviteLink!)}
-                  className="mt-3 text-xs text-slate-400 hover:text-white transition"
+                  className="mt-3 text-xs text-[var(--sa-text-secondary)] hover:text-[var(--sa-text)] transition"
                 >
                   Copy to clipboard
                 </button>
@@ -89,22 +89,22 @@ export default function NewOrgClient() {
 
             {result.adminEmail && !result.inviteLink && (
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-left">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Admin Credentials</p>
-                <p className="text-slate-300 text-sm">Email: <span className="text-white font-mono">{result.adminEmail}</span></p>
+                <p className="text-xs font-semibold text-[var(--sa-text-secondary)] uppercase tracking-wide mb-2">Admin Credentials</p>
+                <p className="text-[var(--sa-text)] text-sm">Email: <span className="text-[var(--sa-text)] font-mono">{result.adminEmail}</span></p>
               </div>
             )}
 
             <div className="flex gap-3 justify-center">
               <Link
                 href={`/superadmin/orgs/${result.orgId}`}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-bold transition"
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-[var(--sa-text)] rounded-lg text-sm font-bold transition"
               >
                 Manage Org
               </Link>
               <Link
                 href="/superadmin/orgs/new"
                 onClick={() => setResult(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-bold transition"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[var(--sa-text)] rounded-lg text-sm font-bold transition"
               >
                 Create Another
               </Link>
@@ -119,21 +119,21 @@ export default function NewOrgClient() {
     <div className="min-h-screen p-6 md:p-10">
       <div className="max-w-lg mx-auto">
         {/* Back */}
-        <Link href="/superadmin/orgs" className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-sm mb-6 transition">
+        <Link href="/superadmin/orgs" className="inline-flex items-center gap-1.5 text-[var(--sa-text-secondary)] hover:text-[var(--sa-text)] text-sm mb-6 transition">
           <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
             <path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" />
           </svg>
           Organisations
         </Link>
 
-        <h1 className="text-2xl font-bold text-white mb-8">New Organisation</h1>
+        <h1 className="text-2xl font-bold text-[var(--sa-text)] mb-8">New Organisation</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Org details */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300">Organisation details</h2>
+            <h2 className="text-sm font-semibold text-[var(--sa-text)]">Organisation details</h2>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Name</label>
+              <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Name</label>
               <input
                 type="text"
                 required
@@ -142,20 +142,20 @@ export default function NewOrgClient() {
                   setOrgName(e.target.value)
                   setSlug(deriveSlug(e.target.value))
                 }}
-                className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                 placeholder="Apex Admissions"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">URL slug</label>
+              <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">URL slug</label>
               <div className="flex items-center gap-0 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
-                <span className="px-3 py-2.5 text-sm text-slate-500 border-r border-slate-700 shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
+                <span className="px-3 py-2.5 text-sm text-[var(--sa-text-secondary)] border-r border-slate-700 shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
                 <input
                   type="text"
                   required
                   value={slug}
                   onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  className="flex-1 px-3 py-2.5 bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
+                  className="flex-1 px-3 py-2.5 bg-transparent text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none"
                   placeholder="apex-admissions"
                 />
               </div>
@@ -164,7 +164,7 @@ export default function NewOrgClient() {
 
           {/* Admin account */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-            <h2 className="text-sm font-semibold text-slate-300">Admin account</h2>
+            <h2 className="text-sm font-semibold text-[var(--sa-text)]">Admin account</h2>
 
             {/* Option selector */}
             <div className="grid grid-cols-3 gap-2">
@@ -179,8 +179,8 @@ export default function NewOrgClient() {
                   onClick={() => setAdminOption(opt.value)}
                   className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${
                     adminOption === opt.value
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                      ? 'bg-teal-600 text-[var(--sa-text)]'
+                      : 'bg-slate-800 text-[var(--sa-text-secondary)] hover:bg-slate-700 hover:text-[var(--sa-text)]'
                   }`}
                 >
                   {opt.label}
@@ -191,38 +191,38 @@ export default function NewOrgClient() {
             {adminOption === 'create' && (
               <div className="space-y-3 pt-1">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Full name</label>
+                  <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Full name</label>
                   <input
                     type="text"
                     required
                     value={adminName}
                     onChange={e => setAdminName(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="John Smith"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
+                  <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Email</label>
                   <input
                     type="email"
                     required
                     value={adminEmail}
                     onChange={e => setAdminEmail(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="admin@apexadmissions.com"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Password</label>
+                  <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Password</label>
                   <input
                     type="text"
                     required
                     value={adminPassword}
                     onChange={e => setAdminPassword(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="Set a strong password"
                   />
-                  <p className="text-xs text-slate-500 mt-1">You'll share these credentials with the admin.</p>
+                  <p className="text-xs text-[var(--sa-text-secondary)] mt-1">You'll share these credentials with the admin.</p>
                 </div>
               </div>
             )}
@@ -230,31 +230,31 @@ export default function NewOrgClient() {
             {adminOption === 'invite' && (
               <div className="space-y-3 pt-1">
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Name (optional)</label>
+                  <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Name (optional)</label>
                   <input
                     type="text"
                     value={inviteName}
                     onChange={e => setInviteName(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="Pre-fill admin's name"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Email (optional)</label>
+                  <label className="block text-xs font-medium text-[var(--sa-text-secondary)] mb-1.5">Email (optional)</label>
                   <input
                     type="email"
                     value={inviteEmail}
                     onChange={e => setInviteEmail(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="admin@apexadmissions.com"
                   />
                 </div>
-                <p className="text-xs text-slate-500">An invite link will be generated. Share it with the admin — they set their own password.</p>
+                <p className="text-xs text-[var(--sa-text-secondary)]">An invite link will be generated. Share it with the admin — they set their own password.</p>
               </div>
             )}
 
             {adminOption === 'none' && (
-              <p className="text-xs text-slate-500">You can add employees from the org management page later.</p>
+              <p className="text-xs text-[var(--sa-text-secondary)]">You can add employees from the org management page later.</p>
             )}
           </div>
 
@@ -265,7 +265,7 @@ export default function NewOrgClient() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-[var(--sa-text)] rounded-xl text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating…' : 'Create Organisation'}
           </button>

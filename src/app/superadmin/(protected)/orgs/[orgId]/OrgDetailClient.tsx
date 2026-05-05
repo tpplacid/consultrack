@@ -23,12 +23,12 @@ type OrgRole = { key: string; label: string }
 type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
-  ad: 'bg-teal-500/15 text-teal-300 border-teal-500/20',
-  tl: 'bg-blue-500/15 text-blue-300 border-blue-500/20',
-  counsellor: 'bg-slate-500/15 text-slate-300 border-slate-500/20',
-  telesales: 'bg-purple-500/15 text-purple-300 border-purple-500/20',
+  ad: 'bg-teal-500/15 text-[var(--sa-accent-3)] border-teal-500/30',
+  tl: 'bg-blue-500/15 text-[var(--sa-accent-3)] border-blue-500/30',
+  counsellor: 'bg-slate-500/15 text-[var(--sa-text)] border-slate-500/20',
+  telesales: 'bg-purple-500/15 text-[var(--sa-accent-4)] border-purple-500/30',
 }
-const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-slate-300 border-slate-500/20'
+const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-[var(--sa-text)] border-slate-500/20'
 
 const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, bulk_upload: true }
 
@@ -49,9 +49,9 @@ interface Props {
   orgRoles: OrgRole[]
 }
 
-const INPUT = 'w-full px-3 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-white placeholder-neutral-700 focus:outline-none focus:ring-1 focus:ring-white/30 focus:border-white/30 transition'
-const BTN_PRIMARY = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-white text-black hover:bg-neutral-200 transition-all disabled:opacity-40'
-const BTN_GHOST = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-neutral-500 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all'
+const INPUT = 'w-full px-3 py-2.5 bg-[var(--sa-surface)] border border-[var(--sa-border)] rounded-lg text-sm text-[var(--sa-text)] placeholder-[var(--sa-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--sa-accent)]/40 focus:border-[var(--sa-border-strong)] transition'
+const BTN_PRIMARY = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--sa-accent)] text-[var(--sa-text-on-accent)] hover:opacity-90 transition-all disabled:opacity-40'
+const BTN_GHOST = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[var(--sa-text-secondary)] hover:text-[var(--sa-text)] bg-[var(--sa-surface)] hover:bg-[var(--sa-surface-hover)] border border-[var(--sa-divider)] transition-all'
 
 export default function OrgDetailClient({ org, employees: initialEmployees, invites: initialInvites, orgRoles }: Props) {
   const [employees, setEmployees] = useState(initialEmployees)
@@ -258,7 +258,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
         {/* Back */}
         <Link href="/superadmin/orgs"
-          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-white text-sm mb-6 transition-colors">
+          className="inline-flex items-center gap-1.5 text-[var(--sa-text-muted)] hover:text-[var(--sa-text)] text-sm mb-6 transition-colors">
           <ArrowLeft size={13} />
           All organisations
         </Link>
@@ -268,29 +268,29 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
           <div className="flex items-center gap-4">
             {logoUrl ? (
               <img src={logoUrl} alt={orgName}
-                className="w-11 h-11 rounded-xl object-contain flex-shrink-0 bg-white/[0.05]" />
+                className="w-11 h-11 rounded-xl object-contain flex-shrink-0 bg-[var(--sa-surface-hover)]" />
             ) : (
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-base flex-shrink-0 bg-white/[0.06] text-white">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-base flex-shrink-0 bg-[var(--sa-surface-hover)] text-[var(--sa-text)]">
                 {orgName.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold text-white tracking-tight">{orgName}</h1>
+                <h1 className="text-xl font-semibold text-[var(--sa-text)] tracking-tight">{orgName}</h1>
                 {isLive
-                  ? <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  ? <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-[var(--sa-success)] border border-emerald-500/20">
                       <Radio size={7} className="fill-emerald-400" />LIVE
                     </span>
-                  : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-white/[0.05] text-neutral-600 border border-white/[0.06]">
+                  : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--sa-surface-hover)] text-[var(--sa-text-muted)] border border-[var(--sa-divider)]">
                       OFFLINE
                     </span>
                 }
               </div>
-              <p className="text-neutral-600 text-sm mt-0.5 flex items-center gap-1.5">
+              <p className="text-[var(--sa-text-muted)] text-sm mt-0.5 flex items-center gap-1.5">
                 <span>/{orgSlug}</span>
-                <span className="text-neutral-800">·</span>
+                <span className="text-[var(--sa-text-muted)]">·</span>
                 <span>{employees.length} employee{employees.length !== 1 ? 's' : ''}</span>
-                <span className="text-neutral-800">·</span>
+                <span className="text-[var(--sa-text-muted)]">·</span>
                 <span>{enabledCount}/{FEATURE_CONFIG.length} features</span>
               </p>
             </div>
@@ -303,13 +303,13 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-lg mb-6 w-fit border border-white/[0.06] bg-white/[0.02]">
+        <div className="flex gap-1 p-1 rounded-lg mb-6 w-fit border border-[var(--sa-divider)] bg-[var(--sa-surface)]">
           {(['employees', 'invites', 'settings'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                 tab === t
-                  ? 'text-white bg-white/[0.1] border border-white/[0.1]'
-                  : 'text-neutral-600 hover:text-white'
+                  ? 'text-[var(--sa-text)] bg-[var(--sa-surface-strong)] border border-[var(--sa-border-strong)]'
+                  : 'text-[var(--sa-text-muted)] hover:text-[var(--sa-text)]'
               }`}
             >
               {t === 'employees' ? `Employees (${employees.length})` : t === 'invites' ? `Invites (${invites.length})` : 'Settings'}
@@ -323,41 +323,41 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className="flex justify-end mb-4">
               <button onClick={() => setShowAddEmployee(v => !v)}
                 className={BTN_PRIMARY}
-                style={{ background: '#fff', color: '#000' }}>
+                style={{ background: "var(--sa-accent)", color: "var(--sa-text-on-accent)" }}>
                 <Plus size={14} />Add Employee
               </button>
             </div>
 
             {showAddEmployee && (
               <form onSubmit={handleAddEmployee}
-                className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
-                style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <h3 className="text-sm font-semibold text-slate-300 mb-1">New employee</h3>
+                className="rounded-2xl p-5 mb-4 space-y-3 border border-[var(--sa-border)]"
+                style={{ background: "var(--sa-surface)" }}>
+                <h3 className="text-sm font-semibold text-[var(--sa-text)] mb-1">New employee</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Full name</label>
+                    <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Full name</label>
                     <input type="text" required value={empName} onChange={e => setEmpName(e.target.value)} className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Role</label>
+                    <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Role</label>
                     <select value={empRole} onChange={e => setEmpRole(e.target.value)} className={INPUT}>
                       {roleList.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Email</label>
+                  <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Email</label>
                   <input type="email" required value={empEmail} onChange={e => setEmpEmail(e.target.value)} className={INPUT} />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Password</label>
+                  <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Password</label>
                   <input type="text" required value={empPassword} onChange={e => setEmpPassword(e.target.value)} className={INPUT} />
                 </div>
                 {empError && <p className="text-xs text-red-400">{empError}</p>}
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={addingEmp}
                     className={BTN_PRIMARY}
-                    style={{ background: '#fff', color: '#000' }}>
+                    style={{ background: "var(--sa-accent)", color: "var(--sa-text-on-accent)" }}>
                     {addingEmp ? <Loader2 size={13} className="animate-spin" /> : null}
                     {addingEmp ? 'Adding…' : 'Add employee'}
                   </button>
@@ -367,25 +367,25 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             )}
 
             {employees.length === 0 ? (
-              <div className="text-center py-12 rounded-2xl border border-white/[0.05]"
-                style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <Users size={20} className="text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-500 text-sm">No employees yet</p>
+              <div className="text-center py-12 rounded-2xl border border-[var(--sa-divider)]"
+                style={{ background: "var(--sa-surface)" }}>
+                <Users size={20} className="text-[var(--sa-text-secondary)] mx-auto mb-2" />
+                <p className="text-[var(--sa-text-secondary)] text-sm">No employees yet</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {employees.map(emp => (
                   <div key={emp.id}
-                    className="group flex items-center justify-between rounded-xl px-4 py-3 border border-white/[0.06]"
-                    style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    className="group flex items-center justify-between rounded-xl px-4 py-3 border border-[var(--sa-divider)]"
+                    style={{ background: "var(--sa-surface)" }}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ background: 'rgba(255,255,255,0.07)', color: '#fff' }}>
+                        style={{ background: 'var(--sa-accent)', color: 'var(--sa-text-on-accent)' }}>
                         {emp.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{emp.name}</p>
-                        <p className="text-slate-500 text-xs flex items-center gap-1 mt-0.5">
+                        <p className="text-[var(--sa-text)] text-sm font-medium truncate">{emp.name}</p>
+                        <p className="text-[var(--sa-text-secondary)] text-xs flex items-center gap-1 mt-0.5">
                           <Mail size={10} />
                           {emp.email}
                         </p>
@@ -399,15 +399,15 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       {/* Password reset — shows generated code inline */}
                       {resetCodeMap[emp.id] ? (
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg tracking-widest">
+                          <span className="font-mono text-xs font-bold text-[var(--sa-accent-2)] bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-lg tracking-widest">
                             {resetCodeMap[emp.id]}
                           </span>
                           <button onClick={() => { navigator.clipboard.writeText(resetCodeMap[emp.id]); toast.success('Code copied') }}
-                            className="text-neutral-700 hover:text-white p-1 transition-colors" title="Copy code">
+                            className="text-[var(--sa-text-muted)] hover:text-[var(--sa-text)] p-1 transition-colors" title="Copy code">
                             <Copy size={11} />
                           </button>
                           <button onClick={() => setResetCodeMap(prev => { const n = {...prev}; delete n[emp.id]; return n })}
-                            className="text-neutral-700 hover:text-white p-1 transition-colors" title="Dismiss">
+                            className="text-[var(--sa-text-muted)] hover:text-[var(--sa-text)] p-1 transition-colors" title="Dismiss">
                             <Trash2 size={11} />
                           </button>
                         </div>
@@ -416,7 +416,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                           onClick={() => handleGenerateResetCode(emp.id)}
                           disabled={generatingCode === emp.id}
                           title="Generate password reset code for this employee"
-                          className="opacity-0 group-hover:opacity-100 text-neutral-700 hover:text-amber-400 transition-all p-1 flex-shrink-0"
+                          className="opacity-0 group-hover:opacity-100 text-[var(--sa-text-muted)] hover:text-[var(--sa-accent-2)] transition-all p-1 flex-shrink-0"
                         >
                           {generatingCode === emp.id
                             ? <Loader2 size={11} className="animate-spin" />
@@ -438,31 +438,31 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             <div className="flex justify-end mb-4">
               <button onClick={() => setShowAddInvite(v => !v)}
                 className={BTN_PRIMARY}
-                style={{ background: '#fff', color: '#000' }}>
+                style={{ background: "var(--sa-accent)", color: "var(--sa-text-on-accent)" }}>
                 <Link2 size={14} />Generate Invite Link
               </button>
             </div>
 
             {showAddInvite && (
               <form onSubmit={handleAddInvite}
-                className="rounded-2xl p-5 mb-4 space-y-3 border border-white/[0.08]"
-                style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <h3 className="text-sm font-semibold text-slate-300 mb-1">Generate invite link</h3>
+                className="rounded-2xl p-5 mb-4 space-y-3 border border-[var(--sa-border)]"
+                style={{ background: "var(--sa-surface)" }}>
+                <h3 className="text-sm font-semibold text-[var(--sa-text)] mb-1">Generate invite link</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Name (optional)</label>
+                    <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Name (optional)</label>
                     <input type="text" value={invName} onChange={e => setInvName(e.target.value)}
                       placeholder="Pre-fill name" className={INPUT} />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Role</label>
+                    <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Role</label>
                     <select value={invRole} onChange={e => setInvRole(e.target.value)} className={INPUT}>
                       {roleList.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Email (optional)</label>
+                  <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Email (optional)</label>
                   <input type="email" value={invEmail} onChange={e => setInvEmail(e.target.value)}
                     placeholder="Pre-fill email" className={INPUT} />
                 </div>
@@ -470,7 +470,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={addingInv}
                     className={BTN_PRIMARY}
-                    style={{ background: '#fff', color: '#000' }}>
+                    style={{ background: "var(--sa-accent)", color: "var(--sa-text-on-accent)" }}>
                     {addingInv ? <Loader2 size={13} className="animate-spin" /> : null}
                     {addingInv ? 'Generating…' : 'Generate'}
                   </button>
@@ -480,10 +480,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             )}
 
             {invites.length === 0 ? (
-              <div className="text-center py-12 rounded-2xl border border-white/[0.05]"
-                style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <Link2 size={20} className="text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-500 text-sm">No invite links yet</p>
+              <div className="text-center py-12 rounded-2xl border border-[var(--sa-divider)]"
+                style={{ background: "var(--sa-surface)" }}>
+                <Link2 size={20} className="text-[var(--sa-text-secondary)] mx-auto mb-2" />
+                <p className="text-[var(--sa-text-secondary)] text-sm">No invite links yet</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -493,30 +493,30 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   return (
                     <div key={inv.id}
                       className={`rounded-xl px-4 py-3 border transition-all ${
-                        isUsed ? 'opacity-50' : isExpired ? 'border-red-900/40' : 'border-white/[0.06]'
+                        isUsed ? 'opacity-50' : isExpired ? 'border-red-900/40' : 'border-[var(--sa-divider)]'
                       }`}
-                      style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      style={{ background: "var(--sa-surface)" }}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-lg border ${ROLE_COLORS[inv.role] ?? ROLE_COLOR_FALLBACK}`}>
                               {roleLabelMap[inv.role] ?? inv.role}
                             </span>
-                            {inv.name && <span className="text-slate-300 text-xs font-medium">{inv.name}</span>}
-                            {inv.email && <span className="text-slate-500 text-xs">{inv.email}</span>}
+                            {inv.name && <span className="text-[var(--sa-text)] text-xs font-medium">{inv.name}</span>}
+                            {inv.email && <span className="text-[var(--sa-text-secondary)] text-xs">{inv.email}</span>}
                             {isUsed && <span className="text-green-400 text-xs font-semibold flex items-center gap-1"><Check size={10} />Used</span>}
                             {isExpired && <span className="text-red-400 text-xs font-semibold">Expired</span>}
                           </div>
-                          <p className="text-slate-600 text-xs font-mono truncate">{inv.link}</p>
+                          <p className="text-[var(--sa-text-secondary)] text-xs font-mono truncate">{inv.link}</p>
                         </div>
                         {!isUsed && !isExpired && (
                           <button onClick={() => copyLink(inv.token, inv.link)}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white border border-white/[0.06] hover:bg-white/[0.07] transition-all">
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--sa-text-secondary)] hover:text-[var(--sa-text)] border border-[var(--sa-divider)] hover:bg-[var(--sa-surface-hover)] transition-all">
                             {copiedToken === inv.token ? <><Check size={11} className="text-green-400" />Copied</> : <><Copy size={11} />Copy</>}
                           </button>
                         )}
                       </div>
-                      <p className="text-slate-600 text-xs mt-1.5">
+                      <p className="text-[var(--sa-text-secondary)] text-xs mt-1.5">
                         {isUsed
                           ? `Used ${formatDistanceToNow(new Date(inv.used_at!), { addSuffix: true })}`
                           : `Expires ${formatDistanceToNow(new Date(inv.expires_at), { addSuffix: true })}`}
@@ -536,23 +536,23 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
             {/* Live status */}
             <div className={`rounded-2xl p-5 border transition-all ${
-              isLive ? 'border-green-500/20' : 'border-white/[0.07]'
+              isLive ? 'border-green-500/20' : 'border-[var(--sa-border)]'
             }`}
               style={{ background: isLive ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.02)' }}>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <h2 className="text-sm font-medium text-white">Live status</h2>
+                    <h2 className="text-sm font-medium text-[var(--sa-text)]">Live status</h2>
                     {isLive
                       ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
                           <Radio size={8} className="fill-green-400" />LIVE
                         </span>
-                      : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-400 border border-slate-500/20">
+                      : <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/15 text-[var(--sa-text-secondary)] border border-slate-500/20">
                           OFFLINE
                         </span>
                     }
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-[var(--sa-text-secondary)]">
                     {isLive
                       ? 'Org is active — employees can log in and access the platform'
                       : 'Org is offline — login is disabled for all employees'}
@@ -560,7 +560,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 </div>
                 <button type="button" onClick={() => setIsLive(v => !v)}
                   className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    isLive ? 'bg-emerald-500' : 'bg-white/[0.08]'
+                    isLive ? 'bg-emerald-500' : 'bg-[var(--sa-surface-hover)]'
                   }`}>
                   <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${
                     isLive ? 'translate-x-5' : 'translate-x-0.5 bg-white'
@@ -570,16 +570,16 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Logo */}
-            <div className="rounded-2xl p-5 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <h2 className="text-sm font-medium text-white mb-4">Logo</h2>
+            <div className="rounded-2xl p-5 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
+              <h2 className="text-sm font-medium text-[var(--sa-text)] mb-4">Logo</h2>
               <div className="flex items-center gap-4">
                 {/* Preview */}
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-white/[0.08]"
-                  style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden border border-[var(--sa-border)]"
+                  style={{ background: "var(--sa-surface)" }}>
                   {logoUrl
                     ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                    : <ImageIcon size={22} className="text-neutral-700" />
+                    : <ImageIcon size={22} className="text-[var(--sa-text-muted)]" />
                   }
                 </div>
 
@@ -608,7 +608,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       Remove
                     </button>
                   )}
-                  <p className="text-[11px] text-neutral-700">PNG, JPG, WebP or SVG · max 2 MB</p>
+                  <p className="text-[11px] text-[var(--sa-text-muted)]">PNG, JPG, WebP or SVG · max 2 MB</p>
                 </div>
               </div>
 
@@ -626,17 +626,17 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* ── Meta Integration ── */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="rounded-2xl p-5 space-y-4 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: metaConnected ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)' }}>
-                    <Zap size={13} className={metaConnected ? 'text-indigo-400' : 'text-neutral-600'} />
+                    <Zap size={13} className={metaConnected ? 'text-indigo-400' : 'text-[var(--sa-text-muted)]'} />
                   </div>
                   <div>
-                    <h2 className="text-sm font-medium text-white">Meta Integration</h2>
-                    <p className="text-[10px] text-neutral-600 mt-0.5">
+                    <h2 className="text-sm font-medium text-[var(--sa-text)]">Meta Integration</h2>
+                    <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">
                       {metaConnected ? 'Connected — receiving leads from Meta Ads' : 'Not configured'}
                     </p>
                   </div>
@@ -644,7 +644,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                   metaConnected
                     ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                    : 'bg-white/[0.04] text-neutral-600 border-white/[0.06]'
+                    : 'bg-[var(--sa-surface)] text-[var(--sa-text-muted)] border-[var(--sa-divider)]'
                 }`}>
                   {metaConnected ? 'ACTIVE' : 'PENDING'}
                 </span>
@@ -652,9 +652,9 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
               {/* Webhook URL */}
               <div>
-                <label className="block text-[11px] text-neutral-500 mb-1.5">Webhook URL</label>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Webhook URL</label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg text-xs text-neutral-400 font-mono truncate">
+                  <div className="flex-1 px-3 py-2 bg-white/[0.03] border border-[var(--sa-divider)] rounded-lg text-xs text-[var(--sa-text-secondary)] font-mono truncate">
                     {WEBHOOK_URL}
                   </div>
                   <button type="button" onClick={() => copyMeta(WEBHOOK_URL, 'webhook')}
@@ -666,7 +666,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
               {/* Page ID */}
               <div>
-                <label className="block text-[11px] text-neutral-500 mb-1.5">Facebook Page ID</label>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Facebook Page ID</label>
                 <input
                   type="text"
                   value={metaPageId}
@@ -674,12 +674,12 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   placeholder="e.g. 123456789012345"
                   className={INPUT}
                 />
-                <p className="text-[10px] text-neutral-700 mt-1">Leads are routed to this org when Meta sends events from this Page ID</p>
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Leads are routed to this org when Meta sends events from this Page ID</p>
               </div>
 
               {/* Access Token */}
               <div>
-                <label className="block text-[11px] text-neutral-500 mb-1.5">Page Access Token</label>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Page Access Token</label>
                 <div className="flex items-center gap-2">
                   <input
                     type={showAccessToken ? 'text' : 'password'}
@@ -693,14 +693,14 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                     {showAccessToken ? <EyeOff size={12} /> : <Eye size={12} />}
                   </button>
                 </div>
-                <p className="text-[10px] text-neutral-700 mt-1">Used to fetch lead field data from Meta Graph API</p>
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Used to fetch lead field data from Meta Graph API</p>
               </div>
 
               {/* Send setup guide */}
-              <div className="pt-1 border-t border-white/[0.06] flex items-center justify-between gap-3">
+              <div className="pt-1 border-t border-[var(--sa-divider)] flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs text-neutral-400">Send setup guide to client admin</p>
-                  <p className="text-[10px] text-neutral-700 mt-0.5">
+                  <p className="text-xs text-[var(--sa-text-secondary)]">Send setup guide to client admin</p>
+                  <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">
                     {guideSent
                       ? 'Guide sent — visible on the client\'s Meta settings page'
                       : 'Client will see step-by-step instructions on their Meta Leads page'}
@@ -724,30 +724,30 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Org details */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <h2 className="text-sm font-medium text-white">Organisation details</h2>
+            <div className="rounded-2xl p-5 space-y-4 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
+              <h2 className="text-sm font-medium text-[var(--sa-text)]">Organisation details</h2>
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">Name</label>
+                <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Name</label>
                 <input type="text" required value={orgName} onChange={e => setOrgName(e.target.value)} className={INPUT} />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">URL slug</label>
-                <div className="flex items-center rounded-xl overflow-hidden border border-white/[0.1] bg-white/[0.05] focus-within:ring-1 focus-within:ring-white/20 focus-within:border-white/20 transition">
-                  <span className="px-3 py-2.5 text-sm text-slate-600 border-r border-white/[0.08] shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
+                <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">URL slug</label>
+                <div className="flex items-center rounded-xl overflow-hidden border border-[var(--sa-border-strong)] bg-[var(--sa-surface-hover)] focus-within:ring-1 focus-within:ring-white/20 focus-within:border-[var(--sa-border-strong)] transition">
+                  <span className="px-3 py-2.5 text-sm text-[var(--sa-text-secondary)] border-r border-[var(--sa-border)] shrink-0">{(process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app').replace('https://', '')}/</span>
                   <input type="text" required value={orgSlug}
                     onChange={e => setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    className="flex-1 px-3 py-2.5 bg-transparent text-sm text-white focus:outline-none" />
+                    className="flex-1 px-3 py-2.5 bg-transparent text-sm text-[var(--sa-text)] focus:outline-none" />
                 </div>
               </div>
             </div>
 
             {/* Brand palette */}
-            <div className="rounded-2xl p-5 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="rounded-2xl p-5 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
               <div className="mb-4">
-                <h2 className="text-sm font-medium text-white">Brand colour</h2>
-                <p className="text-xs text-neutral-600 mt-0.5">Sets the sidebar and accent colour for this org</p>
+                <h2 className="text-sm font-medium text-[var(--sa-text)]">Brand colour</h2>
+                <p className="text-xs text-[var(--sa-text-muted)] mt-0.5">Sets the sidebar and accent colour for this org</p>
               </div>
 
               {/* Preset swatches */}
@@ -757,17 +757,17 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   return (
                     <button key={p.key} type="button" onClick={() => setBrandPalette(p.key)}
                       className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all ${
-                        active ? 'border-white/30 bg-white/[0.08]' : 'border-transparent hover:bg-white/[0.04]'
+                        active ? 'border-[var(--sa-border-strong)] bg-[var(--sa-surface-hover)]' : 'border-transparent hover:bg-[var(--sa-surface)]'
                       }`}>
                       <div className="w-8 h-8 rounded-full flex-shrink-0 relative"
                         style={{ backgroundColor: p.swatch }}>
                         {active && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Check size={14} className="text-white drop-shadow" />
+                            <Check size={14} className="text-[var(--sa-text)] drop-shadow" />
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] text-neutral-500 text-center leading-tight">{p.label}</span>
+                      <span className="text-[10px] text-[var(--sa-text-secondary)] text-center leading-tight">{p.label}</span>
                     </button>
                   )
                 })}
@@ -775,9 +775,9 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
               {/* Divider */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px bg-white/[0.06]" />
-                <span className="text-[10px] text-neutral-700 font-medium uppercase tracking-wide">or custom</span>
-                <div className="flex-1 h-px bg-white/[0.06]" />
+                <div className="flex-1 h-px bg-[var(--sa-surface-hover)]" />
+                <span className="text-[10px] text-[var(--sa-text-muted)] font-medium uppercase tracking-wide">or custom</span>
+                <div className="flex-1 h-px bg-[var(--sa-surface-hover)]" />
               </div>
 
               {/* Custom colour picker */}
@@ -791,7 +791,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                     className={`w-10 h-10 rounded-xl border-2 transition-all flex items-center justify-center overflow-hidden ${
                       brandPalette.startsWith('#')
                         ? 'border-white/40 ring-1 ring-white/20'
-                        : 'border-white/[0.08] hover:border-white/20'
+                        : 'border-[var(--sa-border)] hover:border-[var(--sa-border-strong)]'
                     }`}
                     style={{
                       background: brandPalette.startsWith('#')
@@ -800,10 +800,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                     }}
                   >
                     {!brandPalette.startsWith('#') && (
-                      <Pipette size={14} className="text-white drop-shadow-sm" />
+                      <Pipette size={14} className="text-[var(--sa-text)] drop-shadow-sm" />
                     )}
                     {brandPalette.startsWith('#') && (
-                      <Check size={14} className="text-white drop-shadow" />
+                      <Check size={14} className="text-[var(--sa-text)] drop-shadow" />
                     )}
                   </button>
                   {/* Hidden native colour input — triggers OS colour wheel */}
@@ -827,21 +827,21 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setBrandPalette(v)
                         }}
                         maxLength={7}
-                        className="w-28 px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-lg text-sm text-white font-mono focus:outline-none focus:ring-1 focus:ring-white/20 uppercase"
+                        className="w-28 px-3 py-1.5 bg-[var(--sa-surface)] border border-[var(--sa-border)] rounded-lg text-sm text-[var(--sa-text)] font-mono focus:outline-none focus:ring-1 focus:ring-[var(--sa-accent)]/30 uppercase"
                         placeholder="#000000"
                       />
                       <button
                         type="button"
                         onClick={() => setBrandPalette(DEFAULT_PALETTE)}
-                        className="text-xs text-neutral-600 hover:text-white transition-colors"
+                        className="text-xs text-[var(--sa-text-muted)] hover:text-[var(--sa-text)] transition-colors"
                       >
                         Reset to preset
                       </button>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm text-neutral-400">Custom colour</p>
-                      <p className="text-xs text-neutral-700 mt-0.5">Click the wheel to open the colour picker</p>
+                      <p className="text-sm text-[var(--sa-text-secondary)]">Custom colour</p>
+                      <p className="text-xs text-[var(--sa-text-muted)] mt-0.5">Click the wheel to open the colour picker</p>
                     </div>
                   )}
                 </div>
@@ -852,35 +852,35 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <div className="mt-4 flex items-center gap-2">
                   <div className="h-2 flex-1 rounded-full"
                     style={{ background: `linear-gradient(to right, ${brandPalette}22, ${brandPalette}88, ${brandPalette})` }} />
-                  <span className="text-[10px] text-neutral-700">preview</span>
+                  <span className="text-[10px] text-[var(--sa-text-muted)]">preview</span>
                 </div>
               )}
             </div>
 
             {/* Feature flags */}
-            <div className="rounded-2xl p-5 space-y-1 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="rounded-2xl p-5 space-y-1 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
               <div className="mb-4">
-                <h2 className="text-sm font-medium text-white">Feature access</h2>
-                <p className="text-xs text-neutral-600 mt-0.5">Control which modules this organisation can access</p>
+                <h2 className="text-sm font-medium text-[var(--sa-text)]">Feature access</h2>
+                <p className="text-xs text-[var(--sa-text-muted)] mt-0.5">Control which modules this organisation can access</p>
               </div>
               {FEATURE_CONFIG.map(f => (
                 <div key={f.key}
-                  className="flex items-center justify-between gap-4 py-3 border-b border-white/[0.05] last:border-0">
+                  className="flex items-center justify-between gap-4 py-3 border-b border-[var(--sa-divider)] last:border-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: features[f.key] ? f.color : '#334155' }} />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-200">{f.label}</p>
-                      <p className="text-xs text-slate-600 mt-0.5 truncate">{f.description}</p>
+                      <p className="text-xs text-[var(--sa-text-secondary)] mt-0.5 truncate">{f.description}</p>
                     </div>
                   </div>
                   <button type="button" onClick={() => setFeatures(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
                     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                      features[f.key] ? 'bg-white' : 'bg-white/[0.08]'
+                      features[f.key] ? 'bg-[var(--sa-accent)]' : 'bg-[var(--sa-surface-hover)]'
                     }`}>
-                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${
-                      features[f.key] ? 'translate-x-5 bg-black' : 'translate-x-0.5 bg-white'
+                    <span className={`inline-block h-5 w-5 rounded-full shadow transition-transform mt-0.5 bg-white ${
+                      features[f.key] ? 'translate-x-5' : 'translate-x-0.5'
                     }`} />
                   </button>
                 </div>
@@ -888,18 +888,18 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
             </div>
 
             {/* Plan & Limits — lead ceiling + enforcement toggle */}
-            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
-              style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="rounded-2xl p-5 space-y-4 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
               <div>
-                <h2 className="text-sm font-medium text-white">Plan & Limits</h2>
-                <p className="text-xs text-neutral-600 mt-0.5">
+                <h2 className="text-sm font-medium text-[var(--sa-text)]">Plan & Limits</h2>
+                <p className="text-xs text-[var(--sa-text-muted)] mt-0.5">
                   Lead ceiling for this org. Alerts fire at 80% and 100%; new lead creation is blocked at 100% when enforcement is on.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Lead limit</label>
+                  <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Lead limit</label>
                   <input
                     type="number"
                     min={0}
@@ -909,21 +909,21 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                     placeholder="Leave blank for unlimited"
                     className={INPUT}
                   />
-                  <p className="text-[10px] text-neutral-700 mt-1">Blank = unlimited (no alerts, no block)</p>
+                  <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Blank = unlimited (no alerts, no block)</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Hard enforcement</label>
-                  <div className="flex items-center gap-3 h-10 px-3 rounded-lg border border-white/[0.08] bg-white/[0.04]">
+                  <label className="block text-xs text-[var(--sa-text-secondary)] mb-1.5">Hard enforcement</label>
+                  <div className="flex items-center gap-3 h-10 px-3 rounded-lg border border-[var(--sa-border)] bg-[var(--sa-surface)]">
                     <button type="button" onClick={() => setLeadLimitEnforced(v => !v)}
                       className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                        leadLimitEnforced ? 'bg-emerald-500/40' : 'bg-white/[0.08]'
+                        leadLimitEnforced ? 'bg-emerald-500/40' : 'bg-[var(--sa-surface-hover)]'
                       }`}>
                       <span className={`inline-block h-5 w-5 rounded-full shadow transition-transform mt-0.5 ${
                         leadLimitEnforced ? 'translate-x-5 bg-white' : 'translate-x-0.5 bg-white'
                       }`} />
                     </button>
-                    <span className="text-xs text-slate-300">
+                    <span className="text-xs text-[var(--sa-text)]">
                       {leadLimitEnforced
                         ? 'Block new leads at 100%'
                         : 'Alerts only (creation always allowed)'}
@@ -935,7 +935,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
 
             <button type="submit" disabled={savingSettings}
               className={BTN_PRIMARY}
-              style={{ background: '#fff', color: '#000' }}>
+              style={{ background: "var(--sa-accent)", color: "var(--sa-text-on-accent)" }}>
               {savingSettings ? <Loader2 size={14} className="animate-spin" /> : null}
               {savingSettings ? 'Saving…' : 'Save Changes'}
             </button>
@@ -945,14 +945,14 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
           <div className="mt-8 rounded-2xl p-5 border border-red-900/30"
             style={{ background: 'rgba(239,68,68,0.04)' }}>
             <h2 className="text-sm font-semibold text-red-400 mb-1">Danger zone</h2>
-            <p className="text-xs text-neutral-600 mb-4">These actions are destructive and irreversible.</p>
+            <p className="text-xs text-[var(--sa-text-muted)] mb-4">These actions are destructive and irreversible.</p>
             <div className="flex flex-wrap gap-3">
               {org.is_sandbox && (
                 <button
                   type="button"
                   onClick={handleResetSandbox}
                   disabled={resettingSandbox}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-all disabled:opacity-40"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-amber-500/30 text-[var(--sa-accent-2)] hover:bg-amber-500/10 transition-all disabled:opacity-40"
                 >
                   {resettingSandbox ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
                   {resettingSandbox ? 'Resetting…' : 'Reset Sandbox to Defaults'}
