@@ -23,6 +23,25 @@ export interface Palette {
 }
 
 export const PALETTES: Palette[] = [
+  // Default brand palette — matches the Consultrack mark + SA --sa-accent
+  // (#4f46e5). Listed first so it's the first swatch in the SA picker.
+  {
+    key: 'indigo',
+    label: 'Consultrack',
+    swatch: '#4f46e5',
+    css: {
+      '--color-brand-50':  '#eef2ff',
+      '--color-brand-100': '#e0e7ff',
+      '--color-brand-200': '#c7d2fe',
+      '--color-brand-300': '#a5b4fc',
+      '--color-brand-400': '#4f46e5',
+      '--color-brand-500': '#4338ca',
+      '--color-brand-600': '#3730a3',
+      '--color-brand-700': '#312e81',
+      '--color-brand-800': '#2e2b72',
+      '--color-brand-900': '#1e1b4b',
+    },
+  },
   {
     key: 'teal',
     label: 'Teal',
@@ -72,23 +91,6 @@ export const PALETTES: Palette[] = [
       '--color-brand-700': '#14532d',
       '--color-brand-800': '#14532d',
       '--color-brand-900': '#052e16',
-    },
-  },
-  {
-    key: 'indigo',
-    label: 'Indigo',
-    swatch: '#4f46e5',
-    css: {
-      '--color-brand-50':  '#eef2ff',
-      '--color-brand-100': '#e0e7ff',
-      '--color-brand-200': '#c7d2fe',
-      '--color-brand-300': '#a5b4fc',
-      '--color-brand-400': '#4f46e5',
-      '--color-brand-500': '#4338ca',
-      '--color-brand-600': '#3730a3',
-      '--color-brand-700': '#312e81',
-      '--color-brand-800': '#2e2b72',
-      '--color-brand-900': '#1e1b4b',
     },
   },
   {
@@ -161,7 +163,9 @@ export const PALETTES: Palette[] = [
   },
 ]
 
-export const DEFAULT_PALETTE = 'teal'
+// Default palette for new orgs — Consultrack indigo. Existing orgs that
+// previously had no brand_palette stored will also pick this up.
+export const DEFAULT_PALETTE = 'indigo'
 
 // ── Custom colour support ──────────────────────────────────────────────────
 // When brand_palette is a hex string (e.g. "#c0392b") instead of a key,
