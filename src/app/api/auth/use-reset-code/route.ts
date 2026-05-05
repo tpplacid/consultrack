@@ -32,9 +32,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 })
   }
 
-  // Find the Supabase auth user by email
-  const { data: authData } = await supabase.auth.admin.listUsers()
-  const user = authData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+  // Find the Supabase auth user by email.
+  // listUsers default page size is 50; bump to 1000 so we don't miss users
+  // in larger orgs. Email matching is case-insensitive — Supabase normalises
+  // but defensively lowercase both sides anyway.
+  const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  const targetEmail = email.toLowerCase()
+  const user = authData?.users?.find(u => u.email?.toLowerCase() === targetEmail)
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }

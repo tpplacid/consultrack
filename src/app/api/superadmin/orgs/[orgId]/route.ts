@@ -23,14 +23,20 @@ export async function DELETE(
     )
   }
 
-  // Delete auth users for employees (best-effort)
+  // Delete auth users for employees (best-effort).
+  // Single listUsers call → in-memory map, instead of one listUsers per
+  // employee (was N×listUsers, now 1×listUsers).
   const { data: emps } = await supabase
     .from('employees').select('email').eq('org_id', orgId)
-  if (emps) {
-    const { data: authData } = await supabase.auth.admin.listUsers()
+  if (emps && emps.length > 0) {
+    const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+    const emailToId = new Map<string, string>()
+    for (const u of authData?.users ?? []) {
+      if (u.email) emailToId.set(u.email.toLowerCase(), u.id)
+    }
     for (const emp of emps) {
-      const user = authData?.users?.find(u => u.email === emp.email)
-      if (user) await supabase.auth.admin.deleteUser(user.id)
+      const id = emailToId.get((emp.email || '').toLowerCase())
+      if (id) await supabase.auth.admin.deleteUser(id)
     }
   }
 

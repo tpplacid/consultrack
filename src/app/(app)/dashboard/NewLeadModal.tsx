@@ -119,6 +119,9 @@ export function NewLeadModal({ open, onClose, employee }: Props) {
       if (approvalError) console.error('Approval insert failed:', approvalError.message)
     }
 
+    // Bust admin-leads + analytics caches so the new lead shows immediately
+    // when the admin navigates to /admin/leads or /admin/analytics next.
+    void fetch('/api/cache/invalidate-leads', { method: 'POST' })
     toast.success('Lead created!')
     router.refresh()
     onClose()

@@ -8,10 +8,21 @@ export default async function DashboardPage() {
   const employee = await requireAuth()
   const supabase = await createClient()
 
-  // Fetch leads based on role
+  // Fetch leads based on role.
+  // Explicit column list (instead of *) keeps the dashboard payload tight and
+  // safe against future schema bloat. Includes everything LeadCard + revenue
+  // computation actually use.
   let query = supabase
     .from('leads')
-    .select('*, owner:employees!leads_owner_id_fkey(id,name,role), reporting_manager:employees!leads_reporting_manager_id_fkey(id,name)')
+    .select(`
+      id, org_id, name, phone, source, main_stage, sub_stage,
+      owner_id, reporting_manager_id, approved, approved_by, meta_lead_id,
+      created_at, updated_at, stage_entered_at,
+      sla_deadline, next_followup_at,
+      custom_data,
+      owner:employees!leads_owner_id_fkey(id,name,role),
+      reporting_manager:employees!leads_reporting_manager_id_fkey(id,name)
+    `)
     .order('updated_at', { ascending: false })
 
   if (employee.role === 'ad') {
@@ -67,7 +78,10 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       employee={employee}
-      leads={leads || []}
+      // Cast required because we narrowed select() — Supabase types joined
+      // relations as arrays even when the FK is single-valued. Per CLAUDE.md
+      // convention.
+      leads={(leads || []) as unknown as import('@/types').Lead[]}
       approvalMap={approvalMap}
       stats={stats}
       dashboardStageKeys={dashboardStageKeys}

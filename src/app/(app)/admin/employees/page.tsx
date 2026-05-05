@@ -1,16 +1,7 @@
-import { requireRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
-import { EmployeesClient } from './EmployeesClient'
-
-export default async function EmployeesPage() {
-  const employee = await requireRole(['ad'])
-  const supabase = await createClient()
-
-  const { data: employees } = await supabase
-    .from('employees')
-    .select('*')
-    .eq('org_id', employee.org_id)
-    .order('name')
-
-  return <EmployeesClient admin={employee} employees={employees || []} />
+// Legacy route — kept as a 308 redirect so any old bookmarks / browser
+// history land on the canonical location. The actual UI lives in the
+// sibling client component (still imported by the canonical page).
+import { redirect } from 'next/navigation'
+export default function LegacyRedirect() {
+  redirect('/admin/team-mgmt/employees')
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { requireAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -59,6 +60,11 @@ export async function POST(req: NextRequest) {
       approver_id: emp.reports_to,
     })
   }
+
+  // Bust admin-leads + analytics caches so the new lead appears immediately.
+  // 'max' = stale-while-revalidate (Next.js 16 API).
+  revalidateTag(`admin-leads:${emp.org_id}`, 'max')
+  revalidateTag(`analytics:${emp.org_id}`, 'max')
 
   return NextResponse.json({ data: lead })
 }

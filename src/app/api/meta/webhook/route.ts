@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createHmac } from 'crypto'
 
@@ -159,6 +160,12 @@ export async function POST(req: NextRequest) {
           note:          'Lead created from Meta Lead Ads',
         })
         if (actErr) console.error('[Meta Webhook] activity insert error:', actErr.message)
+
+        // Bust per-org caches so the new Meta lead surfaces immediately
+        // when the admin opens /admin/leads or /admin/analytics.
+        // 'max' = stale-while-revalidate (Next.js 16 API).
+        revalidateTag(`admin-leads:${org.id}`, 'max')
+        revalidateTag(`analytics:${org.id}`, 'max')
 
         console.info('[Meta Webhook] lead created:', lead.id, 'owner:', owner?.id ?? 'unassigned')
 

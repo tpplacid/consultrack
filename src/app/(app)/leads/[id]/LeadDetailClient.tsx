@@ -154,6 +154,9 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
     const { data: updated, error } = await supabase.from('leads').update(updates).eq('id', lead.id).select().single()
     if (error) { toast.error(error.message); setSaving(false); return }
     setLead(updated)
+    // Bust /admin/leads + /admin/analytics caches so the next admin visit
+    // sees fresh data instead of the stale 60s/180s snapshot.
+    void fetch('/api/cache/invalidate-leads', { method: 'POST' })
     toast.success('Lead updated')
     setSaving(false)
   }
@@ -172,6 +175,7 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
         org_id: lead.org_id, lead_id: lead.id, employee_id: employee.id,
         activity_type: 'field_update', note: `Lead transferred to ${emp?.name}`,
       })
+      void fetch('/api/cache/invalidate-leads', { method: 'POST' })
       toast.success(`Lead transferred to ${emp?.name}`)
       router.refresh()
       setTransferOpen(false)

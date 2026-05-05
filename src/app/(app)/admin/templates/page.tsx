@@ -1,10 +1,7 @@
-import { requireRole } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
-import { AdminTemplatesClient } from './AdminTemplatesClient'
-
-export default async function AdminTemplatesPage() {
-  const employee = await requireRole(['ad'])
-  const supabase = await createClient()
-  const { data: templates } = await supabase.from('wa_templates').select('*').eq('org_id', employee.org_id).order('name')
-  return <AdminTemplatesClient admin={employee} templates={templates || []} />
+// Legacy route — kept as a 308 redirect so any old bookmarks / browser
+// history land on the canonical location. The actual UI lives in the
+// sibling client component (still imported by the canonical page).
+import { redirect } from 'next/navigation'
+export default function LegacyRedirect() {
+  redirect('/admin/settings/templates')
 }

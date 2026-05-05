@@ -6,52 +6,55 @@ import { SectionLayout } from '@/lib/fieldLayouts'
 import { unstable_cache } from 'next/cache'
 import { subDays, subMonths, format } from 'date-fns'
 
-// Cache analytics data per org for 3 minutes — safe because each cache key is org-scoped.
-const getAnalyticsData = unstable_cache(
-  async (orgId: string) => {
-    const supabase = createAdminClient()
-    const thirtyDaysAgo   = format(subDays(new Date(), 30),  'yyyy-MM-dd')
-    const twelveMonthsAgo = format(subMonths(new Date(), 12), 'yyyy-MM-dd')
+// Cache analytics data per org for 3 minutes. Tagged so a mutation can call
+// revalidateTag(`analytics:${orgId}`) and bust just that org's cache.
+function analyticsLoader(orgId: string) {
+  return unstable_cache(
+    async () => {
+      const supabase = createAdminClient()
+      const thirtyDaysAgo   = format(subDays(new Date(), 30),  'yyyy-MM-dd')
+      const twelveMonthsAgo = format(subMonths(new Date(), 12), 'yyyy-MM-dd')
 
-    const [
-      { data: leadsRaw },
-      { data: employeesRaw },
-      { data: activities },
-      { data: slaBreaches },
-      { data: sectionsRaw },
-    ] = await Promise.all([
-      // Revenue lives in custom_data since migration 011 — no fee columns selected
-      supabase.from('leads')
-        .select('id, name, created_at, owner_id, main_stage, source, stage_entered_at, custom_data')
-        .eq('org_id', orgId)
-        .gte('created_at', `${twelveMonthsAgo}T00:00:00`)
-        .limit(5000),
-      supabase.from('employees')
-        .select('id, name, role, is_active')
-        .eq('org_id', orgId)
-        .eq('is_active', true),
-      supabase.from('activities')
-        .select('employee_id, activity_type, created_at')
-        .eq('org_id', orgId)
-        .gte('created_at', `${thirtyDaysAgo}T00:00:00`),
-      supabase.from('sla_breaches')
-        .select('owner_id, resolution, created_at')
-        .eq('org_id', orgId),
-      supabase.from('org_field_layouts')
-        .select('*')
-        .eq('org_id', orgId)
-        .order('position', { ascending: true }),
-    ])
+      const [
+        { data: leadsRaw },
+        { data: employeesRaw },
+        { data: activities },
+        { data: slaBreaches },
+        { data: sectionsRaw },
+      ] = await Promise.all([
+        // Revenue lives in custom_data since migration 011 — no fee columns selected
+        supabase.from('leads')
+          .select('id, name, created_at, owner_id, main_stage, source, stage_entered_at, custom_data')
+          .eq('org_id', orgId)
+          .gte('created_at', `${twelveMonthsAgo}T00:00:00`)
+          .limit(5000),
+        supabase.from('employees')
+          .select('id, name, role, is_active')
+          .eq('org_id', orgId)
+          .eq('is_active', true),
+        supabase.from('activities')
+          .select('employee_id, activity_type, created_at')
+          .eq('org_id', orgId)
+          .gte('created_at', `${thirtyDaysAgo}T00:00:00`),
+        supabase.from('sla_breaches')
+          .select('owner_id, resolution, created_at')
+          .eq('org_id', orgId),
+        supabase.from('org_field_layouts')
+          .select('*')
+          .eq('org_id', orgId)
+          .order('position', { ascending: true }),
+      ])
 
-    return { leadsRaw, employeesRaw, activities, slaBreaches, sectionsRaw }
-  },
-  ['analytics-data'],
-  { revalidate: 180 }
-)
+      return { leadsRaw, employeesRaw, activities, slaBreaches, sectionsRaw }
+    },
+    ['analytics-data', orgId],
+    { revalidate: 180, tags: [`analytics:${orgId}`] },
+  )()
+}
 
 export default async function AnalyticsPage() {
   const employee = await requireRole(['ad'])
-  const { leadsRaw, employeesRaw, activities, slaBreaches, sectionsRaw } = await getAnalyticsData(employee.org_id)
+  const { leadsRaw, employeesRaw, activities, slaBreaches, sectionsRaw } = await analyticsLoader(employee.org_id)
 
   return (
     <AnalyticsClient
