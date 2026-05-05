@@ -55,9 +55,20 @@ export async function PATCH(
 
   const { orgId } = await params
   const body = await req.json()
-  const { name, slug, features, brand_palette, meta_config, is_live } = body
+  const { name, slug, features, brand_palette, meta_config, is_live, lead_limit, lead_limit_enforced } = body
 
   const supabase = createAdminClient()
+
+  // Detect a limit raise so we can clear stale 80/100% alerts — otherwise a
+  // raise would leave the alerts table populated and future thresholds (now
+  // calculated from the new ceiling) wouldn't fire.
+  let limitRaised = false
+  if (lead_limit !== undefined) {
+    const { data: prior } = await supabase.from('orgs').select('lead_limit').eq('id', orgId).single()
+    const oldLimit = (prior?.lead_limit as number | null) ?? null
+    const newLimit = lead_limit as number | null
+    limitRaised = (oldLimit ?? 0) < (newLimit ?? Infinity) && newLimit !== oldLimit
+  }
 
   const updates: Record<string, unknown> = {}
   if (name !== undefined) updates.name = name
@@ -66,6 +77,8 @@ export async function PATCH(
   if (brand_palette !== undefined) updates.brand_palette = brand_palette
   if (meta_config !== undefined) updates.meta_config = meta_config
   if (is_live !== undefined) updates.is_live = is_live
+  if (lead_limit !== undefined) updates.lead_limit = lead_limit
+  if (lead_limit_enforced !== undefined) updates.lead_limit_enforced = lead_limit_enforced
 
   const { data, error } = await supabase
     .from('orgs')
@@ -75,5 +88,17 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // Side-effects after a successful save
+  if (limitRaised) {
+    // Clear stale alert rows so the next 80%/100% crossings can fire
+    await supabase.from('org_quota_alerts').delete().eq('org_id', orgId)
+  }
+  // Bust the quota cache regardless — limit/enforced may have changed
+  if (lead_limit !== undefined || lead_limit_enforced !== undefined) {
+    const { revalidateTag } = await import('next/cache')
+    revalidateTag(`lead-count:${orgId}`, 'max')
+  }
+
   return NextResponse.json({ org: data })
 }

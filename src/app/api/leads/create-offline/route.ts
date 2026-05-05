@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { requireAuth } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { assertCanCreateLead, checkAndAlertQuota, bustQuotaCache } from '@/lib/leadQuota'
 
 export async function POST(req: NextRequest) {
   const employee = await requireAuth()
@@ -19,6 +20,10 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!emp) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
+
+  // Hard-block at lead ceiling (when enforcement is on for this org)
+  try { await assertCanCreateLead(emp.org_id) }
+  catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 403 }) }
 
   // Build custom_data from dynamic fields (org-specific — not stored in columns)
   const custom_data: Record<string, string> = {}
@@ -61,10 +66,11 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // Bust admin-leads + analytics caches so the new lead appears immediately.
-  // 'max' = stale-while-revalidate (Next.js 16 API).
+  // Bust admin-leads + analytics + quota caches; check & fire 80/100% alerts
   revalidateTag(`admin-leads:${emp.org_id}`, 'max')
   revalidateTag(`analytics:${emp.org_id}`, 'max')
+  bustQuotaCache(emp.org_id)
+  await checkAndAlertQuota(emp.org_id, 1)
 
   return NextResponse.json({ data: lead })
 }

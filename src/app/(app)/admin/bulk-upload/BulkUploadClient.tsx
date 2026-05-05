@@ -133,6 +133,28 @@ export function BulkUploadClient({ admin, employees, leadSources }: Props) {
     if (valid.length === 0) return
     setUploading(true)
 
+    // Pre-check quota — bail BEFORE inserting anything if the upload would
+    // blow past the org's ceiling. There's a small race window (other
+    // inserts could land between this check and our batch), but for a
+    // single-admin bulk upload it's the right trade-off.
+    const quotaRes = await fetch('/api/quota')
+    if (quotaRes.ok) {
+      const q = await quotaRes.json() as { atLimit: boolean; remaining: number | null; limit: number | null; count: number }
+      if (q.atLimit) {
+        toast.error(`Lead limit reached (${q.count}/${q.limit}). Upgrade or export & reset.`)
+        setUploading(false)
+        return
+      }
+      if (q.remaining !== null && valid.length > q.remaining) {
+        toast.error(
+          `Cannot upload ${valid.length} leads — only ${q.remaining} slots left under your plan (${q.count}/${q.limit}). Trim the file or request a higher limit.`,
+          { duration: 7000 },
+        )
+        setUploading(false)
+        return
+      }
+    }
+
     const supabase = createClient()
     let success = 0
     let failed = 0
@@ -189,7 +211,16 @@ export function BulkUploadClient({ admin, employees, leadSources }: Props) {
     setResult({ success, failed })
     if (success > 0) toast.success(`${success} lead(s) uploaded`)
     if (failed > 0) toast.error(`${failed} lead(s) failed`)
-    if (success > 0) setRows([])
+    if (success > 0) {
+      setRows([])
+      // Bust admin-leads + analytics + quota caches and run threshold check
+      // — passes createdCount so 80%/100% alerts fire if we crossed.
+      void fetch('/api/cache/invalidate-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ createdCount: success }),
+      })
+    }
   }
 
   const validCount = rows.filter(r => !r.error).length

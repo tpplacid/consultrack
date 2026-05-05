@@ -20,7 +20,7 @@ type Features = {
 }
 type MetaConfig = { page_id?: string; access_token?: string }
 type OrgRole = { key: string; label: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; created_at: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-teal-300 border-teal-500/20',
@@ -67,6 +67,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [orgSlug, setOrgSlug] = useState(org.slug)
   const [isLive, setIsLive] = useState(org.is_live ?? true)
   const [features, setFeatures] = useState<Features>(org.features ?? DEFAULT_FEATURES)
+  // Plan & Limits — lead ceiling. null = unlimited; '' string in input = null on save.
+  const [leadLimit, setLeadLimit] = useState<string>(
+    org.lead_limit !== null && org.lead_limit !== undefined ? String(org.lead_limit) : ''
+  )
+  const [leadLimitEnforced, setLeadLimitEnforced] = useState<boolean>(org.lead_limit_enforced ?? true)
   const [brandPalette, setBrandPalette] = useState(org.brand_palette ?? DEFAULT_PALETTE)
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
@@ -155,6 +160,9 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         features,
         brand_palette: brandPalette,
         meta_config: { page_id: metaPageId || undefined, access_token: metaAccessToken || undefined },
+        // Plan & Limits — empty string means unlimited (null in DB)
+        lead_limit: leadLimit.trim() === '' ? null : Math.max(0, Number(leadLimit) || 0),
+        lead_limit_enforced: leadLimitEnforced,
       }),
     })
     if (res.ok) toast.success('Organisation updated')
@@ -877,6 +885,52 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Plan & Limits — lead ceiling + enforcement toggle */}
+            <div className="rounded-2xl p-5 space-y-4 border border-white/[0.06]"
+              style={{ background: 'rgba(255,255,255,0.02)' }}>
+              <div>
+                <h2 className="text-sm font-medium text-white">Plan & Limits</h2>
+                <p className="text-xs text-neutral-600 mt-0.5">
+                  Lead ceiling for this org. Alerts fire at 80% and 100%; new lead creation is blocked at 100% when enforcement is on.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1.5">Lead limit</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={leadLimit}
+                    onChange={e => setLeadLimit(e.target.value)}
+                    placeholder="Leave blank for unlimited"
+                    className={INPUT}
+                  />
+                  <p className="text-[10px] text-neutral-700 mt-1">Blank = unlimited (no alerts, no block)</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1.5">Hard enforcement</label>
+                  <div className="flex items-center gap-3 h-10 px-3 rounded-lg border border-white/[0.08] bg-white/[0.04]">
+                    <button type="button" onClick={() => setLeadLimitEnforced(v => !v)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+                        leadLimitEnforced ? 'bg-emerald-500/40' : 'bg-white/[0.08]'
+                      }`}>
+                      <span className={`inline-block h-5 w-5 rounded-full shadow transition-transform mt-0.5 ${
+                        leadLimitEnforced ? 'translate-x-5 bg-white' : 'translate-x-0.5 bg-white'
+                      }`} />
+                    </button>
+                    <span className="text-xs text-slate-300">
+                      {leadLimitEnforced
+                        ? 'Block new leads at 100%'
+                        : 'Alerts only (creation always allowed)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <button type="submit" disabled={savingSettings}

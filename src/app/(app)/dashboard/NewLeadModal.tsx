@@ -62,66 +62,40 @@ export function NewLeadModal({ open, onClose, employee }: Props) {
     if (!form.name || !form.phone) return toast.error('Name and phone required')
     setLoading(true)
 
-    const supabase = createClient()
-    const { data: emp } = await supabase.from('employees').select('org_id, reports_to').eq('id', employee.id).single()
-    if (!emp) { setLoading(false); return toast.error('Employee not found') }
+    // Delegate the entire create flow to /api/leads/create-offline.
+    // That route handles: org/manager lookup, custom_data assembly,
+    // approval-request creation, lead-quota enforcement (returns 403 if at
+    // ceiling), activity log, and cache busting. Centralising here means
+    // the rules apply uniformly — in-app create + future flows.
+    const res = await fetch('/api/leads/create-offline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone.trim(),
+        source: form.source,
+        // Org-defined fields go through custom_data via the same route.
+        // (Pre-Option B these were direct columns; the route now handles both.)
+        location: form.location || undefined,
+        lead_type: form.lead_type || undefined,
+        preferred_course: form.preferred_course || undefined,
+        comments: form.comments || undefined,
+      }),
+    })
 
-    // Resolve approver — use direct manager or fall back to the org's AD
-    let approverId = emp.reports_to
-    if (!approverId) {
-      const { data: ad } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('org_id', emp.org_id)
-        .eq('role', 'ad')
-        .eq('is_active', true)
-        .limit(1)
-        .single()
-      approverId = ad?.id || null
-    }
-
-    const { data: lead, error } = await supabase.from('leads').insert({
-      org_id: emp.org_id,
-      name: form.name,
-      phone: form.phone.trim(),
-      source: form.source,
-      main_stage: '0',
-      owner_id: employee.id,
-      reporting_manager_id: emp.reports_to,
-      location: form.location || null,
-      lead_type: form.lead_type || null,
-      preferred_course: form.preferred_course || null,
-      comments: form.comments || null,
-      approved: false,
-    }).select().single()
-
-    if (error || !lead) {
-      toast.error(error?.message || 'Failed to create lead')
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: 'Failed to create lead' }))
+      toast.error(error)
       setLoading(false)
       return
     }
 
-    await supabase.from('activities').insert({
-      org_id: emp.org_id,
-      lead_id: lead.id,
-      employee_id: employee.id,
-      activity_type: 'lead_created',
-      note: `Lead created via ${form.source}`,
+    // Bust client-side cached count + fire 80/100% threshold check
+    void fetch('/api/cache/invalidate-leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ createdCount: 1 }),
     })
-
-    if (approverId) {
-      const { error: approvalError } = await supabase.from('offline_lead_approvals').insert({
-        org_id: emp.org_id,
-        lead_id: lead.id,
-        submitted_by: employee.id,
-        approver_id: approverId,
-      })
-      if (approvalError) console.error('Approval insert failed:', approvalError.message)
-    }
-
-    // Bust admin-leads + analytics caches so the new lead shows immediately
-    // when the admin navigates to /admin/leads or /admin/analytics next.
-    void fetch('/api/cache/invalidate-leads', { method: 'POST' })
     toast.success('Lead created!')
     router.refresh()
     onClose()

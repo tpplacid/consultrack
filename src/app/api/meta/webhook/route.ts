@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createHmac } from 'crypto'
+import { getQuotaState, checkAndAlertQuota, bustQuotaCache } from '@/lib/leadQuota'
 
 // ── GET: Meta webhook verification ──────────────────────────
 export async function GET(req: NextRequest) {
@@ -126,6 +127,18 @@ export async function POST(req: NextRequest) {
         if (metaCourse)   metaCustomData.preferred_course = metaCourse
         if (metaLocation) metaCustomData.location         = metaLocation
 
+        // Hard-block at lead ceiling. Meta will retry the webhook so it's
+        // safe to skip without acking — but we DO want to ack so Meta stops
+        // retrying. Log + alert SA + skip the insert. (Returning the same 200
+        // we'd return for a successful insert; the lead is just dropped.)
+        const quota = await getQuotaState(org.id)
+        if (quota.atLimit) {
+          console.warn(`[Meta Webhook] DROPPED lead — org ${org.id} at quota (${quota.count}/${quota.limit})`)
+          // Fire 100% alert if not already (idempotent via unique constraint)
+          await checkAndAlertQuota(org.id, 0)
+          continue
+        }
+
         // Insert lead
         const { data: lead, error: leadErr } = await supabase
           .from('leads')
@@ -166,6 +179,8 @@ export async function POST(req: NextRequest) {
         // 'max' = stale-while-revalidate (Next.js 16 API).
         revalidateTag(`admin-leads:${org.id}`, 'max')
         revalidateTag(`analytics:${org.id}`, 'max')
+        bustQuotaCache(org.id)
+        await checkAndAlertQuota(org.id, 1)
 
         console.info('[Meta Webhook] lead created:', lead.id, 'owner:', owner?.id ?? 'unassigned')
 

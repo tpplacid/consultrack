@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Layers, ListFilter, GitBranch, Clock, LayoutDashboard,
-  Radio, Upload, Shield, MessageSquare, Lock,
+  Radio, Upload, Shield, MessageSquare, Lock, Gauge,
 } from 'lucide-react'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
 import { UpgradeModal } from '@/components/UpgradeModal'
@@ -78,6 +78,12 @@ const NAV_GROUPS: NavGroup[] = [
         upgradeLabel: 'WhatsApp Templates',
         upgradeDesc:  'Manage reusable WhatsApp message templates for consistent lead communication.',
       },
+    ],
+  },
+  {
+    title: 'Account',
+    items: [
+      { href: '/admin/settings/plan', label: 'Plan & Data', icon: Gauge },
     ],
   },
 ]
