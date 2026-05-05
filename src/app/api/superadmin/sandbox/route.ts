@@ -81,27 +81,21 @@ export async function GET() {
     adminEmail = SANDBOX_ADMIN_EMAIL
   }
 
-  // Generate magic link for instant login
+  // Generate magic link to grab a hashed_token; we hand-roll the URL so the
+  // session is established on OUR app domain via /auth/callback (not on
+  // *.supabase.co where the cookies would be useless to us).
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
-  const redirectTo = `${baseUrl}/dashboard`
   const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: adminEmail!,
-    options: { redirectTo },
+    options: { redirectTo: `${baseUrl}/dashboard` },
   })
 
-  if (linkErr || !linkData?.properties?.action_link) {
+  if (linkErr || !linkData?.properties?.hashed_token) {
     return NextResponse.json({ error: linkErr?.message || 'Magic link failed' }, { status: 500 })
   }
 
-  // Defensive: force-rewrite redirect_to in the action_link so even if Supabase
-  // Site URL is misconfigured to localhost, the post-verify hop lands on prod.
-  let finalUrl = linkData.properties.action_link
-  try {
-    const u = new URL(finalUrl)
-    u.searchParams.set('redirect_to', redirectTo)
-    finalUrl = u.toString()
-  } catch {}
+  const finalUrl = `${baseUrl}/auth/callback?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=magiclink&next=${encodeURIComponent('/dashboard')}`
 
   return NextResponse.json({
     orgId: sandbox.id,

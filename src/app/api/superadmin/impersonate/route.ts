@@ -27,32 +27,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No active admin found for this org' }, { status: 404 })
   }
 
-  // Always use the configured app URL for impersonation — SA wants prod even when
-  // hitting the route from localhost. NEXT_PUBLIC_APP_URL must be set in Vercel.
+  // Always use the configured app URL — SA wants prod even from localhost.
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://consultrackk.vercel.app'
-  const redirectTo = `${baseUrl}/dashboard`
 
+  // We don't use action_link directly — see /auth/callback for why. We only
+  // need the hashed_token to feed verifyOtp() server-side on our own domain.
   const { data, error } = await supabase.auth.admin.generateLink({
     type: 'magiclink',
     email: admin.email,
-    options: { redirectTo },
+    options: { redirectTo: `${baseUrl}/dashboard` },
   })
 
-  if (error || !data?.properties?.action_link) {
+  if (error || !data?.properties?.hashed_token) {
     console.error('[Impersonate] generateLink error:', error)
     return NextResponse.json({ error: error?.message ?? 'Failed to generate link' }, { status: 500 })
   }
 
-  // Defensive: Supabase bakes the project Site URL into the action_link. If it's
-  // misconfigured to localhost, force-rewrite the redirect_to query param so at
-  // least the post-verify hop lands on prod. (Final fix is in Supabase Dashboard
-  // → Authentication → URL Configuration → Site URL + Redirect URLs allowlist.)
-  let finalUrl = data.properties.action_link
-  try {
-    const u = new URL(finalUrl)
-    u.searchParams.set('redirect_to', redirectTo)
-    finalUrl = u.toString()
-  } catch {}
+  // Build a URL pointing at OUR /auth/callback route. That route runs
+  // verifyOtp() server-side which sets sb-* session cookies on our app
+  // domain, properly OVERWRITING any existing user session in the browser.
+  const url = `${baseUrl}/auth/callback?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=magiclink&next=${encodeURIComponent('/dashboard')}`
 
-  return NextResponse.json({ url: finalUrl, email: admin.email })
+  return NextResponse.json({ url, email: admin.email })
 }

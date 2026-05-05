@@ -42,7 +42,7 @@ const SETUP_STEPS = [
   },
   {
     title: 'Find your Facebook Page ID',
-    desc:  'Go to Meta Business Suite → Settings → Page Info. Copy your Page ID and share it with your Consultrackk admin to complete routing.',
+    desc:  'Go to Meta Business Suite → Settings → Page Info. Copy your Page ID and share it with your Consultrack admin to complete routing.',
     link:  { label: 'Open Business Suite', href: 'https://business.facebook.com' },
   },
 ]
@@ -124,7 +124,7 @@ export function AdminMetaClient({
             <AlertCircle size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-amber-800">Waiting for setup</p>
-              <p className="text-xs text-amber-700 mt-0.5">Ask your Consultrackk admin to send you the setup guide to get started.</p>
+              <p className="text-xs text-amber-700 mt-0.5">Ask your Consultrack admin to send you the setup guide to get started.</p>
             </div>
           </div>
         )}
@@ -197,7 +197,7 @@ export function AdminMetaClient({
               <p className="text-xs text-slate-500">
                 {pageId
                   ? 'Your Facebook Page is linked. Leads will route to this account automatically.'
-                  : 'Share your Facebook Page ID with your Consultrackk admin to complete setup.'}
+                  : 'Share your Facebook Page ID with your Consultrack admin to complete setup.'}
               </p>
             </div>
           </>

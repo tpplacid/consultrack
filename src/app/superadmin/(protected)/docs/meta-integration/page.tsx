@@ -102,14 +102,14 @@ export default function MetaIntegrationDoc() {
           <p className="text-[11px] font-semibold text-neutral-600 uppercase tracking-widest mb-2">Integration guide</p>
           <h1 className="text-2xl font-semibold text-white tracking-tight mb-2">Meta Lead Integration</h1>
           <p className="text-sm text-neutral-500">
-            End-to-end setup for connecting client Facebook &amp; Instagram Lead Ad forms to the Consultrackk pipeline.
+            End-to-end setup for connecting client Facebook &amp; Instagram Lead Ad forms to the Consultrack pipeline.
           </p>
         </div>
 
         {/* Overview */}
         <H2>Overview</H2>
         <P>
-          One Meta Developer App (owned by you, Consultrackk) acts as the bridge between all client Facebook Pages and the platform.
+          One Meta Developer App (owned by you, Consultrack) acts as the bridge between all client Facebook Pages and the platform.
           When a lead fills a Meta Lead Ad form on any client's page, Meta sends a webhook event to your server. The server identifies
           the org by Page ID, fetches the lead data using that org's Page Access Token, and inserts the lead into their pipeline —
           fully automated, no manual entry.
@@ -148,7 +148,7 @@ export default function MetaIntegrationDoc() {
         <H3>Create the Meta Developer App</H3>
         <Step n={1} title="Create the app">
           <p>Go to <A href="https://developers.facebook.com">developers.facebook.com</A> → My Apps → Create App.</p>
-          <p>Choose <strong className="text-neutral-300">Other</strong> → <strong className="text-neutral-300">Business</strong> type. Name it <em>Consultrackk</em> and attach your Business portfolio.</p>
+          <p>Choose <strong className="text-neutral-300">Other</strong> → <strong className="text-neutral-300">Business</strong> type. Name it <em>Consultrack</em> and attach your Business portfolio.</p>
         </Step>
 
         <Step n={2} title="Get the App Secret">
@@ -269,7 +269,7 @@ export default function MetaIntegrationDoc() {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-white/[0.06]">
-          <p className="text-[11px] text-neutral-700">Consultrackk internal docs · Meta Integration</p>
+          <p className="text-[11px] text-neutral-700">Consultrack internal docs · Meta Integration</p>
         </div>
 
       </div>

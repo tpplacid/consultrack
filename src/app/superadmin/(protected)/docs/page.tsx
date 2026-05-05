@@ -19,7 +19,7 @@ export default function DocsIndexPage() {
         </Link>
 
         <h1 className="text-2xl font-semibold text-white tracking-tight mb-1">Docs</h1>
-        <p className="text-neutral-600 text-sm mb-8">Internal reference for Consultrackk platform setup and integrations.</p>
+        <p className="text-neutral-600 text-sm mb-8">Internal reference for Consultrack platform setup and integrations.</p>
 
         <div className="space-y-2">
           {DOCS.map(doc => (
