@@ -33,7 +33,10 @@ export function EnterOrgButton({ orgId, orgName }: { orgId: string; orgName: str
     <button
       onClick={handleEnter}
       title={`Enter ${orgName} as admin`}
-      className="text-neutral-700 hover:text-white transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100"
+      className="transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100"
+      style={{ color: 'var(--sa-text-muted)' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sa-accent)' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sa-text-muted)' }}
     >
       {loading
         ? <Loader2 size={12} className="animate-spin" />

@@ -4,6 +4,11 @@ import { getOrgFeatures } from '@/lib/orgFeatures'
 import { FeatureGate } from '@/components/FeatureGate'
 import { AdminMetaClient } from '../../meta/AdminMetaClient'
 
+// SA flips meta_setup_sent_at via /api/superadmin/orgs/[orgId]/send-guide.
+// Without force-dynamic, Next.js 16 may serve a build-time snapshot or a
+// stale data-cache hit, so admins keep seeing "no guide yet" forever.
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsMetaPage() {
   const employee = await requireRole(['ad'])
   const features = await getOrgFeatures(employee.org_id)

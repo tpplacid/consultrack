@@ -6,12 +6,12 @@ import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio, FlaskConical
 import { EnterOrgButton } from './EnterOrgButton'
 
 const FEATURE_DOTS: { key: string; label: string; color: string }[] = [
-  { key: 'lead_crm',   label: 'CRM',        color: '#14b8a6' },
-  { key: 'pipeline',   label: 'Pipeline',   color: '#8b5cf6' },
-  { key: 'sla',        label: 'SLA',        color: '#f59e0b' },
-  { key: 'attendance', label: 'Attendance', color: '#3b82f6' },
-  { key: 'roles',      label: 'Roles',      color: '#ec4899' },
-  { key: 'meta',       label: 'Meta',       color: '#6366f1' },
+  { key: 'lead_crm',   label: 'CRM',        color: 'var(--sa-accent-3)' },
+  { key: 'pipeline',   label: 'Pipeline',   color: 'var(--sa-accent-4)' },
+  { key: 'sla',        label: 'SLA',        color: 'var(--sa-accent-2)' },
+  { key: 'attendance', label: 'Attendance', color: 'var(--sa-accent-3)' },
+  { key: 'roles',      label: 'Roles',      color: 'var(--sa-accent)'   },
+  { key: 'meta',       label: 'Meta',       color: 'var(--sa-accent-4)' },
 ]
 
 type Org = {
@@ -36,42 +36,35 @@ function OrgRow({ org, empCount, leadCount, isFirst, accent }: RowProps) {
   const timeAgo  = org.created_at ? formatDistanceToNow(new Date(org.created_at), { addSuffix: true }) : ''
   const isLive   = org.is_live !== false
 
-  // Quota state derived per-row
-  const limit       = (org.lead_limit ?? null) as number | null
-  const pct         = limit && limit > 0 ? Math.round((leadCount / limit) * 100) : 0
-  const overLimit   = limit !== null && leadCount >= limit
-  const nearLimit   = limit !== null && pct >= 80 && !overLimit
-  // Cream + pink textured base; over-limit overlays a subtle red wash
-  const rowBg       = overLimit
-    ? 'linear-gradient(135deg, #fff5f5 0%, #fde8e8 50%, #fbd5d5 100%)'
-    : 'linear-gradient(135deg, #fff8f0 0%, #ffe9eb 60%, #fbd9e2 100%)'
-  // Faint dot pattern overlay for the "textured" feel
-  const texture     = `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0)`
-  const textureSize = '8px 8px'
+  // Quota state
+  const limit     = (org.lead_limit ?? null) as number | null
+  const pct       = limit && limit > 0 ? Math.round((leadCount / limit) * 100) : 0
+  const overLimit = limit !== null && leadCount >= limit
+  const nearLimit = limit !== null && pct >= 80 && !overLimit
 
   return (
     <div
-      className={`relative flex items-center gap-3 px-4 py-3.5 transition-all group ${!isFirst ? 'border-t border-white/[0.06]' : ''}`}
+      className="relative flex items-center gap-3 px-4 py-3.5 transition-all group hover:bg-[var(--sa-surface-hover)]"
       style={{
-        background: `${texture}, ${rowBg}`,
-        backgroundSize: `${textureSize}, auto`,
-        // Subtle outline for at-risk orgs, hard outline for over-limit ones
+        borderTop: !isFirst ? '1px solid var(--sa-divider)' : 'none',
         boxShadow: overLimit
-          ? 'inset 4px 0 0 0 #ef4444, 0 0 0 1px rgba(239,68,68,0.3)'
+          ? 'inset 4px 0 0 0 var(--sa-danger)'
           : nearLimit
-            ? 'inset 4px 0 0 0 #f59e0b'
+            ? 'inset 4px 0 0 0 var(--sa-accent-2)'
             : 'none',
       }}
     >
       <Link href={`/superadmin/orgs/${org.id}`} className="flex items-center gap-3.5 flex-1 min-w-0">
         {org.logo_url ? (
           <img src={org.logo_url} alt={org.name}
-            className="w-9 h-9 rounded-lg object-contain flex-shrink-0 bg-white/40 ring-1 ring-black/5" />
+            className="w-9 h-9 rounded-lg object-contain flex-shrink-0"
+            style={{ background: 'var(--sa-surface-strong)', border: '1.5px solid var(--sa-border)' }} />
         ) : (
           <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0"
             style={{
-              background: '#fff',
-              color: '#000',
+              background: 'var(--sa-surface-strong)',
+              color: 'var(--sa-text)',
+              border: '2px solid var(--sa-shadow-color)',
               boxShadow: `2px 2px 0 0 ${accent}`,
               transform: 'translate(-1px,-1px)',
             }}>
@@ -81,24 +74,28 @@ function OrgRow({ org, empCount, leadCount, isFirst, accent }: RowProps) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-slate-900 text-sm font-bold truncate tracking-tight">{org.name}</p>
+            <p className="text-sm font-bold truncate tracking-tight" style={{ color: 'var(--sa-text)' }}>{org.name}</p>
             {isLive ? (
               <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-widest"
-                style={{ background: '#22c55e', color: '#000' }}>
-                <Radio size={6} className="fill-black" />LIVE
+                style={{ background: 'var(--sa-success)', color: 'var(--sa-text-on-accent)' }}>
+                <Radio size={6} className="fill-current" />LIVE
               </span>
             ) : (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-black/10 text-slate-700 flex-shrink-0 tracking-widest">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-widest"
+                style={{ background: 'var(--sa-surface-hover)', color: 'var(--sa-text-muted)' }}>
                 OFFLINE
               </span>
             )}
-            {/* Quota chip: red if over, amber if near, neutral otherwise. Hidden when no limit. */}
             {limit !== null && (
               <span
                 className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 tabular-nums"
                 style={{
-                  background: overLimit ? '#dc2626' : nearLimit ? '#f59e0b' : 'rgba(0,0,0,0.08)',
-                  color:      overLimit || nearLimit ? '#fff' : '#475569',
+                  background: overLimit
+                    ? 'var(--sa-danger)'
+                    : nearLimit
+                      ? 'var(--sa-accent-2)'
+                      : 'color-mix(in srgb, var(--sa-text) 8%, transparent)',
+                  color: overLimit || nearLimit ? 'var(--sa-text-on-accent)' : 'var(--sa-text-secondary)',
                 }}
                 title={`${leadCount.toLocaleString('en-IN')} of ${limit.toLocaleString('en-IN')} leads used`}
               >
@@ -107,23 +104,25 @@ function OrgRow({ org, empCount, leadCount, isFirst, accent }: RowProps) {
               </span>
             )}
           </div>
-          <p className="text-slate-600 text-xs truncate mt-0.5 font-mono">/{org.slug}</p>
+          <p className="text-xs truncate mt-0.5 font-mono" style={{ color: 'var(--sa-text-muted)' }}>/{org.slug}</p>
         </div>
 
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {FEATURE_DOTS.map(f => (
             <div key={f.key} title={f.label}
-              className="w-1.5 h-1.5 rounded-full ring-1 ring-black/10"
-              style={{ backgroundColor: features[f.key] !== false ? f.color : 'rgba(0,0,0,0.15)' }} />
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: features[f.key] !== false ? f.color : 'color-mix(in srgb, var(--sa-text) 15%, transparent)',
+              }} />
           ))}
         </div>
 
         <div className="hidden md:flex items-center gap-1.5 flex-shrink-0 min-w-[60px]">
-          <Users size={11} className="text-slate-500" />
-          <span className="text-sm font-bold text-slate-700 tabular-nums">{empCount}</span>
+          <Users size={11} style={{ color: 'var(--sa-text-muted)' }} />
+          <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--sa-text)' }}>{empCount}</span>
         </div>
 
-        <p className="hidden lg:block text-xs font-medium text-slate-600 flex-shrink-0 min-w-[90px] text-right">
+        <p className="hidden lg:block text-xs font-medium flex-shrink-0 min-w-[90px] text-right" style={{ color: 'var(--sa-text-secondary)' }}>
           {timeAgo}
         </p>
       </Link>
@@ -131,11 +130,14 @@ function OrgRow({ org, empCount, leadCount, isFirst, accent }: RowProps) {
       <EnterOrgButton orgId={org.id} orgName={org.name} />
 
       <a href={`/${org.slug}`} target="_blank" rel="noopener noreferrer"
-        className="text-slate-500 hover:text-slate-900 transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100">
+        className="transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100"
+        style={{ color: 'var(--sa-text-muted)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sa-text)' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--sa-text-muted)' }}>
         <ExternalLink size={12} />
       </a>
 
-      <ChevronRight size={13} className="text-slate-400 group-hover:text-slate-700 transition-colors flex-shrink-0" />
+      <ChevronRight size={13} className="transition-colors flex-shrink-0" style={{ color: 'var(--sa-text-muted)' }} />
     </div>
   )
 }
@@ -153,22 +155,17 @@ export function OrgsPageClient({ orgs, counts, leadCounts }: Props) {
   const liveCount   = regularOrgs.filter(o => o.is_live !== false).length
 
   return (
-    <div className="relative min-h-screen p-4 md:p-10">
-      <div className="relative max-w-4xl mx-auto">
+    <div className="relative min-h-screen p-4 md:p-10" style={{ color: 'var(--sa-text)' }}>
+      <div className="relative max-w-4xl mx-auto" style={{ zIndex: 10 }}>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end sm:justify-between mb-8 md:mb-10 gap-4">
           <div>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase mb-2"
-              style={{ color: 'rgba(99,102,241,0.8)' }}>
+              style={{ color: 'var(--sa-accent)' }}>
               Workspace management
             </p>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight"
-              style={{
-                background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.45) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: 'var(--sa-text)' }}>
               Organisations
             </h1>
           </div>
@@ -177,9 +174,11 @@ export function OrgsPageClient({ orgs, counts, leadCounts }: Props) {
               href="/superadmin/orgs/new"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all"
               style={{
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                color: '#fff',
-                boxShadow: '0 0 24px rgba(99,102,241,0.35)',
+                background: 'var(--sa-accent)',
+                color: 'var(--sa-text-on-accent)',
+                border: '2px solid var(--sa-shadow-color)',
+                boxShadow: '4px 4px 0 0 var(--sa-shadow-color)',
+                transform: 'translate(-1px,-1px)',
               }}
             >
               <Plus size={14} />
@@ -188,56 +187,69 @@ export function OrgsPageClient({ orgs, counts, leadCounts }: Props) {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stat tiles */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: 'Total orgs',      value: regularOrgs.length, accent: '#6366f1' },
-            { label: 'Total employees', value: totalEmps,           accent: '#14b8a6' },
-            { label: 'Live',            value: liveCount,           accent: '#22c55e' },
+            { label: 'Total orgs',      value: regularOrgs.length, accent: 'var(--sa-accent)'   },
+            { label: 'Total employees', value: totalEmps,           accent: 'var(--sa-accent-3)' },
+            { label: 'Live',            value: liveCount,           accent: 'var(--sa-success)'  },
           ].map(s => (
-            <div key={s.label}
-              className="rounded-xl px-4 py-3 border"
+            <div key={s.label} className="rounded-xl px-4 py-3"
               style={{
-                borderColor: `${s.accent}25`,
-                background:  `linear-gradient(135deg, ${s.accent}09 0%, transparent 100%)`,
+                background: 'var(--sa-surface-strong)',
+                border: '2px solid var(--sa-shadow-color)',
+                boxShadow: `4px 4px 0 0 ${s.accent}`,
+                transform: 'translate(-1px,-1px)',
               }}>
-              <p className="text-2xl font-black tabular-nums"
-                style={{ color: s.accent }}>{s.value}</p>
-              <p className="text-[11px] text-neutral-600 mt-0.5 font-medium">{s.label}</p>
+              <p className="text-2xl font-black tabular-nums" style={{ color: s.accent }}>{s.value}</p>
+              <p className="text-[11px] mt-0.5 font-bold" style={{ color: 'var(--sa-text-secondary)' }}>{s.label}</p>
             </div>
           ))}
         </div>
 
-        {/* ── Sandbox orgs (pinned at top, visually separate) ── */}
+        {/* Sandbox group */}
         {sandboxOrgs.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <FlaskConical size={11} style={{ color: '#f59e0b' }} />
-              <p className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: '#f59e0b' }}>
+              <FlaskConical size={11} style={{ color: 'var(--sa-accent-2)' }} />
+              <p className="text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: 'var(--sa-accent-2)' }}>
                 Sandbox
               </p>
             </div>
-            <div className="rounded-xl overflow-hidden border"
-              style={{ borderColor: 'rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.03)' }}>
+            <div className="rounded-xl overflow-hidden"
+              style={{
+                background: 'var(--sa-surface)',
+                border: '2px solid var(--sa-accent-2)',
+                boxShadow: '4px 4px 0 0 var(--sa-accent-2)',
+                transform: 'translate(-1px,-1px)',
+              }}>
               {sandboxOrgs.map((org, i) => (
-                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="#f59e0b" />
+                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="var(--sa-accent-2)" />
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Regular orgs ── */}
+        {/* Regular orgs */}
         {regularOrgs.length === 0 ? (
-          <div className="text-center py-20 rounded-xl border border-white/[0.06]"
-            style={{ background: 'rgba(255,255,255,0.01)' }}>
-            <Building2 size={20} className="text-neutral-700 mx-auto mb-3" />
-            <p className="text-neutral-500 text-sm font-medium">No organisations yet</p>
+          <div className="text-center py-20 rounded-xl"
+            style={{
+              background: 'var(--sa-surface)',
+              border: '2px dashed var(--sa-border-strong)',
+            }}>
+            <Building2 size={20} className="mx-auto mb-3" style={{ color: 'var(--sa-text-muted)' }} />
+            <p className="text-sm font-medium" style={{ color: 'var(--sa-text-secondary)' }}>No organisations yet</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-white/[0.07] overflow-hidden"
-            style={{ background: 'rgba(255,255,255,0.02)' }}>
+          <div className="rounded-xl overflow-hidden"
+            style={{
+              background: 'var(--sa-surface)',
+              border: '2px solid var(--sa-shadow-color)',
+              boxShadow: '4px 4px 0 0 var(--sa-shadow-color)',
+              transform: 'translate(-1px,-1px)',
+            }}>
             {regularOrgs.map((org, i) => (
-              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="#06b6d4" />
+              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="var(--sa-accent)" />
             ))}
           </div>
         )}
@@ -245,11 +257,11 @@ export function OrgsPageClient({ orgs, counts, leadCounts }: Props) {
         {/* Feature legend */}
         {regularOrgs.length > 0 && (
           <div className="flex items-center gap-4 mt-5 flex-wrap">
-            <p className="text-[10px] text-neutral-700 font-bold uppercase tracking-widest">Features</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--sa-text-muted)' }}>Features</p>
             {FEATURE_DOTS.map(f => (
               <div key={f.key} className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: f.color }} />
-                <span className="text-[10px] text-neutral-600">{f.label}</span>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: f.color }} />
+                <span className="text-[10px]" style={{ color: 'var(--sa-text-secondary)' }}>{f.label}</span>
               </div>
             ))}
           </div>

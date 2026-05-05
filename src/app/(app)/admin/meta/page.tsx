@@ -2,6 +2,8 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { AdminMetaClient } from './AdminMetaClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminMetaPage() {
   const employee = await requireRole(['ad'])
   const supabase = await createClient()

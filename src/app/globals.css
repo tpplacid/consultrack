@@ -85,3 +85,155 @@ body {
   border-color: rgba(61,145,145,0.3);
   transform: translateY(-1px);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SUPERADMIN THEME — single neo-pop palette with light + dark modes.
+   Every SA surface reads var(--sa-*) so flipping data-sa-theme on
+   <html> swaps the entire panel. Defaults to LIGHT.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-sa-theme="light"] {
+  /* Backgrounds — animated gradient stops + noise overlay opacity */
+  --sa-bg-1:        #fff5ec;   /* cream */
+  --sa-bg-2:        #ffe9d3;   /* peach */
+  --sa-bg-3:        #ffd6e0;   /* soft pink */
+  --sa-bg-4:        #ffe2c7;   /* apricot */
+  --sa-noise-opacity: 0.45;
+
+  /* Surfaces */
+  --sa-surface:        rgba(255,255,255,0.78);
+  --sa-surface-hover:  rgba(255,255,255,0.92);
+  --sa-surface-strong: #ffffff;
+
+  /* Borders / strokes */
+  --sa-border:         rgba(15,10,26,0.10);
+  --sa-border-strong:  rgba(15,10,26,0.18);
+  --sa-divider:        rgba(15,10,26,0.06);
+
+  /* Text */
+  --sa-text:           #1a0f24;   /* deep ink — readable on cream */
+  --sa-text-secondary: #5b4d4a;   /* warm gray */
+  --sa-text-muted:     #8a7a76;
+  --sa-text-on-accent: #ffffff;
+
+  /* Accents — single fixed palette, picked to pop on cream + dark */
+  --sa-accent:        #ec4899;    /* hot pink — primary action */
+  --sa-accent-2:      #f59e0b;    /* amber — secondary highlight */
+  --sa-accent-3:      #06b6d4;    /* cyan — tertiary accent */
+  --sa-accent-4:      #a855f7;    /* violet — special states */
+  --sa-success:       #15803d;    /* darker green so it reads on cream */
+  --sa-success-bg:    #bbf7d0;
+  --sa-danger:        #dc2626;
+  --sa-danger-bg:     #fecaca;
+
+  /* Neo-pop hard offset shadow colour — defaults to ink so it pops on light */
+  --sa-shadow-color:  #1a0f24;
+}
+
+:root[data-sa-theme="dark"] {
+  --sa-bg-1:        #050510;
+  --sa-bg-2:        #1a0530;
+  --sa-bg-3:        #001428;
+  --sa-bg-4:        #200522;
+  --sa-noise-opacity: 0.18;
+
+  --sa-surface:        rgba(255,255,255,0.05);
+  --sa-surface-hover:  rgba(255,255,255,0.10);
+  --sa-surface-strong: #18121f;
+
+  --sa-border:         rgba(255,255,255,0.10);
+  --sa-border-strong:  rgba(255,255,255,0.20);
+  --sa-divider:        rgba(255,255,255,0.06);
+
+  --sa-text:           #ffffff;
+  --sa-text-secondary: rgba(255,255,255,0.72);
+  --sa-text-muted:     rgba(255,255,255,0.45);
+  --sa-text-on-accent: #ffffff;
+
+  --sa-accent:        #ec4899;
+  --sa-accent-2:      #f59e0b;
+  --sa-accent-3:      #06b6d4;
+  --sa-accent-4:      #c084fc;
+  --sa-success:       #22c55e;
+  --sa-success-bg:    rgba(34,197,94,0.15);
+  --sa-danger:        #f87171;
+  --sa-danger-bg:     rgba(248,113,113,0.15);
+
+  --sa-shadow-color:  rgba(0,0,0,0.7);
+}
+
+/* Animated gradient backdrop for SA — reused on outer layout */
+.sa-root-bg {
+  background:
+    linear-gradient(125deg,
+      var(--sa-bg-1) 0%,
+      var(--sa-bg-2) 30%,
+      var(--sa-bg-3) 55%,
+      var(--sa-bg-4) 80%,
+      var(--sa-bg-1) 100%);
+  background-size: 280% 280%;
+  animation: sa-grad-shift 32s ease-in-out infinite;
+  color: var(--sa-text);
+}
+.sa-root-bg::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--sa-accent) 18%, transparent) 0%, transparent 38%),
+    radial-gradient(circle at 82% 75%, color-mix(in srgb, var(--sa-accent-3) 14%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--sa-accent-4) 12%, transparent) 0%, transparent 48%);
+  animation: sa-blobs-float 26s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+/* Live noise texture overlay — SVG fractalNoise, sharper grain when light */
+.sa-root-bg::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: var(--sa-noise-opacity);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+:root[data-sa-theme="dark"] .sa-root-bg::after {
+  mix-blend-mode: overlay;
+}
+@keyframes sa-grad-shift {
+  0%   { background-position:   0%   0%; }
+  25%  { background-position:  80%  30%; }
+  50%  { background-position: 100% 100%; }
+  75%  { background-position:  20%  80%; }
+  100% { background-position:   0%   0%; }
+}
+@keyframes sa-blobs-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(3%, -2%) scale(1.05); }
+  66%      { transform: translate(-2%, 3%) scale(0.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sa-root-bg, .sa-root-bg::before { animation: none; }
+}
+
+/* Reusable neo-pop card primitive */
+.sa-card {
+  background: var(--sa-surface);
+  border: 1.5px solid var(--sa-border);
+  color: var(--sa-text);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.sa-card-pop {
+  background: var(--sa-surface-strong);
+  border: 2px solid var(--sa-shadow-color);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 0 var(--sa-shadow-color);
+  color: var(--sa-text);
+}
+.sa-card-pop:hover {
+  transform: translate(-1px,-1px);
+  box-shadow: 5px 5px 0 0 var(--sa-shadow-color);
+  transition: all 0.15s ease;
+}
