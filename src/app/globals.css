@@ -94,63 +94,67 @@ body {
 
 :root,
 :root[data-sa-theme="light"] {
-  /* Backgrounds — animated gradient stops + noise overlay opacity */
-  --sa-bg-1:        #fff5ec;   /* cream */
-  --sa-bg-2:        #ffe9d3;   /* peach */
-  --sa-bg-3:        #ffd6e0;   /* soft pink */
-  --sa-bg-4:        #ffe2c7;   /* apricot */
-  --sa-noise-opacity: 0.45;
+  /* Single yellow Gumroad-style backdrop — restraint over rainbow */
+  --sa-bg-1:        #fde047;   /* signature yellow */
+  --sa-bg-2:        #fce266;   /* slightly warmer */
+  --sa-bg-3:        #fde047;   /* same — keep gentle */
+  --sa-bg-4:        #fbe064;
+  --sa-noise-opacity: 0.32;
 
-  /* Surfaces */
-  --sa-surface:        rgba(255,255,255,0.78);
-  --sa-surface-hover:  rgba(255,255,255,0.92);
+  /* Surfaces — every card is crisp white on yellow, like the reference */
+  --sa-surface:        #ffffff;
+  --sa-surface-hover:  #fafafa;
   --sa-surface-strong: #ffffff;
 
-  /* Borders / strokes */
-  --sa-border:         rgba(15,10,26,0.10);
-  --sa-border-strong:  rgba(15,10,26,0.18);
-  --sa-divider:        rgba(15,10,26,0.06);
+  /* Strokes — chunky black neo-pop rules */
+  --sa-border:         #0a0a0a;
+  --sa-border-strong:  #0a0a0a;
+  --sa-divider:        rgba(10,10,10,0.10);
 
   /* Text */
-  --sa-text:           #1a0f24;   /* deep ink — readable on cream */
-  --sa-text-secondary: #5b4d4a;   /* warm gray */
-  --sa-text-muted:     #8a7a76;
+  --sa-text:           #0a0a0a;   /* ink black */
+  --sa-text-secondary: #404040;
+  --sa-text-muted:     #6b6b6b;
   --sa-text-on-accent: #ffffff;
 
-  /* Accents — single fixed palette, picked to pop on cream + dark */
-  --sa-accent:        #ec4899;    /* hot pink — primary action */
-  --sa-accent-2:      #f59e0b;    /* amber — secondary highlight */
-  --sa-accent-3:      #06b6d4;    /* cyan — tertiary accent */
-  --sa-accent-4:      #a855f7;    /* violet — special states */
-  --sa-success:       #15803d;    /* darker green so it reads on cream */
+  /* ONE primary + tiny semantic palette. No more disco. */
+  --sa-accent:        #ec4899;    /* hot pink — primary action only */
+  --sa-accent-2:      #f59e0b;    /* amber — sandbox / warning */
+  --sa-accent-3:      #06b6d4;    /* cyan — used sparingly */
+  --sa-accent-4:      #a855f7;    /* violet — used sparingly */
+  --sa-success:       #16a34a;
   --sa-success-bg:    #bbf7d0;
   --sa-danger:        #dc2626;
   --sa-danger-bg:     #fecaca;
 
-  /* Neo-pop hard offset shadow colour — defaults to ink so it pops on light */
-  --sa-shadow-color:  #1a0f24;
+  /* Hard shadows are always pure black on light */
+  --sa-shadow-color:  #0a0a0a;
 }
 
 :root[data-sa-theme="dark"] {
-  --sa-bg-1:        #050510;
-  --sa-bg-2:        #1a0530;
-  --sa-bg-3:        #001428;
-  --sa-bg-4:        #200522;
-  --sa-noise-opacity: 0.18;
+  /* Single deep grey/black backdrop — calm, not party */
+  --sa-bg-1:        #0e0e10;
+  --sa-bg-2:        #131316;
+  --sa-bg-3:        #0e0e10;
+  --sa-bg-4:        #161618;
+  --sa-noise-opacity: 0.20;
 
-  --sa-surface:        rgba(255,255,255,0.05);
-  --sa-surface-hover:  rgba(255,255,255,0.10);
-  --sa-surface-strong: #18121f;
+  /* Surfaces — almost-black cards on near-black bg, with hard white-ish borders */
+  --sa-surface:        #1a1a1d;
+  --sa-surface-hover:  #222226;
+  --sa-surface-strong: #1f1f23;
 
-  --sa-border:         rgba(255,255,255,0.10);
-  --sa-border-strong:  rgba(255,255,255,0.20);
-  --sa-divider:        rgba(255,255,255,0.06);
+  /* Strokes — hard light borders for the same neo-pop chunk */
+  --sa-border:         rgba(255,255,255,0.85);
+  --sa-border-strong:  #ffffff;
+  --sa-divider:        rgba(255,255,255,0.08);
 
-  --sa-text:           #ffffff;
+  --sa-text:           #fafafa;
   --sa-text-secondary: rgba(255,255,255,0.72);
   --sa-text-muted:     rgba(255,255,255,0.45);
   --sa-text-on-accent: #ffffff;
 
+  /* Same accents — palette parity across modes */
   --sa-accent:        #ec4899;
   --sa-accent-2:      #f59e0b;
   --sa-accent-3:      #06b6d4;
@@ -160,7 +164,8 @@ body {
   --sa-danger:        #f87171;
   --sa-danger-bg:     rgba(248,113,113,0.15);
 
-  --sa-shadow-color:  rgba(0,0,0,0.7);
+  /* Pure white hard shadows for that flipped neo-pop look in dark */
+  --sa-shadow-color:  #ffffff;
 }
 
 /* Animated gradient backdrop for SA — reused on outer layout */
@@ -176,14 +181,14 @@ body {
   animation: sa-grad-shift 32s ease-in-out infinite;
   color: var(--sa-text);
 }
+/* Subtle warmth blobs — kept very faint so the bg feels alive, not chaotic */
 .sa-root-bg::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--sa-accent) 18%, transparent) 0%, transparent 38%),
-    radial-gradient(circle at 82% 75%, color-mix(in srgb, var(--sa-accent-3) 14%, transparent) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--sa-accent-4) 12%, transparent) 0%, transparent 48%);
-  animation: sa-blobs-float 26s ease-in-out infinite;
+    radial-gradient(circle at 20% 25%, color-mix(in srgb, var(--sa-accent) 10%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--sa-accent-2) 8%, transparent) 0%, transparent 50%);
+  animation: sa-blobs-float 30s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }

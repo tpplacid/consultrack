@@ -7,10 +7,13 @@ import { Building2, LifeBuoy, LogOut, Menu, X, BookOpen } from 'lucide-react'
 import { SandboxLauncher } from './(protected)/SandboxLauncher'
 import { SaThemeToggle } from './SaThemeToggle'
 
+// Single accent for ALL active states — no more per-item rainbow.
+// (Was cyan / amber / violet per item; that's the "too many colours" feel.)
+const NAV_ACCENT = 'var(--sa-accent)'
 const navItems = [
-  { href: '/superadmin/orgs',    label: 'Organisations', icon: Building2, accent: 'var(--sa-accent)' },
-  { href: '/superadmin/support', label: 'Support',       icon: LifeBuoy,  accent: 'var(--sa-accent-2)' },
-  { href: '/superadmin/docs',    label: 'Docs',          icon: BookOpen,  accent: 'var(--sa-accent-3)' },
+  { href: '/superadmin/orgs',    label: 'Organisations', icon: Building2 },
+  { href: '/superadmin/support', label: 'Support',       icon: LifeBuoy  },
+  { href: '/superadmin/docs',    label: 'Docs',          icon: BookOpen  },
 ]
 
 interface Props { openTickets?: number }
@@ -72,14 +75,14 @@ export default function SuperAdminNav({ openTickets = 0 }: Props) {
               <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-all"
                 style={{
                   border: '2px solid',
-                  borderColor: active ? item.accent : 'transparent',
-                  background:  active ? `color-mix(in srgb, ${item.accent} 12%, transparent)` : 'transparent',
-                  boxShadow:   active ? `3px 3px 0 0 ${item.accent}` : 'none',
+                  borderColor: active ? NAV_ACCENT : 'transparent',
+                  background:  active ? `color-mix(in srgb, ${NAV_ACCENT} 12%, transparent)` : 'transparent',
+                  boxShadow:   active ? `3px 3px 0 0 ${NAV_ACCENT}` : 'none',
                   color:       active ? 'var(--sa-text)' : 'var(--sa-text-secondary)',
                   transform:   active ? 'translate(-1px,-1px)' : 'translate(0,0)',
                 }}
               >
-                <Icon size={14} style={{ color: active ? item.accent : 'currentColor' }} />
+                <Icon size={14} style={{ color: active ? NAV_ACCENT : 'currentColor' }} />
                 <span className="flex-1">{item.label}</span>
                 {item.href === '/superadmin/support' && openTickets > 0 && (
                   <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center leading-tight"
