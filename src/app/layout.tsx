@@ -17,20 +17,21 @@ export const metadata: Metadata = {
   description: 'Built for speed. Built for your process.',
   icons: {
     // Single canonical brand mark — indigo rounded square with white Consultrack
-    // glyphs. SVG scales cleanly at any tab/PWA/home-screen size.
+    // glyphs. ?v=N is a cache-buster: bump it whenever the asset changes so
+    // browser favicon caches and PWA icon caches re-fetch.
     icon: [
-      { url: '/consultrack-mark.svg', type: 'image/svg+xml' },
+      { url: '/consultrack-mark.svg?v=2', type: 'image/svg+xml' },
     ],
-    shortcut: '/consultrack-mark.svg',
+    shortcut: '/consultrack-mark.svg?v=2',
     apple: [
-      { url: '/consultrack-mark.svg', sizes: '180x180' },
+      { url: '/consultrack-mark.svg?v=2', sizes: '180x180' },
     ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Consultrack',
-    startupImage: '/consultrack-mark.svg',
+    startupImage: '/consultrack-mark.svg?v=2',
   },
   manifest: '/manifest.json',
 }

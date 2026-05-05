@@ -1,4 +1,10 @@
-<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z" fill="black"/>
-  <path d="M110 10V60H100V90H110V140H140V10H110Z" fill="black"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Same indigo brand mark as /consultrack-mark.svg.
+       Kept at this legacy path so caches / bookmarks from earlier releases
+       still resolve to the correct branded image instead of stale black-on-transparent. -->
+  <rect width="512" height="512" fill="#4f46e5" rx="110"/>
+  <g transform="translate(126 126) scale(2)" fill="#ffffff">
+    <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z"/>
+    <path d="M110 10V60H100V90H110V140H140V10H110Z"/>
+  </g>
 </svg>
