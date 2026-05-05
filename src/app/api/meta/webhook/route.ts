@@ -126,6 +126,8 @@ export async function POST(req: NextRequest) {
         const metaLocation = fields['city']     || fields['location'] || ''
         if (metaCourse)   metaCustomData.preferred_course = metaCourse
         if (metaLocation) metaCustomData.location         = metaLocation
+        // email goes into custom_data — there's no email column on leads
+        if (email)        metaCustomData.email            = email
 
         // Hard-block at lead ceiling. Meta will retry the webhook so it's
         // safe to skip without acking — but we DO want to ack so Meta stops
@@ -146,7 +148,6 @@ export async function POST(req: NextRequest) {
             org_id:               org.id,
             name,
             phone,
-            email,
             source:               'meta',
             main_stage:           '0',
             meta_lead_id:         metaLeadId,

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
-import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio, FlaskConical } from 'lucide-react'
+import { Building2, Users, Plus, ExternalLink, ChevronRight, Radio, FlaskConical, AlertTriangle } from 'lucide-react'
 import { EnterOrgButton } from './EnterOrgButton'
 
 const FEATURE_DOTS: { key: string; label: string; color: string }[] = [
@@ -18,22 +18,55 @@ type Org = {
   id: string; name: string; slug: string; logo_url: string | null
   features: Record<string, boolean> | null; is_live: boolean | null
   is_sandbox: boolean | null; created_at: string
+  lead_limit?: number | null
+  lead_limit_enforced?: boolean | null
 }
 
-function OrgRow({ org, empCount, isFirst, accent }: { org: Org; empCount: number; isFirst: boolean; accent: string }) {
+interface RowProps {
+  org: Org
+  empCount: number
+  leadCount: number
+  isFirst: boolean
+  accent: string
+}
+
+function OrgRow({ org, empCount, leadCount, isFirst, accent }: RowProps) {
   const features = (org.features ?? {}) as Record<string, boolean>
   const initial  = org.name?.charAt(0)?.toUpperCase() ?? '?'
   const timeAgo  = org.created_at ? formatDistanceToNow(new Date(org.created_at), { addSuffix: true }) : ''
   const isLive   = org.is_live !== false
 
+  // Quota state derived per-row
+  const limit       = (org.lead_limit ?? null) as number | null
+  const pct         = limit && limit > 0 ? Math.round((leadCount / limit) * 100) : 0
+  const overLimit   = limit !== null && leadCount >= limit
+  const nearLimit   = limit !== null && pct >= 80 && !overLimit
+  // Cream + pink textured base; over-limit overlays a subtle red wash
+  const rowBg       = overLimit
+    ? 'linear-gradient(135deg, #fff5f5 0%, #fde8e8 50%, #fbd5d5 100%)'
+    : 'linear-gradient(135deg, #fff8f0 0%, #ffe9eb 60%, #fbd9e2 100%)'
+  // Faint dot pattern overlay for the "textured" feel
+  const texture     = `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0)`
+  const textureSize = '8px 8px'
+
   return (
-    <div className={`flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.05] transition-colors group ${
-      !isFirst ? 'border-t border-white/[0.06]' : ''
-    }`}>
+    <div
+      className={`relative flex items-center gap-3 px-4 py-3.5 transition-all group ${!isFirst ? 'border-t border-white/[0.06]' : ''}`}
+      style={{
+        background: `${texture}, ${rowBg}`,
+        backgroundSize: `${textureSize}, auto`,
+        // Subtle outline for at-risk orgs, hard outline for over-limit ones
+        boxShadow: overLimit
+          ? 'inset 4px 0 0 0 #ef4444, 0 0 0 1px rgba(239,68,68,0.3)'
+          : nearLimit
+            ? 'inset 4px 0 0 0 #f59e0b'
+            : 'none',
+      }}
+    >
       <Link href={`/superadmin/orgs/${org.id}`} className="flex items-center gap-3.5 flex-1 min-w-0">
         {org.logo_url ? (
           <img src={org.logo_url} alt={org.name}
-            className="w-9 h-9 rounded-lg object-contain flex-shrink-0 bg-white/[0.04]" />
+            className="w-9 h-9 rounded-lg object-contain flex-shrink-0 bg-white/40 ring-1 ring-black/5" />
         ) : (
           <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0"
             style={{
@@ -47,36 +80,50 @@ function OrgRow({ org, empCount, isFirst, accent }: { org: Org; empCount: number
         )}
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-white text-sm font-bold truncate tracking-tight">{org.name}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-slate-900 text-sm font-bold truncate tracking-tight">{org.name}</p>
             {isLive ? (
               <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0 tracking-widest"
                 style={{ background: '#22c55e', color: '#000' }}>
                 <Radio size={6} className="fill-black" />LIVE
               </span>
             ) : (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-white/[0.06] text-neutral-500 flex-shrink-0 tracking-widest">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-black/10 text-slate-700 flex-shrink-0 tracking-widest">
                 OFFLINE
               </span>
             )}
+            {/* Quota chip: red if over, amber if near, neutral otherwise. Hidden when no limit. */}
+            {limit !== null && (
+              <span
+                className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 tabular-nums"
+                style={{
+                  background: overLimit ? '#dc2626' : nearLimit ? '#f59e0b' : 'rgba(0,0,0,0.08)',
+                  color:      overLimit || nearLimit ? '#fff' : '#475569',
+                }}
+                title={`${leadCount.toLocaleString('en-IN')} of ${limit.toLocaleString('en-IN')} leads used`}
+              >
+                {overLimit && <AlertTriangle size={8} />}
+                {leadCount.toLocaleString('en-IN')}/{limit.toLocaleString('en-IN')} · {pct}%
+              </span>
+            )}
           </div>
-          <p className="text-neutral-500 text-xs truncate mt-0.5 font-mono">/{org.slug}</p>
+          <p className="text-slate-600 text-xs truncate mt-0.5 font-mono">/{org.slug}</p>
         </div>
 
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {FEATURE_DOTS.map(f => (
             <div key={f.key} title={f.label}
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: features[f.key] !== false ? f.color : '#262626' }} />
+              className="w-1.5 h-1.5 rounded-full ring-1 ring-black/10"
+              style={{ backgroundColor: features[f.key] !== false ? f.color : 'rgba(0,0,0,0.15)' }} />
           ))}
         </div>
 
         <div className="hidden md:flex items-center gap-1.5 flex-shrink-0 min-w-[60px]">
-          <Users size={11} className="text-neutral-700" />
-          <span className="text-sm font-medium text-neutral-400 tabular-nums">{empCount}</span>
+          <Users size={11} className="text-slate-500" />
+          <span className="text-sm font-bold text-slate-700 tabular-nums">{empCount}</span>
         </div>
 
-        <p className="hidden lg:block text-xs text-neutral-700 flex-shrink-0 min-w-[90px] text-right">
+        <p className="hidden lg:block text-xs font-medium text-slate-600 flex-shrink-0 min-w-[90px] text-right">
           {timeAgo}
         </p>
       </Link>
@@ -84,11 +131,11 @@ function OrgRow({ org, empCount, isFirst, accent }: { org: Org; empCount: number
       <EnterOrgButton orgId={org.id} orgName={org.name} />
 
       <a href={`/${org.slug}`} target="_blank" rel="noopener noreferrer"
-        className="text-neutral-700 hover:text-white transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100">
+        className="text-slate-500 hover:text-slate-900 transition-colors flex-shrink-0 p-1 opacity-0 group-hover:opacity-100">
         <ExternalLink size={12} />
       </a>
 
-      <ChevronRight size={13} className="text-neutral-800 group-hover:text-neutral-500 transition-colors flex-shrink-0" />
+      <ChevronRight size={13} className="text-slate-400 group-hover:text-slate-700 transition-colors flex-shrink-0" />
     </div>
   )
 }
@@ -96,9 +143,10 @@ function OrgRow({ org, empCount, isFirst, accent }: { org: Org; empCount: number
 interface Props {
   orgs: Org[]
   counts: Record<string, number>
+  leadCounts: Record<string, number>
 }
 
-export function OrgsPageClient({ orgs, counts }: Props) {
+export function OrgsPageClient({ orgs, counts, leadCounts }: Props) {
   const sandboxOrgs = orgs.filter(o => o.is_sandbox)
   const regularOrgs = orgs.filter(o => !o.is_sandbox)
   const totalEmps   = Object.values(counts).reduce((a, b) => a + b, 0)
@@ -172,7 +220,7 @@ export function OrgsPageClient({ orgs, counts }: Props) {
             <div className="rounded-xl overflow-hidden border"
               style={{ borderColor: 'rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.03)' }}>
               {sandboxOrgs.map((org, i) => (
-                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} accent="#f59e0b" />
+                <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="#f59e0b" />
               ))}
             </div>
           </div>
@@ -189,7 +237,7 @@ export function OrgsPageClient({ orgs, counts }: Props) {
           <div className="rounded-xl border border-white/[0.07] overflow-hidden"
             style={{ background: 'rgba(255,255,255,0.02)' }}>
             {regularOrgs.map((org, i) => (
-              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} isFirst={i === 0} accent="#06b6d4" />
+              <OrgRow key={org.id} org={org} empCount={counts[org.id] ?? 0} leadCount={leadCounts[org.id] ?? 0} isFirst={i === 0} accent="#06b6d4" />
             ))}
           </div>
         )}

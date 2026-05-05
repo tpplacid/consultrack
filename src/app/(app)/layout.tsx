@@ -4,6 +4,8 @@ import { OrgConfigProvider, OrgStage, OrgRole, OrgFeatures, DEFAULT_FEATURES, DE
 import { DEFAULT_STAGES, DEFAULT_ROLES } from '@/context/orgDefaults'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getPalette, buildThemeCSS } from '@/lib/orgTheme'
+import { getQuotaState } from '@/lib/leadQuota'
+import { QuotaBanner } from '@/components/QuotaBanner'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const employee = await requireAuth()
@@ -65,12 +67,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const palette = getPalette((orgData as unknown as Record<string, string> | null)?.brand_palette)
   const themeCSS = buildThemeCSS(palette)
 
+  // Pull quota state — banner shows for ≥80% (warning) and 100% (block).
+  // Cheap: count is cached for 60s, busted on every lead create.
+  const quota = await getQuotaState(employee.org_id)
+
   return (
     <>
       {/* Inject per-org brand palette as CSS variable overrides */}
       <style dangerouslySetInnerHTML={{ __html: themeCSS }} />
       <OrgConfigProvider config={{ stages, roles, stageMap, roleMap, features, leadSources }}>
         <AppShell employee={employee} orgLogoUrl={orgData?.logo_url ?? null} orgName={orgData?.name ?? ''}>
+          <QuotaBanner quota={quota} />
           {children}
         </AppShell>
       </OrgConfigProvider>

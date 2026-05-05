@@ -49,8 +49,10 @@ export async function GET() {
     { data: layouts },
   ] = await Promise.all([
     supabase.from('orgs').select('id, name, slug, features, brand_palette, lead_sources, lead_limit, lead_limit_enforced, created_at').eq('id', orgId).single(),
+    // No `email` column on leads — schema only has phone. (Email may live in
+    // custom_data per org's field schema, which we flatten below anyway.)
     supabase.from('leads').select(`
-      id, name, phone, email, source, main_stage, sub_stage, owner_id,
+      id, name, phone, source, main_stage, sub_stage, owner_id,
       reporting_manager_id, approved, approved_by, meta_lead_id,
       created_at, updated_at, stage_entered_at, sla_deadline, next_followup_at,
       custom_data,
@@ -89,7 +91,7 @@ export async function GET() {
     for (const k of Object.keys(cd)) customKeys.add(k)
   }
   const leadColumns = [
-    'id', 'name', 'phone', 'email', 'source', 'main_stage', 'sub_stage',
+    'id', 'name', 'phone', 'source', 'main_stage', 'sub_stage',
     'owner_name', 'reporting_manager_id', 'approved', 'approved_by', 'meta_lead_id',
     'created_at', 'updated_at', 'stage_entered_at', 'sla_deadline', 'next_followup_at',
     ...Array.from(customKeys).sort(),
