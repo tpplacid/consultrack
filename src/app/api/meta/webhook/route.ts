@@ -260,7 +260,7 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
     const isStoryReply = !!(message?.reply_to as Record<string, unknown> | undefined)?.story
     const msgText     = String(message?.text ?? '')
 
-    const { data: existing } = await supabase.from('leads').select('id')
+    const { data: existing } = await supabase.from('leads').select('id, owner_id')
       .eq('org_id', orgId).eq('instagram_thread_id', senderId).limit(1)
 
     // Repeat message from a sender we already have a lead for — log it on
@@ -269,6 +269,7 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
     // where msgText is empty) so the lead clearly reflects the new message.
     if (existing && existing.length > 0) {
       const leadId      = existing[0].id
+      const ownerId     = existing[0].owner_id as string | null
       const attachments = (message?.attachments as { type?: string }[] | undefined) ?? []
       let note: string
       if (msgText) {
@@ -281,15 +282,29 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
       } else {
         note = '[new message]'
       }
-      const { error: actErr } = await supabase.from('activities').insert({
-        org_id: orgId, lead_id: leadId,
-        activity_type: 'ig_dm_received',
-        note,
-      })
-      if (actErr) {
-        console.error('[Instagram DM] activity insert error on repeat:', actErr.message)
+      // employee_id has a NOT NULL constraint, so we attribute the activity
+      // to whoever owns the lead. If the lead is somehow unowned (rare —
+      // would only happen if allocation failed at creation), we fall back
+      // to any active employee in the org so the constraint is satisfied.
+      let employeeId = ownerId
+      if (!employeeId) {
+        const { data: anyEmp } = await supabase.from('employees')
+          .select('id').eq('org_id', orgId).eq('is_active', true).limit(1).maybeSingle()
+        employeeId = anyEmp?.id ?? null
+      }
+      if (!employeeId) {
+        console.error('[Instagram DM] no employee available to attribute activity, skipping insert')
       } else {
-        console.info('[Instagram DM] repeat message logged on lead:', leadId)
+        const { error: actErr } = await supabase.from('activities').insert({
+          org_id: orgId, lead_id: leadId, employee_id: employeeId,
+          activity_type: 'ig_dm_received',
+          note,
+        })
+        if (actErr) {
+          console.error('[Instagram DM] activity insert error on repeat:', actErr.message)
+        } else {
+          console.info('[Instagram DM] repeat message logged on lead:', leadId)
+        }
       }
       revalidateTag(`admin-leads:${orgId}`, 'max')
       return
