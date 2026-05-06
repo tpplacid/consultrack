@@ -1,7 +1,9 @@
 export type EmployeeRole = 'telesales' | 'counsellor' | 'tl' | 'ad'
 export type LeadSource = string
 export type LeadStage = '0' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'X' | 'Y'
-export type ActivityType = 'stage_change' | 'comment' | 'field_update' | 'call_log' | 'whatsapp_sent' | 'lead_created'
+export type ActivityType =
+  | 'stage_change' | 'comment' | 'field_update' | 'call_log' | 'whatsapp_sent' | 'lead_created'
+  | 'ig_dm_received' | 'ig_comment_received' | 'ig_mention_received'
 export type AttendanceStatus = 'present' | 'absent' | 'half_day' | 'questioned' | 'rejected'
 export type LeaveType = 'sick' | 'casual' | 'emergency'
 export type LeaveStatus = 'pending' | 'approved' | 'rejected'

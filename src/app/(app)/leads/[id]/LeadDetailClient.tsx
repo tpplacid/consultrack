@@ -29,9 +29,10 @@ interface Props {
   slaConfig: Record<string, number>
   slaConfigBySource?: SlaConfigBySource
   sections: SectionLayout[]
+  unreadDmCount?: number
 }
 
-export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, slaConfigBySource, sections }: Props) {
+export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, slaConfigBySource, sections, unreadDmCount = 0 }: Props) {
   const { stages, stageMap, leadSources, roleMap } = useOrgConfig()
   const router = useRouter()
   const [lead, setLead] = useState(initialLead)
@@ -68,15 +69,40 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
 
   const supabase = createClient()
 
+  // Unread-DM banner state. Server passes the count computed from
+  // lead_views.viewed_at; client dismisses on demand and also auto-marks
+  // viewed after a short delay so a passive open clears it.
+  const [unreadCount, setUnreadCount] = useState(unreadDmCount)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+
+  async function markLeadViewed() {
+    await supabase.from('lead_views').upsert(
+      { employee_id: employee.id, lead_id: lead.id, viewed_at: new Date().toISOString() },
+      { onConflict: 'employee_id,lead_id' },
+    )
+  }
+
+  // Mark as viewed 4 s after mount so the banner has time to register
+  // visually but the count resets for the next visit. If the user
+  // explicitly dismisses earlier, that path also calls markLeadViewed().
+  useEffect(() => {
+    const t = setTimeout(() => { void markLeadViewed() }, 4000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id])
+
   // Realtime activity updates
   useEffect(() => {
     const channel = supabase
       .channel(`lead-${lead.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities', filter: `lead_id=eq.${lead.id}` }, (payload) => {
-        setActivities(prev => [payload.new as Activity, ...prev])
+        const act = payload.new as Activity
+        setActivities(prev => [act, ...prev])
+        if (act.activity_type === 'ig_dm_received') setUnreadCount(c => c + 1)
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.id])
 
   function validateStageTransition(_from: LeadStage, to: LeadStage): string | null {
@@ -205,8 +231,26 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const overdue = isOverdue(lead.sla_deadline)
   const subStageOptions = SUB_STAGES[stageDraft] || []
 
+  const showUnreadBanner = unreadCount > 0 && !bannerDismissed
+
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      {showUnreadBanner && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 flex items-center gap-3 sticky top-2 z-10 shadow-sm">
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-400 text-white font-bold text-xs">
+            {unreadCount}
+          </span>
+          <p className="text-sm text-amber-900 font-medium flex-1">
+            {unreadCount === 1 ? '1 new message' : `${unreadCount} new messages`} since you last viewed this lead
+          </p>
+          <button
+            onClick={() => { setBannerDismissed(true); void markLeadViewed() }}
+            className="text-xs text-amber-800 font-semibold underline hover:text-amber-900"
+          >
+            Mark as read
+          </button>
+        </div>
+      )}
       {/* Back + Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => router.back()} className="text-brand-500 hover:text-brand-800 transition-colors">
@@ -251,11 +295,12 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Lead details */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Source Context — surfaces the original DM / comment / mention
-              text and ig_username so counsellors don't have to leave the
-              page to know what the lead actually said. Lives outside the
-              org-configurable field layout because it's signal-specific. */}
-          <SourceContextCard lead={lead} />
+          {/* Source Context — for IG DMs, swaps in a full chat-thread view
+              (first message + every follow-up activity). Other IG signals
+              (comment, mention, lead ad) keep the single-content card. */}
+          {lead.source === 'instagram_dm'
+            ? <ConversationCard lead={lead} activities={activities} />
+            : <SourceContextCard lead={lead} />}
 
           {/* Stage & SLA */}
           <Card>
@@ -602,6 +647,88 @@ function LayoutFieldInput({
         className={inputClass}
       />
     </div>
+  )
+}
+
+// Full chat-thread view of an Instagram DM lead. Shows custom_data
+// .first_message as the seed, then every ig_dm_received activity in
+// chronological order, rendered as inbound chat bubbles.
+function ConversationCard({ lead, activities }: { lead: Lead; activities: Activity[] }) {
+  const cd       = (lead.custom_data as Record<string, unknown>) || {}
+  const username = (cd.ig_username as string | undefined) || null
+  const firstMsg = (cd.first_message as string | undefined) || ''
+  const isStory  = cd.is_story_reply === 'true'
+
+  // Build a normalised list: { text, ts, key } sorted oldest-first so it
+  // reads top-to-bottom like a chat history.
+  type Msg = { text: string; ts: string; key: string; placeholder?: boolean }
+  const dmActivities = activities.filter(a => a.activity_type === 'ig_dm_received')
+  const messages: Msg[] = []
+  if (firstMsg) {
+    messages.push({ text: firstMsg, ts: lead.created_at, key: 'first', placeholder: false })
+  } else {
+    // No text first message captured (image/sticker, or Standard Access
+    // partial payload). Still seed the thread with a placeholder so the
+    // timeline starts at the lead's creation moment.
+    messages.push({ text: '[message received]', ts: lead.created_at, key: 'first', placeholder: true })
+  }
+  for (const a of dmActivities) {
+    messages.push({ text: a.note || '[message]', ts: a.created_at, key: a.id, placeholder: !a.note })
+  }
+  messages.sort((a, b) => a.ts.localeCompare(b.ts))
+
+  const lastTs   = messages[messages.length - 1]?.ts
+  const lastDate = lastTs ? new Date(lastTs) : null
+  const isFresh  = lastDate ? Date.now() - lastDate.getTime() < 5 * 60 * 1000 : false
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle size={16} className="text-blue-600" />
+              {isStory ? 'Story reply conversation' : 'Direct message conversation'}
+              {isFresh && <span className="inline-flex items-center gap-1 ml-1 text-[10px] font-semibold text-emerald-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                LIVE
+              </span>}
+            </CardTitle>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold mt-1">
+              {messages.length} message{messages.length === 1 ? '' : 's'}
+              {lastDate && <span className="normal-case tracking-normal text-slate-500 font-normal"> — last {timeAgo(lastTs!)}</span>}
+            </p>
+          </div>
+          {username && (
+            <a
+              href={`https://instagram.com/direct/t/${username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-white bg-gradient-to-tr from-pink-500 to-amber-400 px-2.5 py-1.5 rounded-lg hover:opacity-90 whitespace-nowrap"
+            >
+              Reply on Instagram
+            </a>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+          {messages.map(m => (
+            <div key={m.key} className="flex flex-col items-start max-w-[85%]">
+              <div className={
+                'text-sm leading-relaxed rounded-2xl rounded-bl-md px-3 py-2 whitespace-pre-wrap break-words ' +
+                (m.placeholder
+                  ? 'bg-slate-50 text-slate-400 italic border border-slate-200'
+                  : 'bg-blue-50 text-slate-800 border border-blue-100')
+              }>
+                {m.text}
+              </div>
+              <span className="text-[10px] text-slate-400 mt-1 ml-2">{timeAgo(m.ts)}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

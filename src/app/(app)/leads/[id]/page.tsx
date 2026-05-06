@@ -56,6 +56,19 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const slaConfig         = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
   const slaConfigBySource = (org?.sla_config_by_source as Record<string, Record<string, number>> | null) || {}
 
+  // Compute unread DM count since this employee last viewed the lead.
+  // First-ever view treats lead.created_at as the cutoff so the banner
+  // shows on initial open (every existing DM is "new"). Mark-as-viewed
+  // happens client-side after mount so we don't reset the count before
+  // the banner has a chance to render.
+  const { data: viewRow } = await supabase.from('lead_views')
+    .select('viewed_at').eq('employee_id', employee.id).eq('lead_id', id).maybeSingle()
+  const lastViewedAt = (viewRow?.viewed_at as string | undefined) ?? null
+  const unreadDmCount = (activities ?? [])
+    .filter(a => a.activity_type === 'ig_dm_received' &&
+                 (!lastViewedAt || a.created_at > lastViewedAt))
+    .length
+
   return (
     <LeadDetailClient
       lead={lead}
@@ -66,6 +79,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       slaConfig={slaConfig}
       slaConfigBySource={slaConfigBySource}
       sections={(layouts || []) as SectionLayout[]}
+      unreadDmCount={unreadDmCount}
     />
   )
 }
