@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Employee, formatRole } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { cn, getInitials } from '@/lib/utils'
@@ -102,6 +102,35 @@ interface Props {
   orgName?: string
 }
 
+// Highlight a nav item when both its pathname and any query params it
+// declares match the current URL. Items without query params (e.g. All
+// Leads) only highlight when no query is set, so /admin/leads?source=meta
+// activates Facebook Leads alone instead of also lighting up All Leads.
+function isNavItemActive(
+  href: string,
+  pathname: string,
+  searchParams: URLSearchParams | ReturnType<typeof useSearchParams>,
+): boolean {
+  const [itemPath, itemQuery] = href.split('?')
+  const pathMatches = pathname === itemPath || pathname.startsWith(itemPath + '/')
+  if (!pathMatches) return false
+
+  if (!itemQuery) {
+    // Bare-pathname items only highlight when the current URL has no
+    // declared filter — otherwise All Leads would steal focus from
+    // every filtered child.
+    return Array.from(searchParams.keys()).length === 0
+  }
+
+  // Query-bearing items must have all their declared params present and
+  // matching on the current URL. Extra params on the current URL are
+  // allowed (e.g. ?source=meta&search=foo still highlights Facebook Leads).
+  for (const [key, value] of new URLSearchParams(itemQuery).entries()) {
+    if (searchParams.get(key) !== value) return false
+  }
+  return true
+}
+
 export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgName }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Desktop sidebar resize/collapse
@@ -132,6 +161,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
 
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { features } = useOrgConfig()
 
   // ── Notification badge counts ────────────────────────────────────────────
@@ -304,7 +334,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
     // Delegate locked items to LockedNavLink
     if (isLocked(item)) return <LockedNavLink item={item} slim={slim} />
 
-    const active = pathname === item.href || pathname.startsWith(item.href + '/')
+    const active = isNavItemActive(item.href, pathname, searchParams)
     const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0
     return (
       <Link
