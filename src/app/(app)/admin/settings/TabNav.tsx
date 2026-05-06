@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Layers, ListFilter, GitBranch, Clock, LayoutDashboard,
-  Radio, Upload, Shield, MessageSquare, Lock, Gauge, Instagram,
+  Radio, Upload, Shield, MessageSquare, Lock, Gauge, Camera,
 } from 'lucide-react'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
 import { UpgradeModal } from '@/components/UpgradeModal'
@@ -56,7 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
         upgradeDesc:  'Automatically pull leads from your Facebook Lead Ads campaigns directly into the pipeline.',
       },
       {
-        href: '/admin/settings/instagram',    label: 'Instagram Ads',   icon: Instagram,
+        href: '/admin/settings/instagram',    label: 'Instagram Ads',   icon: Camera,
         feature: 'instagram', featureKey: 'instagram',
         upgradeLabel: 'Instagram Lead Integration',
         upgradeDesc:  'Automatically pull leads from your Instagram Lead Ads directly into the pipeline — bifurcated from Facebook.',

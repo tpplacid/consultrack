@@ -10,7 +10,7 @@ import Link from 'next/link'
 import {
   Download, Send, ThumbsDown, ThumbsUp,
   Copy, Check, CheckCircle2, Circle,
-  Instagram, AlertCircle, ExternalLink,
+  Camera, AlertCircle, ExternalLink,
 } from 'lucide-react'
 
 interface Props {
@@ -123,7 +123,7 @@ export function AdminInstagramClient({
 
         {setupSent ? (
           <div className="flex items-start gap-3 bg-brand-50 border border-brand-100 rounded-xl p-4">
-            <Instagram size={16} className="text-brand-500 flex-shrink-0 mt-0.5" />
+            <Camera size={16} className="text-brand-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-brand-800">Your setup guide is ready</p>
               <p className="text-xs text-brand-600 mt-0.5">Follow the steps below to connect your Instagram Business account — leads will start flowing in automatically.</p>
@@ -229,7 +229,7 @@ export function AdminInstagramClient({
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center">
-            <Instagram size={18} className="text-pink-600" />
+            <Camera size={18} className="text-pink-600" />
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-900">Connected</p>

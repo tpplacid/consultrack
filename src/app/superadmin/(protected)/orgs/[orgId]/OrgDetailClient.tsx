@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
   Users, Mail, Link2, Loader2, Radio, Pipette,
-  Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap, Instagram,
+  Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap, Camera,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 import { DeleteOrgModal } from '@/components/DeleteOrgModal'
@@ -754,7 +754,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: igConnected ? 'rgba(225,48,108,0.2)' : 'rgba(255,255,255,0.05)' }}>
-                    <Instagram size={13} className={igConnected ? 'text-pink-400' : 'text-[var(--sa-text-muted)]'} />
+                    <Camera size={13} className={igConnected ? 'text-pink-400' : 'text-[var(--sa-text-muted)]'} />
                   </div>
                   <div>
                     <h2 className="text-sm font-medium text-[var(--sa-text)]">Instagram Integration</h2>
