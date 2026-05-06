@@ -3,6 +3,36 @@ import { revalidateTag } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createHmac } from 'crypto'
 import { getQuotaState, checkAndAlertQuota, bustQuotaCache } from '@/lib/leadQuota'
+import { computeSlaDeadline, type SlaConfig, type SlaConfigBySource } from '@/lib/sla'
+
+const ONE_DAY_MS = 86400000
+
+// Pull both org-wide sla_config and per-source overrides at the start of
+// each webhook batch so all handlers in the loop share the same snapshot.
+async function fetchOrgSla(supabase: ReturnType<typeof createAdminClient>, orgId: string) {
+  const { data } = await supabase
+    .from('orgs').select('sla_config, sla_config_by_source').eq('id', orgId).maybeSingle()
+  return {
+    slaConfig:         (data?.sla_config         ?? null) as SlaConfig | null,
+    slaConfigBySource: (data?.sla_config_by_source ?? null) as SlaConfigBySource | null,
+  }
+}
+
+function deadlineFor(args: {
+  stage: string; source: string
+  slaConfig: SlaConfig | null
+  slaConfigBySource: SlaConfigBySource | null
+}): string {
+  const dt = computeSlaDeadline({
+    stage:                args.stage,
+    source:               args.source,
+    orgSlaConfig:         args.slaConfig,
+    orgSlaConfigBySource: args.slaConfigBySource,
+  })
+  // Webhook leads always need *some* deadline so they show up in stuck-leads;
+  // fall back to 24 h when the org hasn't configured one for this stage.
+  return (dt ?? new Date(Date.now() + ONE_DAY_MS)).toISOString()
+}
 
 // ── GET: Meta/Instagram webhook verification ─────────────────
 export async function GET(req: NextRequest) {
@@ -72,7 +102,9 @@ async function handleFacebookLeads(body: Record<string, unknown>) {
       const accessToken = metaConfig.access_token || process.env.META_PAGE_ACCESS_TOKEN || ''
       if (!accessToken) { console.error('[Meta Webhook] no access token for org:', org.id); continue }
 
-      await processLeadgenEvent({ supabase, orgId: org.id, accessToken,
+      const sla = await fetchOrgSla(supabase, org.id)
+
+      await processLeadgenEvent({ supabase, orgId: org.id, accessToken, ...sla,
         leadgenId: String(value.leadgen_id), source: 'meta', idField: 'meta_lead_id' })
     }
   }
@@ -97,19 +129,21 @@ async function handleInstagramEvents(body: Record<string, unknown>) {
 
     if (!accessToken) { console.error('[Instagram Webhook] no access token for org:', org.id); continue }
 
+    const sla = await fetchOrgSla(supabase, org.id)
+
     // Lead Ads + Comments + Mentions all come via entry.changes
     for (const change of (entry.changes as Record<string, unknown>[]) || []) {
       const field = (change as { field: string }).field
       const value = change.value as Record<string, unknown>
 
       if (field === 'leadgen') {
-        await processLeadgenEvent({ supabase, orgId: org.id, accessToken,
+        await processLeadgenEvent({ supabase, orgId: org.id, accessToken, ...sla,
           leadgenId: String(value.leadgen_id), source: 'instagram', idField: 'instagram_lead_id',
           igUsername: value.ig_username as string | undefined })
       } else if (field === 'comments' && signals.comments_enabled) {
-        await handleCommentEvent({ supabase, orgId: org.id, accessToken, value, signals })
+        await handleCommentEvent({ supabase, orgId: org.id, accessToken, ...sla, value, signals })
       } else if (field === 'mentions' && signals.mentions_enabled) {
-        await handleMentionEvent({ supabase, orgId: org.id, accessToken, value })
+        await handleMentionEvent({ supabase, orgId: org.id, accessToken, ...sla, value })
       }
     }
 
@@ -118,21 +152,23 @@ async function handleInstagramEvents(body: Record<string, unknown>) {
       for (const msg of (entry.messaging as Record<string, unknown>[]) || []) {
         const senderId = (msg.sender as { id: string })?.id
         if (!senderId || senderId === igAccountId) continue  // skip echo
-        await handleDmEvent({ supabase, orgId: org.id, accessToken, igAccountId, msg })
+        await handleDmEvent({ supabase, orgId: org.id, accessToken, ...sla, igAccountId, msg })
       }
     }
   }
 }
 
 // ── Shared Lead Ads processor ────────────────────────────────
-async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, source, idField, igUsername }: {
-  supabase:    ReturnType<typeof createAdminClient>
-  orgId:       string
-  accessToken: string
-  leadgenId:   string
-  source:      'meta' | 'instagram'
-  idField:     'meta_lead_id' | 'instagram_lead_id'
-  igUsername?: string
+async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, source, idField, igUsername, slaConfig, slaConfigBySource }: {
+  supabase:          ReturnType<typeof createAdminClient>
+  orgId:             string
+  accessToken:       string
+  leadgenId:         string
+  source:            'meta' | 'instagram'
+  idField:           'meta_lead_id' | 'instagram_lead_id'
+  igUsername?:       string
+  slaConfig:         SlaConfig | null
+  slaConfigBySource: SlaConfigBySource | null
 }) {
   try {
     const graphRes = await fetch(
@@ -174,7 +210,7 @@ async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, so
       [idField]: leadgenId,
       owner_id: owner?.id ?? null, reporting_manager_id: owner?.reports_to ?? null,
       custom_data: customData, approved: true,
-      sla_deadline: new Date(Date.now() + 86400000).toISOString(),
+      sla_deadline: deadlineFor({ stage: '0', source, slaConfig, slaConfigBySource }),
     }).select().single()
 
     if (leadErr) { console.error(`[${source} Webhook] insert error:`, leadErr.message); return }
@@ -191,10 +227,12 @@ async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, so
 }
 
 // ── DM / Story reply handler ─────────────────────────────────
-async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg }: {
-  supabase:    ReturnType<typeof createAdminClient>
-  orgId:       string; accessToken: string; igAccountId: string
-  msg:         Record<string, unknown>
+async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, slaConfig, slaConfigBySource }: {
+  supabase:          ReturnType<typeof createAdminClient>
+  orgId:             string; accessToken: string; igAccountId: string
+  msg:               Record<string, unknown>
+  slaConfig:         SlaConfig | null
+  slaConfigBySource: SlaConfigBySource | null
 }) {
   try {
     const senderId    = (msg.sender as { id: string })?.id
@@ -230,7 +268,7 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg }:
       instagram_thread_id: senderId,
       owner_id: owner?.id ?? null, reporting_manager_id: owner?.reports_to ?? null,
       custom_data: customData, approved: true,
-      sla_deadline: new Date(Date.now() + 86400000).toISOString(),
+      sla_deadline: deadlineFor({ stage: '0', source: 'instagram_dm', slaConfig, slaConfigBySource }),
     }).select().single()
 
     if (error) { console.error('[Instagram DM] insert error:', error.message); return }
@@ -248,10 +286,12 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg }:
 }
 
 // ── Comment handler ──────────────────────────────────────────
-async function handleCommentEvent({ supabase, orgId, accessToken, value, signals }: {
-  supabase:    ReturnType<typeof createAdminClient>
-  orgId:       string; accessToken: string
-  value:       Record<string, unknown>; signals: IgSignals
+async function handleCommentEvent({ supabase, orgId, accessToken, value, signals, slaConfig, slaConfigBySource }: {
+  supabase:          ReturnType<typeof createAdminClient>
+  orgId:             string; accessToken: string
+  value:             Record<string, unknown>; signals: IgSignals
+  slaConfig:         SlaConfig | null
+  slaConfigBySource: SlaConfigBySource | null
 }) {
   try {
     const commentId   = String(value.id ?? '')
@@ -290,7 +330,7 @@ async function handleCommentEvent({ supabase, orgId, accessToken, value, signals
       instagram_comment_id: commentId,
       owner_id: owner?.id ?? null, reporting_manager_id: owner?.reports_to ?? null,
       custom_data: customData, approved: true,
-      sla_deadline: new Date(Date.now() + 86400000).toISOString(),
+      sla_deadline: deadlineFor({ stage: '0', source: 'instagram_comment', slaConfig, slaConfigBySource }),
     }).select().single()
 
     if (error) { console.error('[Instagram Comment] insert error:', error.message); return }
@@ -308,9 +348,11 @@ async function handleCommentEvent({ supabase, orgId, accessToken, value, signals
 }
 
 // ── Mention handler ──────────────────────────────────────────
-async function handleMentionEvent({ supabase, orgId, accessToken, value }: {
-  supabase:    ReturnType<typeof createAdminClient>
-  orgId:       string; accessToken: string; value: Record<string, unknown>
+async function handleMentionEvent({ supabase, orgId, accessToken, value, slaConfig, slaConfigBySource }: {
+  supabase:          ReturnType<typeof createAdminClient>
+  orgId:             string; accessToken: string; value: Record<string, unknown>
+  slaConfig:         SlaConfig | null
+  slaConfigBySource: SlaConfigBySource | null
 }) {
   try {
     const mentionId = String(value.comment_id || value.media_id || '')
@@ -353,7 +395,7 @@ async function handleMentionEvent({ supabase, orgId, accessToken, value }: {
       instagram_mention_id: mentionId,
       owner_id: owner?.id ?? null, reporting_manager_id: owner?.reports_to ?? null,
       custom_data: customData, approved: true,
-      sla_deadline: new Date(Date.now() + 86400000).toISOString(),
+      sla_deadline: deadlineFor({ stage: '0', source: 'instagram_mention', slaConfig, slaConfigBySource }),
     }).select().single()
 
     if (error) { console.error('[Instagram Mention] insert error:', error.message); return }

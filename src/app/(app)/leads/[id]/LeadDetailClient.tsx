@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lead, Activity, Employee, WaTemplate, LeadStage, SUB_STAGES } from '@/types'
 import { SectionLayout, FieldDef, evaluateFormula } from '@/lib/fieldLayouts'
+import { computeSlaDeadline, type SlaConfigBySource } from '@/lib/sla'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
@@ -25,10 +26,11 @@ interface Props {
   employee: Employee
   orgEmployees: Employee[]
   slaConfig: Record<string, number>
+  slaConfigBySource?: SlaConfigBySource
   sections: SectionLayout[]
 }
 
-export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, sections }: Props) {
+export function LeadDetailClient({ lead: initialLead, activities: initialActivities, templates, employee, orgEmployees, slaConfig, slaConfigBySource, sections }: Props) {
   const { stages, stageMap, leadSources, roleMap } = useOrgConfig()
   const router = useRouter()
   const [lead, setLead] = useState(initialLead)
@@ -125,15 +127,19 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       updates.main_stage = stageDraft
       updates.stage_entered_at = new Date().toISOString()
 
-      // Reset SLA deadline based on org-configured thresholds (skip for referral/offline leads)
-      const slaDays = slaConfig[stageDraft]
+      // Reset SLA deadline based on per-source override → org default
+      // (skip for referral/offline-style sources marked sla_excluded).
       const sourceConfig = leadSources.find(s => s.key === lead.source)
-      if (slaDays && !sourceConfig?.sla_excluded) {
-        const deadline = new Date()
-        deadline.setDate(deadline.getDate() + slaDays)
-        updates.sla_deadline = deadline.toISOString()
-      } else {
+      if (sourceConfig?.sla_excluded) {
         updates.sla_deadline = null
+      } else {
+        const dt = computeSlaDeadline({
+          stage:                stageDraft,
+          source:               lead.source,
+          orgSlaConfig:         slaConfig,
+          orgSlaConfigBySource: slaConfigBySource ?? null,
+        })
+        updates.sla_deadline = dt ? dt.toISOString() : null
       }
 
       await supabase.from('activities').insert({

@@ -43,7 +43,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       .limit(100),
     supabase
       .from('orgs')
-      .select('sla_config')
+      .select('sla_config, sla_config_by_source')
       .eq('id', lead.org_id)
       .single(),
     adminSupabase
@@ -53,7 +53,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       .order('position', { ascending: true }),
   ])
 
-  const slaConfig = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
+  const slaConfig         = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
+  const slaConfigBySource = (org?.sla_config_by_source as Record<string, Record<string, number>> | null) || {}
 
   return (
     <LeadDetailClient
@@ -63,6 +64,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       employee={employee}
       orgEmployees={(orgEmployees || []) as unknown as Employee[]}
       slaConfig={slaConfig}
+      slaConfigBySource={slaConfigBySource}
       sections={(layouts || []) as SectionLayout[]}
     />
   )

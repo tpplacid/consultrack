@@ -19,7 +19,8 @@ export default async function SlaThresholdsPage() {
   }
 
   const supabase = createAdminClient()
-  const { data: org } = await supabase.from('orgs').select('id, sla_config').eq('id', employee.org_id).single()
-  const slaConfig = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
-  return <SlaThresholdsClient orgId={employee.org_id} slaConfig={slaConfig} />
+  const { data: org } = await supabase.from('orgs').select('id, sla_config, sla_config_by_source').eq('id', employee.org_id).single()
+  const slaConfig         = (org?.sla_config as Record<string, number> | null) || { A: 1, B: 5, C: 5, D: 20 }
+  const slaConfigBySource = (org?.sla_config_by_source as Record<string, Record<string, number>> | null) || {}
+  return <SlaThresholdsClient orgId={employee.org_id} slaConfig={slaConfig} slaConfigBySource={slaConfigBySource} />
 }
