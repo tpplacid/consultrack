@@ -134,7 +134,7 @@ function isNavItemActive(
 export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgName }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   // Desktop sidebar resize/collapse
-  const [desktopW, setDesktopW] = useState(288)
+  const [desktopW, setDesktopW] = useState(200)
   const [collapsed, setCollapsed] = useState(false)
   const resizeRef = useRef<{ startX: number; startW: number } | null>(null)
 
@@ -143,7 +143,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
     resizeRef.current = { startX: e.clientX, startW: desktopW }
     function onMove(ev: MouseEvent) {
       if (!resizeRef.current) return
-      const next = Math.min(432, Math.max(192, resizeRef.current.startW + ev.clientX - resizeRef.current.startX))
+      const next = Math.min(320, Math.max(140, resizeRef.current.startW + ev.clientX - resizeRef.current.startX))
       setDesktopW(next)
     }
     function onUp() {
@@ -292,7 +292,7 @@ export function AppShell({ employee, children, notifCount = 0, orgLogoUrl, orgNa
 
   const visibleNav = navItems.filter(isVisible)
 
-  const narrow = !collapsed && desktopW < 168
+  const narrow = !collapsed && desktopW < 120
 
   // A locked sidebar item — shows dimmed with lock, opens UpgradeModal on click
   function LockedNavLink({ item, slim }: { item: NavItem; slim?: boolean }) {
