@@ -209,10 +209,69 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
           </div>
         </div>
 
-        {/* ── Stat cards ── */}
+        {/* ── Stat cards ──
+            Mobile: single horizontal-scroll strip of compact pills (cards
+            + alert chips merged into one row) so leads start much closer
+            to the top of the screen.
+            Desktop (sm+): two rows — grid of cards then alert chips below,
+            same layout the user is used to.
+        */}
         <div className="space-y-2">
-          <p className="text-[8px] text-brand-400 font-semibold">Click a card to filter leads</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+          <p className="text-[8px] text-brand-400 font-semibold hidden sm:block">Click a card to filter leads</p>
+
+          {/* Mobile horizontal strip */}
+          <div className="sm:hidden -mx-4 px-4 overflow-x-auto">
+            <div className="flex gap-2 pb-2 w-max">
+              {statCards.map(s => {
+                const active = quickFilter === s.filter && s.filter !== null
+                const clickable = s.filter !== null
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    disabled={!clickable}
+                    onClick={() => s.filter && toggleQuick(s.filter)}
+                    className={`shrink-0 min-w-[110px] text-left bg-white rounded-lg border px-2.5 py-1.5 shadow-sm transition-all ${
+                      !clickable
+                        ? 'cursor-default border-brand-100'
+                        : active
+                          ? 'border-brand-400 ring-2 ring-brand-100'
+                          : 'border-brand-100 active:border-brand-300'
+                    }`}
+                  >
+                    <p className="text-[9px] font-semibold text-brand-500 truncate">{s.label}</p>
+                    <p className="text-base font-bold text-brand-800 truncate leading-tight">{s.value}</p>
+                  </button>
+                )
+              })}
+              {alertChips.map(c => {
+                const active = quickFilter === c.filter
+                return (
+                  <button
+                    key={c.filter}
+                    type="button"
+                    onClick={() => toggleQuick(c.filter)}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all ${
+                      active
+                        ? 'bg-brand-800 text-white border-brand-800'
+                        : c.count > 0
+                          ? 'bg-white text-brand-700 border-brand-200'
+                          : 'bg-white text-brand-300 border-brand-100'
+                    }`}
+                  >
+                    {c.icon}
+                    {c.label}
+                    <span className={`font-bold tabular-nums ${active ? 'text-white/80' : c.count > 0 ? 'text-brand-500' : 'text-brand-300'}`}>
+                      {c.count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Desktop grid */}
+          <div className="hidden sm:grid grid-cols-4 lg:grid-cols-6 gap-2">
             {statCards.map(s => {
               const active = quickFilter === s.filter && s.filter !== null
               const clickable = s.filter !== null
@@ -238,8 +297,8 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
             })}
           </div>
 
-          {/* ── Alert chips ── */}
-          <div className="flex flex-wrap gap-2 pt-1">
+          {/* Desktop alert chips row */}
+          <div className="hidden sm:flex flex-wrap gap-2 pt-1">
             {alertChips.map(c => {
               const active = quickFilter === c.filter
               return (
