@@ -16,7 +16,8 @@ import { formatDateTime, timeAgo, isOverdue } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import {
   Phone, MessageSquare, Clock, ArrowLeft,
-  AlertTriangle, Save, ArrowRightLeft
+  AlertTriangle, Save, ArrowRightLeft,
+  MessageCircle, AtSign, FileText, Camera,
 } from 'lucide-react'
 
 interface Props {
@@ -250,6 +251,12 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Lead details */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Source Context — surfaces the original DM / comment / mention
+              text and ig_username so counsellors don't have to leave the
+              page to know what the lead actually said. Lives outside the
+              org-configurable field layout because it's signal-specific. */}
+          <SourceContextCard lead={lead} />
+
           {/* Stage & SLA */}
           <Card>
             <CardHeader>
@@ -595,5 +602,73 @@ function LayoutFieldInput({
         className={inputClass}
       />
     </div>
+  )
+}
+
+// Renders the message body / comment text / mention text that the IG webhook
+// captured into custom_data. Shows nothing for non-IG sources.
+function SourceContextCard({ lead }: { lead: Lead }) {
+  const cd = (lead.custom_data as Record<string, unknown>) || {}
+  const username = (cd.ig_username as string | undefined) || null
+  const source   = lead.source || ''
+
+  let icon: React.ReactNode = null
+  let title  = ''
+  let body   = ''
+  let label  = ''
+
+  if (source === 'instagram_dm') {
+    icon  = <MessageCircle size={16} className="text-blue-600" />
+    title = cd.is_story_reply === 'true' ? 'Story reply' : 'Direct message'
+    body  = (cd.first_message as string) || ''
+    label = 'First message'
+  } else if (source === 'instagram_comment') {
+    icon  = <FileText size={16} className="text-purple-600" />
+    title = 'Comment'
+    body  = (cd.comment_text as string) || ''
+    label = 'Comment text'
+  } else if (source === 'instagram_mention') {
+    icon  = <AtSign size={16} className="text-amber-600" />
+    title = 'Mention'
+    body  = (cd.mention_text as string) || ''
+    label = 'Mention text'
+  } else if (source === 'instagram') {
+    icon  = <Camera size={16} className="text-pink-600" />
+    title = 'Instagram Lead Ad'
+  } else {
+    return null
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {icon}
+          {title}
+        </CardTitle>
+        {username && (
+          <a
+            href={`https://instagram.com/${username}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-brand-400 mt-0.5 font-semibold hover:underline"
+          >
+            @{username}
+          </a>
+        )}
+      </CardHeader>
+      <CardContent>
+        {body ? (
+          <>
+            <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold mb-1.5">{label}</p>
+            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5">
+              {body}
+            </p>
+          </>
+        ) : (
+          <p className="text-xs text-slate-400 italic">No content captured (Standard Access — request reviewer fetched profile only).</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
