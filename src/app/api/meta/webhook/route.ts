@@ -254,16 +254,32 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
       .eq('org_id', orgId).eq('instagram_thread_id', senderId).limit(1)
 
     // Repeat message from a sender we already have a lead for — log it on
-    // the existing lead's activity feed so counsellors see the full thread,
-    // and bump sla_deadline because each new message resets engagement.
+    // the existing lead's activity feed so counsellors see the full thread.
+    // We always insert *something* (even for image/sticker/reaction-only DMs
+    // where msgText is empty) so the lead clearly reflects the new message.
     if (existing && existing.length > 0) {
-      const leadId = existing[0].id
+      const leadId      = existing[0].id
+      const attachments = (message?.attachments as { type?: string }[] | undefined) ?? []
+      let note: string
       if (msgText) {
-        await supabase.from('activities').insert({
-          org_id: orgId, lead_id: leadId,
-          activity_type: 'ig_dm_received',
-          note: msgText.slice(0, 1000),
-        })
+        note = msgText.slice(0, 1000)
+      } else if (attachments.length > 0) {
+        const types = attachments.map(a => a.type || 'attachment').join(', ')
+        note = `[${types}]`
+      } else if ((message as { reactions?: unknown })?.reactions) {
+        note = '[reaction]'
+      } else {
+        note = '[new message]'
+      }
+      const { error: actErr } = await supabase.from('activities').insert({
+        org_id: orgId, lead_id: leadId,
+        activity_type: 'ig_dm_received',
+        note,
+      })
+      if (actErr) {
+        console.error('[Instagram DM] activity insert error on repeat:', actErr.message)
+      } else {
+        console.info('[Instagram DM] repeat message logged on lead:', leadId)
       }
       revalidateTag(`admin-leads:${orgId}`, 'max')
       return

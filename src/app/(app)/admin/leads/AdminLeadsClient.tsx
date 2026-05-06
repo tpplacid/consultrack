@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Employee, Lead, LeadStage } from '@/types'
 import { useOrgConfig } from '@/context/OrgConfigContext'
 import { LeadCard } from '@/components/leads/LeadCard'
@@ -19,11 +20,14 @@ export function AdminLeadsClient({ admin, leads: initialLeads, employees, sectio
   const revenueKeys = useMemo(() => getRevenueFieldKeys(sections), [sections])
   const revenueDefs = useMemo(() => getRevenueFieldDefs(sections), [sections])
   const { stages } = useOrgConfig()
+  const searchParams = useSearchParams()
   const [leads, setLeads] = useState(initialLeads)
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState('')
   const [ownerFilter, setOwnerFilter] = useState('')
-  const [sourceFilter, setSourceFilter] = useState('')
+  // Pre-fill source filter from ?source=… so sidebar entries like
+  // "Facebook Leads" deep-link straight into a filtered view.
+  const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') ?? '')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selected, setSelected] = useState<string[]>([])

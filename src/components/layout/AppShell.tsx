@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Users, ClipboardList, Calendar, FileText,
   BarChart3, LogOut, Menu, Bell, Lock,
   MessageSquare, CheckSquare, TrendingDown,
-  Settings, UsersRound, AlertCircle, PieChart, Ticket, Camera,
+  Settings, UsersRound, AlertCircle, PieChart, Ticket, Camera, Megaphone,
 } from 'lucide-react'
 import { RealtimeNotifier } from '@/components/RealtimeNotifier'
 
@@ -38,10 +38,11 @@ const navItems: NavItem[] = [
 ]
 
 const adminNavItems: NavItem[] = [
-  { href: '/admin/leads',             label: 'All Leads',         icon: <FileText size={17} />,    feature: 'lead_crm' },
-  { href: '/admin/offline-approvals', label: 'Offline Approvals', icon: <CheckSquare size={17} />, feature: 'lead_crm' },
-  { href: '/admin/stuck-leads',       label: 'Stuck Leads',       icon: <TrendingDown size={17} />,feature: 'lead_crm' },
-  { href: '/admin/instagram',         label: 'Instagram',         icon: <Camera size={17} />,      feature: 'instagram' },
+  { href: '/admin/leads',                 label: 'All Leads',         icon: <FileText size={17} />,    feature: 'lead_crm' },
+  { href: '/admin/leads?source=meta',     label: 'Facebook Leads',    icon: <Megaphone size={17} />,   feature: 'meta' },
+  { href: '/admin/instagram',             label: 'Instagram',         icon: <Camera size={17} />,      feature: 'instagram' },
+  { href: '/admin/offline-approvals',     label: 'Offline Approvals', icon: <CheckSquare size={17} />, feature: 'lead_crm' },
+  { href: '/admin/stuck-leads',           label: 'Stuck Leads',       icon: <TrendingDown size={17} />,feature: 'lead_crm' },
 ]
 
 const analyticsNavItems: NavItem[] = [
