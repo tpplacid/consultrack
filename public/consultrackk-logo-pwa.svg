@@ -3,7 +3,7 @@
        Kept at this legacy path so any older cached PWA manifest that points
        here still picks up the correct branded image (not the old white-bg one). -->
   <rect width="512" height="512" fill="#4f46e5" rx="110"/>
-  <g transform="translate(126 126) scale(2)" fill="#ffffff">
+  <g transform="translate(106 106) scale(2)" fill="#ffffff">
     <path d="M85 10H35C21.1929 10 10 21.1929 10 35V115C10 128.807 21.1929 140 35 140H85V105H45V45H85V10Z"/>
     <path d="M110 10V60H100V90H110V140H140V10H110Z"/>
   </g>
