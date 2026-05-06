@@ -41,7 +41,7 @@ export default async function DashboardPage() {
       .eq('submitted_by', employee.id),
     supabase
       .from('orgs')
-      .select('dashboard_stage_keys, dashboard_cards')
+      .select('dashboard_stage_keys, dashboard_cards, dashboard_cards_configured')
       .eq('id', employee.org_id)
       .single(),
     supabase
@@ -53,6 +53,7 @@ export default async function DashboardPage() {
 
   const dashboardStageKeys = (orgRow?.dashboard_stage_keys as string[] | null) ?? ['C', 'B', 'F']
   const dashboardCards     = (orgRow?.dashboard_cards as import('@/lib/dashboardCards').DashboardCard[] | null) ?? []
+  const dashboardConfigured = !!orgRow?.dashboard_cards_configured
   const revenueKeys = getRevenueFieldKeys((sections || []) as SectionLayout[])
 
   // Map lead_id → approval status for offline/referral leads
@@ -95,6 +96,7 @@ export default async function DashboardPage() {
       stats={stats}
       dashboardStageKeys={dashboardStageKeys}
       dashboardCards={dashboardCards}
+      dashboardConfigured={dashboardConfigured}
     />
   )
 }

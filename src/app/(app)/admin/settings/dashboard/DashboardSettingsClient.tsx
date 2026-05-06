@@ -16,6 +16,7 @@ interface Props {
   orgRoles:        { key: string; label: string }[]
   initialCards:    DashboardCard[]
   legacyStageKeys: string[]
+  configured:      boolean
 }
 
 function uid() {
@@ -23,16 +24,17 @@ function uid() {
 }
 
 export function DashboardSettingsClient({
-  orgId, stages, currencyDefs, orgRoles, initialCards, legacyStageKeys,
+  orgId, stages, currencyDefs, orgRoles, initialCards, legacyStageKeys, configured,
 }: Props) {
   const { leadSources } = useOrgConfig()
   const stageMap = useMemo(() => Object.fromEntries(stages.map(s => [s.key, s])), [stages])
 
-  // If org never migrated, seed the editor with cards that mirror the
-  // current dashboard appearance (Total Leads + each legacy stage key +
-  // Total Payments) so the admin can edit rather than start blank.
+  // Seed only when the org has NEVER explicitly saved here. Once
+  // configured = true, we honour whatever they saved (including an
+  // intentional empty list) instead of overwriting their choice on
+  // every settings revisit.
   const seeded: DashboardCard[] = useMemo(() => {
-    if (initialCards.length > 0) return initialCards
+    if (configured) return initialCards
     const seed: DashboardCard[] = [
       { id: uid(), label: 'Total Leads', metric: { type: 'count' } },
       ...legacyStageKeys.map(k => ({
@@ -50,7 +52,7 @@ export function DashboardSettingsClient({
       })
     }
     return seed
-  }, [initialCards, legacyStageKeys, stageMap, currencyDefs])
+  }, [configured, initialCards, legacyStageKeys, stageMap, currencyDefs])
 
   const [cards, setCards] = useState<DashboardCard[]>(seeded)
   const [saving, setSaving] = useState(false)
@@ -89,9 +91,13 @@ export function DashboardSettingsClient({
   async function save() {
     // No "minimum 1 card" check — empty list is valid (dashboard renders no
     // headline cards, just the lead grid). Admins can opt out cleanly.
+    // Always set dashboard_cards_configured = true so subsequent visits
+    // honour the saved list (even when empty) instead of re-seeding.
     setSaving(true)
     const supabase = createClient()
-    const { error } = await supabase.from('orgs').update({ dashboard_cards: cards }).eq('id', orgId)
+    const { error } = await supabase.from('orgs')
+      .update({ dashboard_cards: cards, dashboard_cards_configured: true })
+      .eq('id', orgId)
     if (error) toast.error(error.message)
     else toast.success('Dashboard cards saved')
     setSaving(false)

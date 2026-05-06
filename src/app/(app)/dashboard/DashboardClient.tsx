@@ -22,6 +22,7 @@ interface Props {
   stats: { total: number; stageCounts: Record<string, number>; totalPayments: number }
   dashboardStageKeys: string[]
   dashboardCards?: DashboardCard[]
+  dashboardConfigured?: boolean
 }
 
 const STATIC_FILTER_LABELS: Record<string, string> = {
@@ -31,7 +32,7 @@ const STATIC_FILTER_LABELS: Record<string, string> = {
   new_leads:      'New Leads',
 }
 
-export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats, dashboardStageKeys, dashboardCards = [] }: Props) {
+export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats, dashboardStageKeys, dashboardCards = [], dashboardConfigured = false }: Props) {
   const { stages } = useOrgConfig()
   const [leads, setLeads] = useState(initialLeads)
   const [approvalMap, setApprovalMap] = useState<Record<string, string>>(initialApprovalMap)
@@ -141,13 +142,15 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
   const canCreateLead = ['ad', 'tl', 'counsellor', 'telesales'].includes(employee.role)
 
-  // Stat card config. New: admins build cards in Settings → Dashboard
-  // (label + metric + filters). When dashboardCards is empty we fall back
-  // to the legacy hardcoded shape (Total Leads + each stage key + Total
-  // Payments) so existing orgs render exactly as before.
+  // Stat card config. Admins build cards in Settings → Dashboard.
+  // dashboardConfigured = true honours the saved list as-is (even an
+  // intentional empty list, in which case we render no headline cards).
+  // dashboardConfigured = false means the org never visited settings, so
+  // we fall back to the legacy hardcoded shape so existing orgs render
+  // exactly as before.
   const stageMap = Object.fromEntries(stages.map(s => [s.key, s]))
   type StatCard = { key: string; label: string; value: string; desc: string; filter: QuickFilter | null }
-  const statCards: StatCard[] = dashboardCards.length > 0
+  const statCards: StatCard[] = dashboardConfigured
     ? dashboardCards.map(card => {
         // Pick a click-through filter that lines up with the most useful
         // single attribute of the card (single stage = filter to that
