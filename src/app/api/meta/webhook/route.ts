@@ -248,10 +248,26 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
     const senderId    = (msg.sender as { id: string })?.id
     const message     = msg.message as Record<string, unknown>
     const isStoryReply = !!(message?.reply_to as Record<string, unknown> | undefined)?.story
+    const msgText     = String(message?.text ?? '')
 
     const { data: existing } = await supabase.from('leads').select('id')
       .eq('org_id', orgId).eq('instagram_thread_id', senderId).limit(1)
-    if (existing && existing.length > 0) return
+
+    // Repeat message from a sender we already have a lead for — log it on
+    // the existing lead's activity feed so counsellors see the full thread,
+    // and bump sla_deadline because each new message resets engagement.
+    if (existing && existing.length > 0) {
+      const leadId = existing[0].id
+      if (msgText) {
+        await supabase.from('activities').insert({
+          org_id: orgId, lead_id: leadId,
+          activity_type: 'ig_dm_received',
+          note: msgText.slice(0, 1000),
+        })
+      }
+      revalidateTag(`admin-leads:${orgId}`, 'max')
+      return
+    }
 
     const profileRes = await fetch(
       `https://graph.facebook.com/v19.0/${senderId}?fields=name,username&access_token=${accessToken}`)
@@ -263,7 +279,6 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg, s
 
     const name     = profile.name || (profile.username ? `@${profile.username}` : `Instagram User ${senderId.slice(-4)}`)
     const username = profile.username || ''
-    const msgText  = String(message?.text ?? '')
     const customData: Record<string, string> = { ig_signal: 'dm' }
     if (username)     customData.ig_username   = username
     if (msgText)      customData.first_message = msgText.slice(0, 500)
