@@ -207,10 +207,13 @@ async function handleDmEvent({ supabase, orgId, accessToken, igAccountId, msg }:
 
     const profileRes = await fetch(
       `https://graph.facebook.com/v19.0/${senderId}?fields=name,username&access_token=${accessToken}`)
-    const profile = await profileRes.json() as { name?: string; username?: string; error?: unknown }
-    if (profile.error) { console.warn('[Instagram DM] profile fetch failed:', senderId); return }
+    const profile = await profileRes.json() as { name?: string; username?: string; error?: { message?: string } }
+    if (profile.error) {
+      console.warn('[Instagram DM] profile fetch failed (creating lead with placeholder name):',
+        senderId, profile.error.message)
+    }
 
-    const name     = profile.name || `@${profile.username}` || 'Unknown'
+    const name     = profile.name || (profile.username ? `@${profile.username}` : `Instagram User ${senderId.slice(-4)}`)
     const username = profile.username || ''
     const msgText  = String(message?.text ?? '')
     const customData: Record<string, string> = { ig_signal: 'dm' }
@@ -319,8 +322,11 @@ async function handleMentionEvent({ supabase, orgId, accessToken, value }: {
 
     const mentionRes = await fetch(
       `https://graph.facebook.com/v19.0/${mentionId}?fields=text,from&access_token=${accessToken}`)
-    const mentionData = await mentionRes.json() as { text?: string; from?: { id?: string; username?: string }; error?: unknown }
-    if (mentionData.error) { console.warn('[Instagram Mention] fetch failed:', mentionId); return }
+    const mentionData = await mentionRes.json() as { text?: string; from?: { id?: string; username?: string }; error?: { message?: string } }
+    if (mentionData.error) {
+      console.warn('[Instagram Mention] fetch failed (creating lead with placeholder):',
+        mentionId, mentionData.error.message)
+    }
 
     const mentionText = String(mentionData.text ?? '')
     let   name        = mentionData.from?.username ? `@${mentionData.from.username}` : 'Unknown'
