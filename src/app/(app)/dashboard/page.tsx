@@ -41,7 +41,7 @@ export default async function DashboardPage() {
       .eq('submitted_by', employee.id),
     supabase
       .from('orgs')
-      .select('dashboard_stage_keys')
+      .select('dashboard_stage_keys, dashboard_cards')
       .eq('id', employee.org_id)
       .single(),
     supabase
@@ -52,6 +52,7 @@ export default async function DashboardPage() {
   ])
 
   const dashboardStageKeys = (orgRow?.dashboard_stage_keys as string[] | null) ?? ['C', 'B', 'F']
+  const dashboardCards     = (orgRow?.dashboard_cards as import('@/lib/dashboardCards').DashboardCard[] | null) ?? []
   const revenueKeys = getRevenueFieldKeys((sections || []) as SectionLayout[])
 
   // Map lead_id → approval status for offline/referral leads
@@ -75,16 +76,25 @@ export default async function DashboardPage() {
     totalPayments: visibleLeads.reduce((sum, l) => sum + leadRevenue(l, revenueKeys), 0),
   }
 
+  // Annotate each lead with its owner's role so dashboard_cards filtering
+  // by owner_role works without a second query in the client.
+  const leadsWithOwnerRole = (leads || []).map(l => {
+    const ownerRel = (l as unknown as { owner?: { role?: string } | { role?: string }[] }).owner
+    const ownerRole = Array.isArray(ownerRel) ? ownerRel[0]?.role : ownerRel?.role
+    return { ...l, __owner_role: ownerRole ?? null }
+  })
+
   return (
     <DashboardClient
       employee={employee}
       // Cast required because we narrowed select() — Supabase types joined
       // relations as arrays even when the FK is single-valued. Per CLAUDE.md
       // convention.
-      leads={(leads || []) as unknown as import('@/types').Lead[]}
+      leads={leadsWithOwnerRole as unknown as import('@/types').Lead[]}
       approvalMap={approvalMap}
       stats={stats}
       dashboardStageKeys={dashboardStageKeys}
+      dashboardCards={dashboardCards}
     />
   )
 }

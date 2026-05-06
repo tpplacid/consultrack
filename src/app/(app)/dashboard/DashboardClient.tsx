@@ -9,6 +9,7 @@ import { NewLeadModal } from './NewLeadModal'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBanner } from '@/components/NotificationBanner'
 import { useOrgConfig } from '@/context/OrgConfigContext'
+import { DashboardCard, computeCardValue, formatCardValue, describeCard } from '@/lib/dashboardCards'
 
 // QuickFilter is a string. For org-configured stage cards, the value is
 // `stage:<stageKey>` (e.g. 'stage:C'). Other filters are fixed strings.
@@ -20,6 +21,7 @@ interface Props {
   approvalMap: Record<string, string>
   stats: { total: number; stageCounts: Record<string, number>; totalPayments: number }
   dashboardStageKeys: string[]
+  dashboardCards?: DashboardCard[]
 }
 
 const STATIC_FILTER_LABELS: Record<string, string> = {
@@ -29,7 +31,7 @@ const STATIC_FILTER_LABELS: Record<string, string> = {
   new_leads:      'New Leads',
 }
 
-export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats, dashboardStageKeys }: Props) {
+export function DashboardClient({ employee, leads: initialLeads, approvalMap: initialApprovalMap, stats, dashboardStageKeys, dashboardCards = [] }: Props) {
   const { stages } = useOrgConfig()
   const [leads, setLeads] = useState(initialLeads)
   const [approvalMap, setApprovalMap] = useState<Record<string, string>>(initialApprovalMap)
@@ -139,19 +141,39 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
 
   const canCreateLead = ['ad', 'tl', 'counsellor', 'telesales'].includes(employee.role)
 
-  // Stat card config — admin picks which stages to show via Settings → Dashboard.
-  // Falls back to ['C','B','F'] if not configured.
+  // Stat card config. New: admins build cards in Settings → Dashboard
+  // (label + metric + filters). When dashboardCards is empty we fall back
+  // to the legacy hardcoded shape (Total Leads + each stage key + Total
+  // Payments) so existing orgs render exactly as before.
   const stageMap = Object.fromEntries(stages.map(s => [s.key, s]))
-  const statCards: { label: string; value: string; desc: string; filter: QuickFilter | null }[] = [
-    { label: 'Total Leads', value: stats.total.toString(), desc: 'All active leads', filter: 'all' },
-    ...dashboardStageKeys.map(k => ({
-      label:  stageMap[k]?.label ?? k,
-      value:  (stats.stageCounts[k] ?? 0).toString(),
-      desc:   stageMap[k]?.is_won ? 'Confirmed deals' : `Stage ${k}`,
-      filter: `stage:${k}` as QuickFilter,
-    })),
-    { label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Collected across all leads', filter: null },
-  ]
+  type StatCard = { key: string; label: string; value: string; desc: string; filter: QuickFilter | null }
+  const statCards: StatCard[] = dashboardCards.length > 0
+    ? dashboardCards.map(card => {
+        // Pick a click-through filter that lines up with the most useful
+        // single attribute of the card (single stage = filter to that
+        // stage; otherwise no click-through).
+        const singleStage = card.filter?.stages?.length === 1 ? card.filter.stages[0] : null
+        const clickFilter: QuickFilter | null = singleStage ? `stage:${singleStage}` : null
+        const raw = computeCardValue(card, visibleLeads)
+        return {
+          key:    card.id,
+          label:  card.label,
+          value:  formatCardValue(card, raw),
+          desc:   describeCard(card),
+          filter: clickFilter,
+        }
+      })
+    : [
+        { key: 'total',     label: 'Total Leads',    value: stats.total.toString(), desc: 'All active leads', filter: 'all' },
+        ...dashboardStageKeys.map(k => ({
+          key:    `stage-${k}`,
+          label:  stageMap[k]?.label ?? k,
+          value:  (stats.stageCounts[k] ?? 0).toString(),
+          desc:   stageMap[k]?.is_won ? 'Confirmed deals' : `Stage ${k}`,
+          filter: `stage:${k}` as QuickFilter,
+        })),
+        { key: 'payments',  label: 'Total Payments', value: `₹${stats.totalPayments.toLocaleString('en-IN')}`, desc: 'Collected across all leads', filter: null },
+      ]
 
   // Alert chip config
   const alertChips: { label: string; count: number; filter: QuickFilter; icon: React.ReactNode }[] = [
@@ -190,17 +212,17 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
         {/* ── Stat cards ── */}
         <div className="space-y-2">
           <p className="text-[8px] text-brand-400 font-semibold">Click a card to filter leads</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
             {statCards.map(s => {
               const active = quickFilter === s.filter && s.filter !== null
               const clickable = s.filter !== null
               return (
                 <button
-                  key={s.label}
+                  key={s.key}
                   type="button"
                   disabled={!clickable}
                   onClick={() => s.filter && toggleQuick(s.filter)}
-                  className={`text-left bg-white rounded-xl border p-4 shadow-sm transition-all ${
+                  className={`text-left bg-white rounded-lg border px-3 py-2.5 shadow-sm transition-all ${
                     !clickable
                       ? 'cursor-default border-brand-100'
                       : active
@@ -208,9 +230,9 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
                         : 'border-brand-100 hover:border-brand-300 cursor-pointer'
                   }`}
                 >
-                  <p className="text-xs font-semibold text-brand-600">{s.label}</p>
-                  <p className="text-2xl font-bold mt-1 text-brand-800 truncate">{s.value}</p>
-                  <p className="text-[8px] text-brand-400 mt-1">{s.desc}</p>
+                  <p className="text-[10px] font-semibold text-brand-600 truncate">{s.label}</p>
+                  <p className="text-lg font-bold mt-0.5 text-brand-800 truncate">{s.value}</p>
+                  <p className="text-[8px] text-brand-400 mt-0.5 truncate">{s.desc}</p>
                 </button>
               )
             })}
