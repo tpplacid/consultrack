@@ -76,10 +76,21 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
   const [bannerDismissed, setBannerDismissed] = useState(false)
 
   async function markLeadViewed() {
-    await supabase.from('lead_views').upsert(
+    const { error } = await supabase.from('lead_views').upsert(
       { employee_id: employee.id, lead_id: lead.id, viewed_at: new Date().toISOString() },
       { onConflict: 'employee_id,lead_id' },
     )
+    if (error) {
+      // Surface RLS / missing-table / type errors instead of swallowing
+      // them — a silent failure here is what causes "banner reappears
+      // after going back to the lead" symptoms.
+      console.error('[lead_views upsert]', error)
+    } else {
+      // Invalidate the router cache for this route so a back/forward
+      // navigation re-runs the server-side unread count instead of
+      // serving the previously rendered banner.
+      router.refresh()
+    }
   }
 
   // Mark as viewed 4 s after mount so the banner has time to register

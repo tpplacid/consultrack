@@ -6,6 +6,12 @@ import { LeadDetailClient } from './LeadDetailClient'
 import { Employee } from '@/types'
 import { SectionLayout } from '@/lib/fieldLayouts'
 
+// Lead detail must always read fresh server state — caching would
+// preserve stale unread counts across navigations (open lead, mark as
+// read, navigate away, navigate back -> stale banner shows the count
+// again because the cached render predates the lead_views upsert).
+export const dynamic = 'force-dynamic'
+
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const employee = await requireAuth()
