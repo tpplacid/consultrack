@@ -19,7 +19,8 @@ type Features = {
   roles: boolean; attendance: boolean; meta: boolean; instagram: boolean; bulk_upload: boolean
 }
 type MetaConfig      = { page_id?: string; access_token?: string }
-type InstagramConfig = { ig_account_id?: string; access_token?: string; capi_dataset_id?: string }
+type IgSignals = { dms_enabled?: boolean; comments_enabled?: boolean; comments_keywords?: string[]; mentions_enabled?: boolean }
+type InstagramConfig = { ig_account_id?: string; access_token?: string; capi_dataset_id?: string; signals?: IgSignals }
 type OrgRole = { key: string; label: string }
 type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; instagram_config?: InstagramConfig; instagram_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
 
@@ -104,6 +105,13 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [showIgAccessToken, setShowIgAccessToken] = useState(false)
   const igConnected = !!(igAccountId && igAccountId.trim())
 
+  // Instagram signal toggles
+  const igSignals = org.instagram_config?.signals ?? {}
+  const [dmEnabled,       setDmEnabled]       = useState(igSignals.dms_enabled      ?? false)
+  const [commentsEnabled, setCommentsEnabled] = useState(igSignals.comments_enabled ?? false)
+  const [mentionsEnabled, setMentionsEnabled] = useState(igSignals.mentions_enabled ?? false)
+  const [commentKeywords, setCommentKeywords] = useState((igSignals.comments_keywords ?? []).join(', '))
+
   const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`
 
   function copyMeta(value: string, field: string) {
@@ -180,9 +188,15 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         brand_palette: brandPalette,
         meta_config: { page_id: metaPageId || undefined, access_token: metaAccessToken || undefined },
         instagram_config: {
-          ig_account_id:  igAccountId     || undefined,
-          access_token:   igAccessToken   || undefined,
+          ig_account_id:   igAccountId     || undefined,
+          access_token:    igAccessToken   || undefined,
           capi_dataset_id: igCapiDatasetId || undefined,
+          signals: {
+            dms_enabled:       dmEnabled,
+            comments_enabled:  commentsEnabled,
+            comments_keywords: commentKeywords.split(',').map((k: string) => k.trim()).filter(Boolean),
+            mentions_enabled:  mentionsEnabled,
+          },
         },
         // Plan & Limits — empty string means unlimited (null in DB)
         lead_limit: leadLimit.trim() === '' ? null : Math.max(0, Number(leadLimit) || 0),
@@ -829,6 +843,58 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   className={INPUT}
                 />
                 <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Required only for push-audience (conversion signal) functionality on Instagram</p>
+              </div>
+
+              {/* Social signal toggles */}
+              <div className="pt-3 border-t border-[var(--sa-divider)] space-y-3">
+                <p className="text-xs font-semibold text-[var(--sa-text-secondary)] uppercase tracking-wide">Social Signals</p>
+
+                {/* DMs */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-[var(--sa-text)]">DMs &amp; Story Replies</p>
+                    <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">One lead per new conversation thread (sender deduped per org)</p>
+                  </div>
+                  <button type="button" onClick={() => setDmEnabled(v => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${dmEnabled ? 'bg-pink-500' : 'bg-[var(--sa-surface-hover)]'}`}>
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${dmEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+
+                {/* Comments */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-[var(--sa-text)]">Comments</p>
+                      <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">Create leads from comments matching keywords (leave blank = all comments)</p>
+                    </div>
+                    <button type="button" onClick={() => setCommentsEnabled(v => !v)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${commentsEnabled ? 'bg-pink-500' : 'bg-[var(--sa-surface-hover)]'}`}>
+                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${commentsEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                  {commentsEnabled && (
+                    <input
+                      type="text"
+                      value={commentKeywords}
+                      onChange={e => setCommentKeywords(e.target.value)}
+                      placeholder="interested, price, info, dm me"
+                      className={INPUT}
+                    />
+                  )}
+                </div>
+
+                {/* Mentions */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-[var(--sa-text)]">Mentions</p>
+                    <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">One lead per @mention of your account</p>
+                  </div>
+                  <button type="button" onClick={() => setMentionsEnabled(v => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${mentionsEnabled ? 'bg-pink-500' : 'bg-[var(--sa-surface-hover)]'}`}>
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform mt-0.5 ${mentionsEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
               </div>
 
               {/* Send IG setup guide */}

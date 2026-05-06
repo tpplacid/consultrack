@@ -4,17 +4,27 @@ import { AdminInstagramClient } from './AdminInstagramClient'
 
 export const dynamic = 'force-dynamic'
 
+const IG_SOURCES = ['instagram', 'instagram_dm', 'instagram_comment', 'instagram_mention']
+
 export default async function AdminInstagramPage() {
   const employee = await requireRole(['ad'])
   const supabase = await createClient()
 
   const [{ data: orgData }, { data: igLeads }] = await Promise.all([
     supabase.from('orgs').select('instagram_config, instagram_setup_sent_at').eq('id', employee.org_id).single(),
-    supabase.from('leads').select('*').eq('source', 'instagram').eq('org_id', employee.org_id).order('created_at', { ascending: false }).limit(100),
+    supabase.from('leads').select('*')
+      .eq('org_id', employee.org_id)
+      .in('source', IG_SOURCES)
+      .order('created_at', { ascending: false })
+      .limit(200),
   ])
 
-  const igConfig      = (orgData?.instagram_config ?? {}) as { ig_account_id?: string; capi_dataset_id?: string }
-  const isConnected   = !!(igConfig.ig_account_id || (igLeads && igLeads.length > 0))
+  const igConfig = (orgData?.instagram_config ?? {}) as {
+    ig_account_id?: string
+    capi_dataset_id?: string
+    signals?: { dms_enabled?: boolean; comments_enabled?: boolean; comments_keywords?: string[]; mentions_enabled?: boolean }
+  }
+  const isConnected    = !!(igConfig.ig_account_id || (igLeads && igLeads.length > 0))
   const hasCapiDataset = !!(igConfig.capi_dataset_id || process.env.INSTAGRAM_CAPI_DATASET_ID)
 
   return (
@@ -28,6 +38,7 @@ export default async function AdminInstagramPage() {
       webhookUrl={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`}
       igAccountId={igConfig.ig_account_id ?? null}
       hasCapiDataset={hasCapiDataset}
+      signalConfig={igConfig.signals ?? {}}
     />
   )
 }
