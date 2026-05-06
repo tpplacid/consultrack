@@ -31,7 +31,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-[var(--sa-text)] border-slate-500/20'
 
-const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, instagram: true, bulk_upload: true }
+const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, instagram: false, bulk_upload: true }
 
 const FEATURE_CONFIG: { key: keyof Features; label: string; description: string; color: string }[] = [
   { key: 'lead_crm',    label: 'Lead CRM',            description: 'Dashboard, lead pipeline, bulk CSV upload, offline approvals', color: '#14b8a6' },

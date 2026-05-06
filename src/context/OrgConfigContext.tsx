@@ -46,7 +46,7 @@ export const DEFAULT_FEATURES: OrgFeatures = {
   roles:       true,
   attendance:  true,
   meta:        true,
-  instagram:   true,
+  instagram:   false,
   bulk_upload: true,
 }
 
