@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Plus, Copy, Check, ExternalLink,
   Users, Mail, Link2, Loader2, Radio, Pipette,
-  Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap,
+  Upload, Trash2, ImageIcon, Send, Eye, EyeOff, Zap, Instagram,
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 import { DeleteOrgModal } from '@/components/DeleteOrgModal'
@@ -16,11 +16,12 @@ type Employee = { id: string; name: string; email: string; role: string; is_acti
 type Invite = { id: string; token: string; email: string | null; name: string | null; role: string; used_at: string | null; expires_at: string; created_at: string; link: string }
 type Features = {
   lead_crm: boolean; sla: boolean; pipeline: boolean
-  roles: boolean; attendance: boolean; meta: boolean; bulk_upload: boolean
+  roles: boolean; attendance: boolean; meta: boolean; instagram: boolean; bulk_upload: boolean
 }
-type MetaConfig = { page_id?: string; access_token?: string }
+type MetaConfig      = { page_id?: string; access_token?: string }
+type InstagramConfig = { ig_account_id?: string; access_token?: string; capi_dataset_id?: string }
 type OrgRole = { key: string; label: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; instagram_config?: InstagramConfig; instagram_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-[var(--sa-accent-3)] border-teal-500/30',
@@ -30,16 +31,17 @@ const ROLE_COLORS: Record<string, string> = {
 }
 const ROLE_COLOR_FALLBACK = 'bg-slate-500/15 text-[var(--sa-text)] border-slate-500/20'
 
-const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, bulk_upload: true }
+const DEFAULT_FEATURES: Features = { lead_crm: true, sla: true, pipeline: true, roles: true, attendance: true, meta: true, instagram: false, bulk_upload: true }
 
 const FEATURE_CONFIG: { key: keyof Features; label: string; description: string; color: string }[] = [
-  { key: 'lead_crm',   label: 'Lead CRM',           description: 'Dashboard, lead pipeline, bulk CSV upload, offline approvals', color: '#14b8a6' },
-  { key: 'pipeline',   label: 'Pipeline Config',     description: 'Custom stages, sub-stages, and transition flow editor',       color: '#8b5cf6' },
-  { key: 'sla',        label: 'Deadline Breach',     description: 'Stage-level deadline tracking with breach alerts and logs',   color: '#f59e0b' },
-  { key: 'attendance', label: 'Attendance & Leaves', description: 'Clock-in/out with wifi verification, leave approvals',       color: '#3b82f6' },
-  { key: 'roles',      label: 'Role Management',     description: 'Custom roles with granular access permissions',               color: '#ec4899' },
-  { key: 'meta',        label: 'Meta Integration',    description: 'Auto-import leads from Facebook & Instagram ad campaigns',   color: '#6366f1' },
-  { key: 'bulk_upload', label: 'Bulk CSV Upload',     description: 'Import leads in bulk via CSV — map columns and push to pipeline', color: '#10b981' },
+  { key: 'lead_crm',    label: 'Lead CRM',            description: 'Dashboard, lead pipeline, bulk CSV upload, offline approvals', color: '#14b8a6' },
+  { key: 'pipeline',    label: 'Pipeline Config',      description: 'Custom stages, sub-stages, and transition flow editor',       color: '#8b5cf6' },
+  { key: 'sla',         label: 'Deadline Breach',      description: 'Stage-level deadline tracking with breach alerts and logs',   color: '#f59e0b' },
+  { key: 'attendance',  label: 'Attendance & Leaves',  description: 'Clock-in/out with wifi verification, leave approvals',       color: '#3b82f6' },
+  { key: 'roles',       label: 'Role Management',      description: 'Custom roles with granular access permissions',               color: '#ec4899' },
+  { key: 'meta',        label: 'Facebook Lead Ads',    description: 'Auto-import leads from Facebook Lead Ads campaigns',          color: '#6366f1' },
+  { key: 'instagram',   label: 'Instagram Lead Ads',   description: 'Auto-import leads from Instagram Lead Ads (separate from FB)', color: '#e1306c' },
+  { key: 'bulk_upload', label: 'Bulk CSV Upload',      description: 'Import leads in bulk via CSV — map columns and push to pipeline', color: '#10b981' },
 ]
 
 interface Props {
@@ -87,11 +89,20 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [removingLogo, setRemovingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  // Meta integration
+  // Meta (Facebook) integration
   const [sendingGuide, setSendingGuide] = useState(false)
   const [guideSent, setGuideSent] = useState(!!org.meta_setup_sent_at)
   const [showAccessToken, setShowAccessToken] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  // Instagram integration
+  const [igAccountId, setIgAccountId] = useState(org.instagram_config?.ig_account_id ?? '')
+  const [igAccessToken, setIgAccessToken] = useState(org.instagram_config?.access_token ?? '')
+  const [igCapiDatasetId, setIgCapiDatasetId] = useState(org.instagram_config?.capi_dataset_id ?? '')
+  const [sendingIgGuide, setSendingIgGuide] = useState(false)
+  const [igGuideSent, setIgGuideSent] = useState(!!org.instagram_setup_sent_at)
+  const [showIgAccessToken, setShowIgAccessToken] = useState(false)
+  const igConnected = !!(igAccountId && igAccountId.trim())
 
   const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`
 
@@ -107,6 +118,14 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
     if (res.ok) { setGuideSent(true); toast.success('Setup guide sent to client') }
     else toast.error('Failed to send guide')
     setSendingGuide(false)
+  }
+
+  async function sendIgSetupGuide() {
+    setSendingIgGuide(true)
+    const res = await fetch(`/api/superadmin/orgs/${org.id}/send-ig-guide`, { method: 'POST' })
+    if (res.ok) { setIgGuideSent(true); toast.success('Instagram setup guide sent to client') }
+    else toast.error('Failed to send guide')
+    setSendingIgGuide(false)
   }
 
   const metaConnected = !!(metaPageId && metaPageId.trim())
@@ -160,6 +179,11 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         features,
         brand_palette: brandPalette,
         meta_config: { page_id: metaPageId || undefined, access_token: metaAccessToken || undefined },
+        instagram_config: {
+          ig_account_id:  igAccountId     || undefined,
+          access_token:   igAccessToken   || undefined,
+          capi_dataset_id: igCapiDatasetId || undefined,
+        },
         // Plan & Limits — empty string means unlimited (null in DB)
         lead_limit: leadLimit.trim() === '' ? null : Math.max(0, Number(leadLimit) || 0),
         lead_limit_enforced: leadLimitEnforced,
@@ -719,6 +743,117 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                       : <Send size={13} />
                   }
                   {guideSent ? 'Sent' : 'Send Guide'}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Instagram Integration ── */}
+            <div className="rounded-2xl p-5 space-y-4 border border-[var(--sa-divider)]"
+              style={{ background: "var(--sa-surface)" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: igConnected ? 'rgba(225,48,108,0.2)' : 'rgba(255,255,255,0.05)' }}>
+                    <Instagram size={13} className={igConnected ? 'text-pink-400' : 'text-[var(--sa-text-muted)]'} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-medium text-[var(--sa-text)]">Instagram Integration</h2>
+                    <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">
+                      {igConnected ? 'Connected — receiving leads from Instagram Lead Ads' : 'Not configured'}
+                    </p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  igConnected
+                    ? 'bg-pink-500/10 text-pink-400 border-pink-500/20'
+                    : 'bg-[var(--sa-surface)] text-[var(--sa-text-muted)] border-[var(--sa-divider)]'
+                }`}>
+                  {igConnected ? 'ACTIVE' : 'PENDING'}
+                </span>
+              </div>
+
+              {/* Shared Webhook URL */}
+              <div>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Webhook URL (same as Facebook)</label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-3 py-2 bg-white/[0.03] border border-[var(--sa-divider)] rounded-lg text-xs text-[var(--sa-text-secondary)] font-mono truncate">
+                    {WEBHOOK_URL}
+                  </div>
+                  <button type="button" onClick={() => copyMeta(WEBHOOK_URL, 'ig-webhook')}
+                    className={BTN_GHOST + ' !px-2.5'}>
+                    {copiedField === 'ig-webhook' ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* IG Business Account ID */}
+              <div>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Instagram Business Account ID</label>
+                <input
+                  type="text"
+                  value={igAccountId}
+                  onChange={e => setIgAccountId(e.target.value)}
+                  placeholder="e.g. 17841400000000000"
+                  className={INPUT}
+                />
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Leads are routed to this org when Meta sends events from this IG Business Account ID</p>
+              </div>
+
+              {/* IG Access Token */}
+              <div>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Instagram Page Access Token</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type={showIgAccessToken ? 'text' : 'password'}
+                    value={igAccessToken}
+                    onChange={e => setIgAccessToken(e.target.value)}
+                    placeholder="EAAx…"
+                    className={INPUT + ' font-mono flex-1'}
+                  />
+                  <button type="button" onClick={() => setShowIgAccessToken(v => !v)}
+                    className={BTN_GHOST + ' !px-2.5'}>
+                    {showIgAccessToken ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Used to fetch lead field data from Meta Graph API for Instagram leads</p>
+              </div>
+
+              {/* IG CAPI Dataset ID (optional) */}
+              <div>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">CAPI Dataset ID <span className="text-[var(--sa-text-muted)]">(optional)</span></label>
+                <input
+                  type="text"
+                  value={igCapiDatasetId}
+                  onChange={e => setIgCapiDatasetId(e.target.value)}
+                  placeholder="e.g. 123456789012345"
+                  className={INPUT}
+                />
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Required only for push-audience (conversion signal) functionality on Instagram</p>
+              </div>
+
+              {/* Send IG setup guide */}
+              <div className="pt-1 border-t border-[var(--sa-divider)] flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-[var(--sa-text-secondary)]">Send Instagram setup guide to client admin</p>
+                  <p className="text-[10px] text-[var(--sa-text-muted)] mt-0.5">
+                    {igGuideSent
+                      ? 'Guide sent — visible on the client\'s Instagram settings page'
+                      : 'Client will see step-by-step instructions on their Instagram Leads page'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={sendingIgGuide}
+                  onClick={sendIgSetupGuide}
+                  className={BTN_GHOST + ' flex-shrink-0'}
+                >
+                  {sendingIgGuide
+                    ? <Loader2 size={13} className="animate-spin" />
+                    : igGuideSent
+                      ? <Check size={13} className="text-green-400" />
+                      : <Send size={13} />
+                  }
+                  {igGuideSent ? 'Sent' : 'Send Guide'}
                 </button>
               </div>
             </div>

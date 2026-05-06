@@ -4,8 +4,13 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 const DOCS = [
   {
     slug: 'meta-integration',
-    title: 'Meta Lead Integration',
-    desc:  'Full setup guide — create the Meta App, connect client pages, configure per-org tokens, and understand the end-to-end lead flow.',
+    title: 'Facebook Lead Integration',
+    desc:  'Full setup guide — create the Meta App, connect client Facebook pages, configure per-org tokens, and understand the end-to-end Facebook lead flow.',
+  },
+  {
+    slug: 'instagram-integration',
+    title: 'Instagram Lead Integration',
+    desc:  'Connect Instagram Business Accounts to auto-import leads from Instagram Lead Ads — bifurcated from Facebook with separate config, routing, and admin view.',
   },
 ]
 
