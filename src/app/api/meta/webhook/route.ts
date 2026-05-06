@@ -183,19 +183,29 @@ async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, so
     }
 
     const phone = fields['phone_number'] || fields['phone'] || ''
-    const name  = `${fields['first_name'] || ''} ${fields['last_name'] || ''}`.trim() || fields['full_name'] || 'Unknown'
+    const email = fields['email']  || ''
+    const name  = `${fields['first_name'] || ''} ${fields['last_name'] || ''}`.trim()
+                  || fields['full_name']
+                  || email
+                  || `Lead ${leadgenId.slice(-4)}`
 
-    if (!phone) { console.warn(`[${source} Webhook] no phone in lead`, leadgenId); return }
+    if (!phone) {
+      console.info(`[${source} Webhook] no phone in lead (creating anyway):`, leadgenId)
+    }
 
+    // Dedupe by leadgen_id always; only fall back to phone when we have one,
+    // since phone.eq. with empty value would match every phone-less lead.
+    const dedupeFilter = phone
+      ? `phone.eq.${phone},${idField}.eq.${leadgenId}`
+      : `${idField}.eq.${leadgenId}`
     const { data: existing } = await supabase.from('leads').select('id').eq('org_id', orgId)
-      .or(`phone.eq.${phone},${idField}.eq.${leadgenId}`).limit(1)
+      .or(dedupeFilter).limit(1)
     if (existing && existing.length > 0) { console.info(`[${source} Webhook] duplicate, skipping:`, leadgenId); return }
 
     const owner      = await allocateLead(supabase, orgId, new Date())
     const customData: Record<string, string> = {}
     const course     = fields['course'] || fields['program'] || ''
     const location   = fields['city']   || fields['location'] || ''
-    const email      = fields['email']  || ''
     const username   = igUsername || fields['username'] || fields['ig_username'] || ''
     if (course)   customData.preferred_course = course
     if (location) customData.location         = location
@@ -206,7 +216,7 @@ async function processLeadgenEvent({ supabase, orgId, accessToken, leadgenId, so
     if (quota.atLimit) { await checkAndAlertQuota(orgId, 0); return }
 
     const { data: lead, error: leadErr } = await supabase.from('leads').insert({
-      org_id: orgId, name, phone, source, main_stage: '0',
+      org_id: orgId, name, phone: phone || null, source, main_stage: '0',
       [idField]: leadgenId,
       owner_id: owner?.id ?? null, reporting_manager_id: owner?.reports_to ?? null,
       custom_data: customData, approved: true,
