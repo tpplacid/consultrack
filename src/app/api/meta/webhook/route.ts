@@ -149,9 +149,19 @@ async function handleInstagramEvents(body: Record<string, unknown>) {
 
     // DMs + Story replies come via entry.messaging
     if (signals.dms_enabled) {
-      for (const msg of (entry.messaging as Record<string, unknown>[]) || []) {
+      const messaging = (entry.messaging as Record<string, unknown>[]) || []
+      console.info(`[Instagram Webhook] ${messaging.length} messaging event(s) for org ${org.id}`)
+      for (const msg of messaging) {
         const senderId = (msg.sender as { id: string })?.id
-        if (!senderId || senderId === igAccountId) continue  // skip echo
+        if (!senderId) {
+          console.warn('[Instagram Webhook] dm event missing sender.id, skipping')
+          continue
+        }
+        if (senderId === igAccountId) {
+          console.info(`[Instagram Webhook] dm event is echo from own account ${igAccountId}, skipping`)
+          continue
+        }
+        console.info(`[Instagram Webhook] dispatching dm from sender ${senderId}`)
         await handleDmEvent({ supabase, orgId: org.id, accessToken, ...sla, igAccountId, msg })
       }
     }
