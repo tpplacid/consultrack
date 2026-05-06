@@ -46,6 +46,21 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [quickFilter, setQuickFilter] = useState<QuickFilter | null>(null)
 
+  // Mobile: counsellors who scroll past stats every time can collapse them.
+  // Persisted to localStorage so the choice survives navigation. Default is
+  // expanded so first-time users discover the cards.
+  const [mobileStatsHidden, setMobileStatsHidden] = useState(false)
+  useEffect(() => {
+    setMobileStatsHidden(localStorage.getItem('dashboard.mobileStatsHidden') === '1')
+  }, [])
+  function toggleMobileStats() {
+    setMobileStatsHidden(v => {
+      const next = !v
+      localStorage.setItem('dashboard.mobileStatsHidden', next ? '1' : '0')
+      return next
+    })
+  }
+
   useEffect(() => {
     const supabase = createClient()
 
@@ -222,55 +237,69 @@ export function DashboardClient({ employee, leads: initialLeads, approvalMap: in
         <div className="space-y-2">
           <p className="text-[8px] text-brand-400 font-semibold hidden sm:block">Click a card to filter leads</p>
 
-          {/* Mobile horizontal strip */}
-          <div className="sm:hidden -mx-4 px-4 overflow-x-auto">
-            <div className="flex gap-2 pb-2 w-max">
-              {statCards.map(s => {
-                const active = quickFilter === s.filter && s.filter !== null
-                const clickable = s.filter !== null
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    disabled={!clickable}
-                    onClick={() => s.filter && toggleQuick(s.filter)}
-                    className={`shrink-0 min-w-[110px] text-left bg-white rounded-lg border px-2.5 py-1.5 shadow-sm transition-all ${
-                      !clickable
-                        ? 'cursor-default border-brand-100'
-                        : active
-                          ? 'border-brand-400 ring-2 ring-brand-100'
-                          : 'border-brand-100 active:border-brand-300'
-                    }`}
-                  >
-                    <p className="text-[9px] font-semibold text-brand-500 truncate">{s.label}</p>
-                    <p className="text-base font-bold text-brand-800 truncate leading-tight">{s.value}</p>
-                  </button>
-                )
-              })}
-              {alertChips.map(c => {
-                const active = quickFilter === c.filter
-                return (
-                  <button
-                    key={c.filter}
-                    type="button"
-                    onClick={() => toggleQuick(c.filter)}
-                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition-all ${
-                      active
-                        ? 'bg-brand-800 text-white border-brand-800'
-                        : c.count > 0
-                          ? 'bg-white text-brand-700 border-brand-200'
-                          : 'bg-white text-brand-300 border-brand-100'
-                    }`}
-                  >
-                    {c.icon}
-                    {c.label}
-                    <span className={`font-bold tabular-nums ${active ? 'text-white/80' : c.count > 0 ? 'text-brand-500' : 'text-brand-300'}`}>
-                      {c.count}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+          {/* Mobile: collapsible stats (3-col grid, no horizontal scroll). */}
+          <div className="sm:hidden">
+            <button
+              type="button"
+              onClick={toggleMobileStats}
+              className="w-full flex items-center justify-between text-[10px] font-semibold text-brand-500 mb-1.5 px-1"
+            >
+              <span>{mobileStatsHidden ? 'Show stats' : 'Hide stats'}</span>
+              <ChevronDown size={12} className={`transition-transform ${mobileStatsHidden ? '-rotate-90' : ''}`} />
+            </button>
+            {!mobileStatsHidden && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {statCards.map(s => {
+                    const active = quickFilter === s.filter && s.filter !== null
+                    const clickable = s.filter !== null
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        disabled={!clickable}
+                        onClick={() => s.filter && toggleQuick(s.filter)}
+                        className={`text-left bg-white rounded-lg border px-2 py-1.5 transition-all ${
+                          !clickable
+                            ? 'cursor-default border-brand-100'
+                            : active
+                              ? 'border-brand-400 ring-2 ring-brand-100'
+                              : 'border-brand-100 active:border-brand-300'
+                        }`}
+                      >
+                        <p className="text-[9px] font-semibold text-brand-500 truncate leading-tight">{s.label}</p>
+                        <p className="text-sm font-bold text-brand-800 truncate leading-tight mt-0.5">{s.value}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {alertChips.map(c => {
+                    const active = quickFilter === c.filter
+                    return (
+                      <button
+                        key={c.filter}
+                        type="button"
+                        onClick={() => toggleQuick(c.filter)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-semibold transition-all ${
+                          active
+                            ? 'bg-brand-800 text-white border-brand-800'
+                            : c.count > 0
+                              ? 'bg-white text-brand-700 border-brand-200'
+                              : 'bg-white text-brand-300 border-brand-100'
+                        }`}
+                      >
+                        {c.icon}
+                        {c.label}
+                        <span className={`font-bold tabular-nums ${active ? 'text-white/80' : c.count > 0 ? 'text-brand-500' : 'text-brand-300'}`}>
+                          {c.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Desktop grid */}
