@@ -30,7 +30,8 @@ export function encodeWAText(text: string): string {
   return encodeURIComponent(text)
 }
 
-export function buildWAUrl(phone: string, body: string): string {
+export function buildWAUrl(phone: string | null | undefined, body: string): string {
+  if (!phone) return '#'
   let clean = phone.replace(/\D/g, '')
 
   // Normalise to full international format — wa.me requires this on mobile.

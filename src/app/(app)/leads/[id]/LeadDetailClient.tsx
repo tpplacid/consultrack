@@ -208,10 +208,14 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
         <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-brand-800 truncate">{lead.name}</h1>
           <div className="flex flex-wrap items-center gap-2 mt-0.5">
-            <div className="flex items-center gap-1 text-sm text-brand-500">
-              <Phone size={13} />
-              <a href={`tel:${lead.phone}`} className="hover:text-brand-700">{lead.phone}</a>
-            </div>
+            {lead.phone ? (
+              <div className="flex items-center gap-1 text-sm text-brand-500">
+                <Phone size={13} />
+                <a href={`tel:${lead.phone}`} className="hover:text-brand-700">{lead.phone}</a>
+              </div>
+            ) : (
+              <span className="text-xs text-brand-400 italic">No phone — channel: {lead.source}</span>
+            )}
             <StageBadge stage={lead.main_stage} />
             {overdue && (
               <span className="flex items-center gap-1 text-xs text-red-600 font-semibold">
@@ -228,10 +232,12 @@ export function LeadDetailClient({ lead: initialLead, activities: initialActivit
               Transfer
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => setWaOpen(true)}>
-            <MessageSquare size={14} />
-            WhatsApp
-          </Button>
+          {lead.phone && (
+            <Button size="sm" variant="outline" onClick={() => setWaOpen(true)}>
+              <MessageSquare size={14} />
+              WhatsApp
+            </Button>
+          )}
         </div>
       </div>
 
