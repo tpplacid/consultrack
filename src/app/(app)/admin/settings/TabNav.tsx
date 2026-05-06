@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Layers, ListFilter, GitBranch, Clock, LayoutDashboard,
-  Radio, Upload, Shield, MessageSquare, Lock, Gauge,
+  Radio, Upload, Shield, MessageSquare, Lock, Gauge, Instagram,
 } from 'lucide-react'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
 import { UpgradeModal } from '@/components/UpgradeModal'
@@ -50,10 +50,16 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'Integrations',
     items: [
       {
-        href: '/admin/settings/meta',         label: 'Meta / Facebook', icon: Radio,
+        href: '/admin/settings/meta',         label: 'Facebook Ads',    icon: Radio,
         feature: 'meta', featureKey: 'meta',
-        upgradeLabel: 'Meta Integration',
-        upgradeDesc:  'Automatically pull leads from your Meta (Facebook & Instagram) ad campaigns directly into the pipeline.',
+        upgradeLabel: 'Facebook Lead Integration',
+        upgradeDesc:  'Automatically pull leads from your Facebook Lead Ads campaigns directly into the pipeline.',
+      },
+      {
+        href: '/admin/settings/instagram',    label: 'Instagram Ads',   icon: Instagram,
+        feature: 'instagram', featureKey: 'instagram',
+        upgradeLabel: 'Instagram Lead Integration',
+        upgradeDesc:  'Automatically pull leads from your Instagram Lead Ads directly into the pipeline — bifurcated from Facebook.',
       },
       {
         href: '/admin/settings/bulk-upload',  label: 'Import Leads',    icon: Upload,

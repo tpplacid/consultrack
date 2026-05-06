@@ -58,6 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     roles:       raw.roles       ?? DEFAULT_FEATURES.roles,
     attendance:  raw.attendance  ?? DEFAULT_FEATURES.attendance,
     meta:        raw.meta        ?? DEFAULT_FEATURES.meta,
+    instagram:   raw.instagram   ?? DEFAULT_FEATURES.instagram,
     bulk_upload: raw.bulk_upload ?? DEFAULT_FEATURES.bulk_upload,
   }
 

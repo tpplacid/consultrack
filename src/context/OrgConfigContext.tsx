@@ -35,6 +35,7 @@ export interface OrgFeatures {
   roles:       boolean
   attendance:  boolean
   meta:        boolean
+  instagram:   boolean
   bulk_upload: boolean
 }
 
@@ -45,6 +46,7 @@ export const DEFAULT_FEATURES: OrgFeatures = {
   roles:       true,
   attendance:  true,
   meta:        true,
+  instagram:   true,
   bulk_upload: true,
 }
 
@@ -55,9 +57,10 @@ export interface LeadSource {
 }
 
 export const DEFAULT_LEAD_SOURCES: LeadSource[] = [
-  { key: 'meta',     label: 'Meta Ads', sla_excluded: false },
-  { key: 'offline',  label: 'Offline',  sla_excluded: true  },
-  { key: 'referral', label: 'Referral', sla_excluded: true  },
+  { key: 'meta',      label: 'Facebook Ads', sla_excluded: false },
+  { key: 'instagram', label: 'Instagram Ads', sla_excluded: false },
+  { key: 'offline',   label: 'Offline',       sla_excluded: true  },
+  { key: 'referral',  label: 'Referral',      sla_excluded: true  },
 ]
 
 interface OrgConfig {
