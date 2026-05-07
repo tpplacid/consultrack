@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { AdminMetaClient } from './AdminMetaClient'
+import { META_WEBHOOK_URL } from '@/lib/webhookUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export default async function AdminMetaPage() {
       isConnected={isConnected}
       setupSent={orgData?.meta_setup_sent_at ?? null}
       verifyToken={process.env.META_VERIFY_TOKEN ?? null}
-      webhookUrl={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`}
+      webhookUrl={META_WEBHOOK_URL}
       pageId={metaConfig.page_id ?? null}
     />
   )

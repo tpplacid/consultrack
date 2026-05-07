@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { PALETTES, DEFAULT_PALETTE } from '@/lib/orgTheme'
 import { DeleteOrgModal } from '@/components/DeleteOrgModal'
+import { META_WEBHOOK_URL } from '@/lib/webhookUrl'
 
 type Employee = { id: string; name: string; email: string; role: string; is_active: boolean; created_at: string }
 type Invite = { id: string; token: string; email: string | null; name: string | null; role: string; used_at: string | null; expires_at: string; created_at: string; link: string }
@@ -112,7 +113,7 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [mentionsEnabled, setMentionsEnabled] = useState(igSignals.mentions_enabled ?? false)
   const [commentKeywords, setCommentKeywords] = useState((igSignals.comments_keywords ?? []).join(', '))
 
-  const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`
+  const WEBHOOK_URL = META_WEBHOOK_URL
 
   function copyMeta(value: string, field: string) {
     navigator.clipboard.writeText(value)

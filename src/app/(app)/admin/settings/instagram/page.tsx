@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrgFeatures } from '@/lib/orgFeatures'
 import { FeatureGate } from '@/components/FeatureGate'
 import { AdminInstagramClient } from '../../instagram/AdminInstagramClient'
+import { META_WEBHOOK_URL } from '@/lib/webhookUrl'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export default async function SettingsInstagramPage() {
       isConnected={isConnected}
       setupSent={orgData?.instagram_setup_sent_at ?? null}
       verifyToken={process.env.META_VERIFY_TOKEN ?? null}
-      webhookUrl={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`}
+      webhookUrl={META_WEBHOOK_URL}
       igAccountId={igConfig.ig_account_id ?? null}
       hasCapiDataset={hasCapiDataset}
       signalConfig={igConfig.signals ?? {}}

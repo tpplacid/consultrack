@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrgFeatures } from '@/lib/orgFeatures'
 import { FeatureGate } from '@/components/FeatureGate'
 import { AdminMetaClient } from '../../meta/AdminMetaClient'
+import { META_WEBHOOK_URL } from '@/lib/webhookUrl'
 
 // SA flips meta_setup_sent_at via /api/superadmin/orgs/[orgId]/send-guide.
 // Without force-dynamic, Next.js 16 may serve a build-time snapshot or a
@@ -41,7 +42,7 @@ export default async function SettingsMetaPage() {
       isConnected={isConnected}
       setupSent={orgData?.meta_setup_sent_at ?? null}
       verifyToken={process.env.META_VERIFY_TOKEN ?? null}
-      webhookUrl={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://consultrackk.vercel.app'}/api/meta/webhook`}
+      webhookUrl={META_WEBHOOK_URL}
       pageId={metaConfig.page_id ?? null}
     />
   )
