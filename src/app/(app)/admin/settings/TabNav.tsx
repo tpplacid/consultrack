@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   Layers, ListFilter, GitBranch, Clock, LayoutDashboard,
   Radio, Upload, Shield, MessageSquare, Lock, Gauge, Camera,
+  ShieldCheck,
 } from 'lucide-react'
 import { useOrgConfig, OrgFeatures } from '@/context/OrgConfigContext'
 import { UpgradeModal } from '@/components/UpgradeModal'
@@ -89,7 +90,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     title: 'Account',
     items: [
-      { href: '/admin/settings/plan', label: 'Plan & Data', icon: Gauge },
+      { href: '/admin/settings/plan',         label: 'Plan & Data',  icon: Gauge },
+      { href: '/admin/settings/data-privacy', label: 'Data & Privacy', icon: ShieldCheck },
     ],
   },
 ]
