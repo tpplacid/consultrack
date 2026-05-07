@@ -22,7 +22,7 @@ type MetaConfig      = { page_id?: string; access_token?: string }
 type IgSignals = { dms_enabled?: boolean; comments_enabled?: boolean; comments_keywords?: string[]; mentions_enabled?: boolean }
 type InstagramConfig = { ig_account_id?: string; access_token?: string; capi_dataset_id?: string; signals?: IgSignals }
 type OrgRole = { key: string; label: string }
-type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; instagram_config?: InstagramConfig; instagram_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; created_at: string }
+type Org = { id: string; name: string; slug: string; logo_url: string | null; features?: Features; brand_palette?: string; meta_config?: MetaConfig; meta_setup_sent_at?: string | null; instagram_config?: InstagramConfig; instagram_setup_sent_at?: string | null; is_live?: boolean; is_sandbox?: boolean; lead_limit?: number | null; lead_limit_enforced?: boolean; meta_app_mode?: 'central' | 'own'; meta_app_id?: string | null; meta_app_secret?: string | null; meta_verify_token?: string | null; created_at: string }
 
 const ROLE_COLORS: Record<string, string> = {
   ad: 'bg-teal-500/15 text-[var(--sa-accent-3)] border-teal-500/30',
@@ -78,6 +78,14 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
   const [brandPalette, setBrandPalette] = useState(org.brand_palette ?? DEFAULT_PALETTE)
   const [metaPageId, setMetaPageId] = useState(org.meta_config?.page_id ?? '')
   const [metaAccessToken, setMetaAccessToken] = useState(org.meta_config?.access_token ?? '')
+  // Per-org Meta app credentials — only used when meta_app_mode = 'own'.
+  // Bridge feature for the App Review window; flipping back to 'central'
+  // hides these fields and the central env vars take over again.
+  const [metaAppMode, setMetaAppMode] = useState<'central' | 'own'>(org.meta_app_mode ?? 'central')
+  const [metaAppId, setMetaAppId] = useState(org.meta_app_id ?? '')
+  const [metaAppSecret, setMetaAppSecret] = useState(org.meta_app_secret ?? '')
+  const [metaVerifyToken, setMetaVerifyToken] = useState(org.meta_verify_token ?? '')
+  const [testingConnection, setTestingConnection] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [resettingSandbox, setResettingSandbox] = useState(false)
@@ -187,6 +195,10 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
         features,
         brand_palette: brandPalette,
         meta_config: { page_id: metaPageId || undefined, access_token: metaAccessToken || undefined },
+        meta_app_mode:     metaAppMode,
+        meta_app_id:       metaAppMode === 'own' ? (metaAppId.trim()       || null) : null,
+        meta_app_secret:   metaAppMode === 'own' ? (metaAppSecret.trim()   || null) : null,
+        meta_verify_token: metaAppMode === 'own' ? (metaVerifyToken.trim() || null) : null,
         instagram_config: {
           ig_account_id:   igAccountId     || undefined,
           access_token:    igAccessToken   || undefined,
@@ -688,7 +700,42 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                 </span>
               </div>
 
-              {/* Webhook URL */}
+              {/* Connection mode toggle */}
+              <div>
+                <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Connection mode</label>
+                <div className="flex gap-2">
+                  <button type="button"
+                    onClick={() => setMetaAppMode('central')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+                      metaAppMode === 'central'
+                        ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                        : 'bg-[var(--sa-surface)] text-[var(--sa-text-secondary)] border-[var(--sa-divider)] hover:border-[var(--sa-border-strong)]'
+                    }`}>
+                    Consultrack&rsquo;s app
+                  </button>
+                  <button type="button"
+                    onClick={() => setMetaAppMode('own')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+                      metaAppMode === 'own'
+                        ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                        : 'bg-[var(--sa-surface)] text-[var(--sa-text-secondary)] border-[var(--sa-divider)] hover:border-[var(--sa-border-strong)]'
+                    }`}>
+                    Client&rsquo;s own app
+                  </button>
+                </div>
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">
+                  {metaAppMode === 'central'
+                    ? 'Routes through Consultrack’s verified Meta app. Requires App Review approval to onboard real client accounts.'
+                    : 'Routes through the client’s own Meta app. Use during the App Review window. See ' }
+                  {metaAppMode === 'own' && (
+                    <a href="/superadmin/docs/own-meta-app" target="_blank" rel="noopener noreferrer"
+                      className="underline hover:text-[var(--sa-text)]">setup guide</a>
+                  )}
+                  {metaAppMode === 'own' && '.'}
+                </p>
+              </div>
+
+              {/* Webhook URL — same for both modes */}
               <div>
                 <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Webhook URL</label>
                 <div className="flex items-center gap-2">
@@ -701,6 +748,37 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   </button>
                 </div>
               </div>
+
+              {/* Per-org Meta app credentials — only shown when 'own' mode */}
+              {metaAppMode === 'own' && (
+                <div className="space-y-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3">
+                  <p className="text-[10px] text-amber-300/80 leading-relaxed">
+                    These three fields come from the client&rsquo;s own Meta Developer app.
+                    Walk them through <a href="/superadmin/docs/own-meta-app" target="_blank" rel="noopener noreferrer" className="underline">the setup guide</a> first.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">App ID</label>
+                    <input type="text" value={metaAppId}
+                      onChange={e => setMetaAppId(e.target.value)}
+                      placeholder="e.g. 1234567890123456"
+                      className={INPUT + ' font-mono'} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">App Secret</label>
+                    <input type="password" value={metaAppSecret}
+                      onChange={e => setMetaAppSecret(e.target.value)}
+                      placeholder="32-char hex string from App Settings → Basic"
+                      className={INPUT + ' font-mono'} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-[var(--sa-text-secondary)] mb-1.5">Verify Token</label>
+                    <input type="text" value={metaVerifyToken}
+                      onChange={e => setMetaVerifyToken(e.target.value)}
+                      placeholder="any random string the client picks (paste it into Meta and here)"
+                      className={INPUT + ' font-mono'} />
+                  </div>
+                </div>
+              )}
 
               {/* Page ID */}
               <div>
@@ -732,6 +810,31 @@ export default function OrgDetailClient({ org, employees: initialEmployees, invi
                   </button>
                 </div>
                 <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">Used to fetch lead field data from Meta Graph API</p>
+              </div>
+
+              {/* Test connection — calls Graph API with the saved Page ID +
+                  token and reports green / red so SA / client can self-
+                  diagnose token expiry, page mismatch etc. without digging
+                  through Vercel logs. */}
+              <div>
+                <button
+                  type="button"
+                  disabled={testingConnection || !metaPageId.trim() || !metaAccessToken.trim()}
+                  onClick={async () => {
+                    setTestingConnection(true)
+                    const res = await fetch(`/api/superadmin/orgs/${org.id}/test-meta-connection`, { method: 'POST' })
+                    const j = await res.json().catch(() => ({}))
+                    if (j.ok) toast.success(`Connected: ${j.page_name ?? 'OK'}`)
+                    else toast.error(j.error ?? 'Connection failed')
+                    setTestingConnection(false)
+                  }}
+                  className={BTN_GHOST + ' text-xs'}
+                >
+                  {testingConnection ? 'Testing…' : 'Test connection'}
+                </button>
+                <p className="text-[10px] text-[var(--sa-text-muted)] mt-1">
+                  Calls Graph API with the saved credentials. Run this whenever a token is rotated or leads stop arriving.
+                </p>
               </div>
 
               {/* Send setup guide */}

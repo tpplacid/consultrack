@@ -41,6 +41,14 @@ function Note({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
+function Pitfall({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-amber-500/20 rounded-xl p-3.5 bg-amber-500/[0.04] my-4">
+      <p className="text-xs font-semibold text-amber-300 mb-1">⚠ Pitfall — {title}</p>
+      <div className="text-xs text-[var(--sa-text-secondary)] leading-relaxed">{children}</div>
+    </div>
+  )
+}
 function Table({ rows }: { rows: [string, string, string][] }) {
   return (
     <div className="overflow-x-auto my-4">
@@ -175,6 +183,27 @@ export default function MetaIntegrationDoc() {
           <p>Click <strong className="text-[var(--sa-text)]">Verify and Save</strong> — Meta calls your GET endpoint to confirm. Then find the <strong className="text-[var(--sa-text)]">leadgen</strong> field and click <strong className="text-[var(--sa-text)]">Subscribe</strong>.</p>
         </Step>
 
+        <Pitfall title="Always use consultrackk.vercel.app, never admishine.vercel.app">
+          The legacy domain <Code>admishine.vercel.app</Code> is a 308 redirect to{' '}
+          <Code>consultrackk.vercel.app</Code>. GET verification follows the redirect and
+          succeeds, but POST webhooks <em>do not follow redirects</em> — every lead silently
+          disappears. Always paste the canonical URL.
+        </Pitfall>
+
+        <Pitfall title="leadgen field doesn't appear in the subscription list">
+          You haven&rsquo;t requested <Code>leads_retrieval</Code> permission yet. Go to
+          App Review → Permissions and Features → search <Code>leads_retrieval</Code> →
+          <em>Get Advanced Access</em> (auto-flips to Standard Access for owned assets). The
+          field shows up immediately afterwards.
+        </Pitfall>
+
+        <Pitfall title="App Mode must be Live, not Development">
+          The Webhooks page has a small red banner: <em>&ldquo;No production webhooks,
+          including from app admins, developers or testers, will be delivered unless the app
+          has been published.&rdquo;</em> Toggle App Mode to Live (top of dashboard) before
+          expecting any webhook delivery.
+        </Pitfall>
+
         <Note>
           Leads are routed to the correct org by matching the incoming Facebook Page ID against <Code>meta_config.page_id</Code> stored per org in superadmin. Make sure every org's Page ID is configured before going live.
         </Note>
@@ -190,8 +219,9 @@ export default function MetaIntegrationDoc() {
 
         <Step n={2} title="Generate a Page Access Token">
           <p>Go to the <A href="https://developers.facebook.com/tools/explorer/">Graph API Explorer</A> → select your app → click <strong className="text-[var(--sa-text)]">Generate Access Token</strong> → select the client's Page.</p>
-          <p>Request permissions: <Code>pages_show_list</Code>, <Code>leads_retrieval</Code>, <Code>pages_read_engagement</Code>.</p>
-          <p>Exchange the short-lived token for a long-lived one:</p>
+          <p>Request permissions: <Code>pages_show_list</Code>, <Code>leads_retrieval</Code>, <Code>pages_read_engagement</Code>, <Code>pages_manage_metadata</Code>, <Code>pages_manage_ads</Code>.</p>
+          <p>Easy way to extend (no curl): click the <strong className="text-[var(--sa-text)]">i</strong> icon next to the Access Token → <em>Open in Access Token Tool</em> → at the bottom click <strong className="text-[var(--sa-text)]">Extend Access Token</strong> → enter FB password. Returns a long-lived (60-day) User Token.</p>
+          <p>Curl alternative if you prefer scripting:</p>
         </Step>
 
         <CodeBlock>{`GET https://graph.facebook.com/v19.0/oauth/access_token
@@ -200,7 +230,22 @@ export default function MetaIntegrationDoc() {
   &client_secret={APP_SECRET}
   &fb_exchange_token={SHORT_LIVED_TOKEN}`}</CodeBlock>
 
-        <P>The response contains a long-lived token. This is what goes into the org's access token field.</P>
+        <P>The response contains a long-lived User Token. Now query <Code>me/accounts</Code> in Graph Explorer with that token — copy the Page&rsquo;s <Code>access_token</Code> field. That&rsquo;s the long-lived <em>Page</em> Access Token (typically never expires) and what goes into the org&rsquo;s access token field.</P>
+
+        <Pitfall title="me/accounts returns empty array">
+          The User Token doesn&rsquo;t see the Page yet. Click <em>Generate Access Token</em>
+          again, find the <em>Edit access</em> link in the consent popup, ensure the Page is
+          ticked. Newly-created Pages default to unchecked.
+        </Pitfall>
+
+        <Pitfall title="Page-level subscription is also required">
+          App-level subscription (Step 5) tells Meta that the app cares about leadgen.
+          Page-level subscription tells <em>that specific Page</em> to forward leadgen events
+          to the app. Both are needed. Run this in Graph API Explorer with method=POST and
+          the <strong>Page</strong> Access Token (not User Token):
+          <div className="mt-2"><Code>{'POST {page_id}/subscribed_apps?subscribed_fields=leadgen'}</Code></div>
+          Expected response: <Code>{'{"success": true}'}</Code>.
+        </Pitfall>
 
         <Step n={3} title="Find the client's Facebook Page ID">
           <p>Option A: Facebook Page → About → Page ID (shown at the bottom).</p>

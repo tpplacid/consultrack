@@ -55,7 +55,11 @@ export async function PATCH(
 
   const { orgId } = await params
   const body = await req.json()
-  const { name, slug, features, brand_palette, meta_config, instagram_config, is_live, lead_limit, lead_limit_enforced } = body
+  const {
+    name, slug, features, brand_palette, meta_config, instagram_config,
+    is_live, lead_limit, lead_limit_enforced,
+    meta_app_mode, meta_app_id, meta_app_secret, meta_verify_token,
+  } = body
 
   const supabase = createAdminClient()
 
@@ -80,6 +84,10 @@ export async function PATCH(
   if (is_live !== undefined) updates.is_live = is_live
   if (lead_limit !== undefined) updates.lead_limit = lead_limit
   if (lead_limit_enforced !== undefined) updates.lead_limit_enforced = lead_limit_enforced
+  if (meta_app_mode     !== undefined) updates.meta_app_mode     = meta_app_mode
+  if (meta_app_id       !== undefined) updates.meta_app_id       = meta_app_id
+  if (meta_app_secret   !== undefined) updates.meta_app_secret   = meta_app_secret
+  if (meta_verify_token !== undefined) updates.meta_verify_token = meta_verify_token
 
   const { data, error } = await supabase
     .from('orgs')

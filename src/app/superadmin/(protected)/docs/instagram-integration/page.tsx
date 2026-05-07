@@ -41,6 +41,14 @@ function Note({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
+function Pitfall({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-amber-500/20 rounded-xl p-3.5 bg-amber-500/[0.04] my-4">
+      <p className="text-xs font-semibold text-amber-300 mb-1">⚠ Pitfall — {title}</p>
+      <div className="text-xs text-[var(--sa-text-secondary)] leading-relaxed">{children}</div>
+    </div>
+  )
+}
 function Table({ rows }: { rows: [string, string, string][] }) {
   return (
     <div className="overflow-x-auto my-4">
@@ -138,12 +146,32 @@ export default function InstagramIntegrationDoc() {
         <Step n={2} title="Subscribe Instagram webhook">
           <p>In the app dashboard → Webhooks → change the dropdown from <strong>Page</strong> to <strong>Instagram</strong>.</p>
           <p>Click <strong>Subscribe to this object</strong>. Use the same Callback URL and Verify Token as Facebook.</p>
-          <p>Under Fields, find <strong>leadgen</strong> and click Subscribe.</p>
+          <p>Under Fields, subscribe: <Code>messages</Code>, <Code>comments</Code>, <Code>mentions</Code>. (IG Lead Ads come through the <strong>Page</strong> object set up in the Facebook integration doc, not Instagram — don&rsquo;t look for <Code>leadgen</Code> here.)</p>
         </Step>
-        <Step n={3} title="Add Instagram to your app permissions">
-          <p>Under App Review → Permissions and Features, request <Code>instagram_manage_leads</Code> permission if not already approved.</p>
-          <p>For development/testing you can use the app in dev mode — only the test account will receive webhooks.</p>
+
+        <Pitfall title="Newer apps see a different IG product UI">
+          Recent Meta accounts now have a dedicated <strong>Instagram</strong> product (separate
+          from Webhooks) with four numbered steps: Generate access tokens, Configure webhooks,
+          Set up business login, App Review. Use <em>Step 1 — Add account</em> to attach the
+          client&rsquo;s IG Business Account; <em>Step 2 — Configure webhooks</em> auto-fills
+          if step 1 succeeds, otherwise paste the same Callback URL + Verify Token. Skip steps
+          3 and 4 — both are for OAuth and App Review submissions you don&rsquo;t need for
+          owned-asset testing.
+        </Pitfall>
+
+        <Step n={3} title="Add Instagram permissions">
+          <p>App Review → Permissions and Features. Request <strong>Get Advanced Access</strong> on:</p>
+          <p><Code>instagram_basic</Code>, <Code>instagram_manage_messages</Code>, <Code>instagram_manage_comments</Code>, <Code>instagram_manage_insights</Code>, plus <Code>pages_show_list</Code>, <Code>pages_manage_metadata</Code>.</p>
+          <p>Standard Access works for testing on the app&rsquo;s own assets. Advanced Access (post-App-Review) is required to enrich profiles for users outside the app&rsquo;s test list.</p>
         </Step>
+
+        <Pitfall title="DM webhooks fire but profile fetch fails (#200)">
+          Standard Access on <Code>instagram_manage_messages</Code> can&rsquo;t fetch the
+          profile of a DM sender unless that sender is added as an Instagram Tester in App
+          Roles. Without it, the lead still gets created but the name is a placeholder
+          (<em>&ldquo;Instagram User 1234&rdquo;</em>). Real usernames come automatically once
+          Advanced Access is approved via App Review — no code change needed.
+        </Pitfall>
 
         <H2>Per-client setup (SA actions)</H2>
         <P>Do this in the Org detail page → Settings tab → Instagram Integration card.</P>

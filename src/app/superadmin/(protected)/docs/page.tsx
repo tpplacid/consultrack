@@ -12,6 +12,11 @@ const DOCS = [
     title: 'Instagram Lead Integration',
     desc:  'Connect Instagram Business Accounts to auto-import leads from Instagram Lead Ads — bifurcated from Facebook with separate config, routing, and admin view.',
   },
+  {
+    slug: 'own-meta-app',
+    title: "Client's Own Meta App Setup",
+    desc:  'Bridge guide for the App Review window — onboard a client by having them create their own Meta Developer app and pasting App ID + Secret + Verify Token into Superadmin. Captures every gotcha from the first-integration session.',
+  },
 ]
 
 export default function DocsIndexPage() {

@@ -34,6 +34,39 @@ function deadlineFor(args: {
   return (dt ?? new Date(Date.now() + ONE_DAY_MS)).toISOString()
 }
 
+// ── Auth helpers (multi-app aware) ────────────────────────────
+// During the App Review window, some orgs route webhooks through their
+// own Meta app instead of Consultrack's central one. We accept either
+// the env-configured central credentials OR any per-org overrides set
+// when an org is in meta_app_mode = 'own'.
+
+async function isVerifyTokenValid(token: string | null): Promise<boolean> {
+  if (!token) return false
+  if (token === process.env.META_VERIFY_TOKEN) return true
+  const supabase = createAdminClient()
+  const { data } = await supabase.from('orgs')
+    .select('id').eq('meta_app_mode', 'own').eq('meta_verify_token', token).limit(1)
+  return !!(data && data.length)
+}
+
+async function isSignatureValid(rawBody: string, sigHeader: string | null): Promise<boolean> {
+  if (!sigHeader) return false
+  const expectedFor = (secret: string) =>
+    'sha256=' + createHmac('sha256', secret).update(rawBody).digest('hex')
+
+  const central = process.env.META_APP_SECRET
+  if (central && sigHeader === expectedFor(central)) return true
+
+  const supabase = createAdminClient()
+  const { data: orgs } = await supabase.from('orgs')
+    .select('meta_app_secret').eq('meta_app_mode', 'own').not('meta_app_secret', 'is', null)
+  for (const o of orgs ?? []) {
+    const secret = o.meta_app_secret as string | null
+    if (secret && sigHeader === expectedFor(secret)) return true
+  }
+  return false
+}
+
 // ── GET: Meta/Instagram webhook verification ─────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -41,7 +74,7 @@ export async function GET(req: NextRequest) {
   const token     = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+  if (mode === 'subscribe' && await isVerifyTokenValid(token)) {
     return new NextResponse(challenge, { status: 200 })
   }
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -51,11 +84,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
-  const appSecret = process.env.META_APP_SECRET
-  if (appSecret) {
-    const sig      = req.headers.get('x-hub-signature-256') ?? ''
-    const expected = 'sha256=' + createHmac('sha256', appSecret).update(rawBody).digest('hex')
-    if (sig !== expected) {
+  // Signature verification only enforced when at least the central
+  // META_APP_SECRET is configured. If neither central nor any own-app
+  // secret matches, the request is rejected. If META_APP_SECRET is unset
+  // and no own-app secrets exist, signing is effectively disabled (test
+  // environments only).
+  const haveAnySecret = !!process.env.META_APP_SECRET
+  if (haveAnySecret) {
+    const sig = req.headers.get('x-hub-signature-256')
+    if (!await isSignatureValid(rawBody, sig)) {
       console.warn('[Meta Webhook] signature mismatch — rejecting request')
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
